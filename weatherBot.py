@@ -40,7 +40,7 @@ def makeTweet():
     condition = ydata['query']['results']['channel']['item']['condition']['text']
     
     if (windchill <= -30):
-        return "Wow, mother nature is a bitch. The windchill is " + str(windchill) + "F and the wind is blowing at " + windspeed + " mph. My face hurts."
+        return "Wow, mother nature is a bitch. The windchill is " + str(windchill) + deg + "F and the wind is blowing at " + windspeed + " mph. My face hurts."
     elif (code == 0 or code == 1 or code == 2):
         return "HOLY SHIT, THERE'S A " + condition.upper() + "!"
     elif (code == 3):
