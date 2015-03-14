@@ -84,12 +84,17 @@ def makeSpecialTweet(ydata):
         return "normal"
 
 def doTweet(content, latitude, longitude):
+    global last_tweet
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
     api = tweepy.API(auth)
     
     print content
-    api.update_status(status=content,lat=latitude,long=longitude)
+    try:
+        api.update_status(status=content,lat=latitude,long=longitude)
+        print "Tweet"
+    except tweepy.TweepError, e:
+        print "Tweet failed:", e.reason
     last_tweet = content
 
 while(True):
@@ -102,28 +107,35 @@ while(True):
     longitude = ydata['query']['results']['channel']['item']['long']
     
     now = datetime.now()
+    print "last tweet:", last_tweet
     
     if (last_tweet == contentNormal):
         #posting tweet will fail if same as last tweet
         print "Time:", datetime.now().time().strftime("%H:%M:%S")
-        print "Duplicate tweet:", contentNormal
+        print "Duplicate normal tweet:", contentNormal
     elif (last_tweet == contentSpecial):
         #posting tweet will fail if same as last tweet
         print "Time:", datetime.now().time().strftime("%H:%M:%S")
-        print "Duplicate tweet:", contentSpecial
+        print "Duplicate special tweet:", contentSpecial
     elif (contentSpecial != "normal"):
         #post special weather event at non-timed time
         print "Time:", datetime.now().time().strftime("%H:%M:%S")
+        print "Special event"
         doTweet(contentSpecial, latitude, longitude)
         time.sleep(840) #sleep for 14 mins (plus the 1 minute at the end of the loop) so there aren't a ton of similar tweets in a row
     else:
         #standard timed tweet
         time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
         time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
-        time3 = now.replace(hour=15, minute=30, second=0, microsecond=0)
-        time4 = now.replace(hour=20, minute=0, second=0, microsecond=0)
+        time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
+        time4 = now.replace(hour=18, minute=0, second=0, microsecond=0)
+        time5 = now.replace(hour=22, minute=0, second=0, microsecond=0)
         
-        if (now > time4 and now < time4.replace(minute=time4.minute + 1)):
+        if (now > time5 and now < time5.replace(minute=time5.minute + 1)):
+            print "Time:", datetime.now().time().strftime("%H:%M:%S")
+            print "time5"
+            doTweet(contentNormal, latitude, longitude)
+        elif (now > time4 and now < time4.replace(minute=time4.minute + 1)):
             print "Time:", datetime.now().time().strftime("%H:%M:%S")
             print "time4"
             doTweet(contentNormal, latitude, longitude)
