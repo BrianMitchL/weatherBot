@@ -5,22 +5,25 @@
 #Copyright 2015 Brian Mitchell under the MIT license
 #See the GitHub repository: https://github.com/bman4789/weatherBot
 
-from datetime import datetime
-import time
+from datetime import datetime, timedelta
+import time, random
 import tweepy, urllib2, urllib, json
 from keys import keys
 
 #Contants
 WOEID = '2454256' #Yahoo location ID
-LOOP_SLEEP_TIME = 30 #number of seconds that go by between loops
 
 CONSUMER_KEY = keys['consumer_key']
 CONSUMER_SECRET = keys['consumer_secret']
 ACCESS_KEY = keys['access_key']
 ACCESS_SECRET = keys['access_secret']
 
+#global variables
+last_tweet = ""
+count = 1
+
 #Grr unicode support in Python 2
-deg = "º"
+deg = "ºF"
 deg = deg.decode('utf-8')
 
 def getWeather():
@@ -29,8 +32,19 @@ def getWeather():
     yql_url = ybaseurl + urllib.urlencode({'q':yql_query}) + "&format=json"
     yresult = urllib2.urlopen(yql_url).read()
     return json.loads(yresult)
+
+def makeNormalTweet(ydata):
+    temp = ydata['query']['results']['channel']['item']['condition']['temp'] + deg
+    condition = ydata['query']['results']['channel']['item']['condition']['text']
     
-def makeTweet(ydata):
+    #List of possible tweets that will be used. A random one will be chosen every time.
+    text = ["The weather is fucking boring. " + temp + " and " + condition + ".",
+    "Great, it's fucking " + condition + " and " + temp + ".",
+    "What a normal fucking day, it's " + condition + " and " + temp + "."]
+    
+    return random.choice(text)
+
+def makeSpecialTweet(ydata):
     windchill = int(ydata['query']['results']['channel']['wind']['chill'])
     windspeed = int(ydata['query']['results']['channel']['wind']['speed'])
     humidity = int(ydata['query']['results']['channel']['atmosphere']['humidity'])
@@ -39,7 +53,7 @@ def makeTweet(ydata):
     condition = ydata['query']['results']['channel']['item']['condition']['text']
     
     if (windchill <= -30):
-        return "Wow, mother nature is a bitch. The windchill is " + str(windchill) + deg + "F and the wind is blowing at " + windspeed + " mph. My face hurts."
+        return "Wow, mother nature is a bitch. The windchill is " + str(windchill) + deg + " and the wind is blowing at " + windspeed + " mph. My face hurts."
     elif (code == 0 or code == 1 or code == 2):
         return "HOLY SHIT, THERE'S A " + condition.upper() + "!"
     elif (code == 3):
@@ -57,55 +71,74 @@ def makeTweet(ydata):
     elif (humidity == 100 and (code != 10 or code != 11 or code != 12 or code != 37 or code != 38 or code != 39 or code != 40 or code != 45 or code != 47)):
         return "Damn, it's 100% humid. Glad I'm not a toilet so water doesn't condense on me."
     elif (humidity < 5):
-        return "It's dry as fuck. Fucking " + str(humidity) + "% humid right now."
+        return "It's dry as fuck. " + str(humidity) + "% humid right now."
     elif (temp <= -20):
-        return "It's fucking " + str(temp) + deg + "F. Too fucking cold."
+        return "It's fucking " + str(temp) + deg + ". Too fucking cold."
     elif (temp >= 100):
-        return "Holy fuck it's " + str(temp) + deg + "F. I could literally (figuratively) melt."
+        return "Holy fuck it's " + str(temp) + deg + ". I could literally (figuratively) melt."
     elif (temp == 69):
-        return "Teehee, it's 69" + deg + "F."
+        return "Teehee, it's 69" + deg + "."
     elif (code == 3200):
         return "Someone fucked up, apparently the current condition is \"not available\" http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
     else:
-        return "The weather is fucking boring. " + str(temp) + deg + "F and " + condition + "."
+        return "normal"
 
-def doTweet():
+def doTweet(content, latitude, longitude):
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
     api = tweepy.API(auth)
-    ydata = getWeather()
     
-    content = makeTweet(ydata)
-    latitude = ydata['query']['results']['channel']['item']['lat']
-    longitude = ydata['query']['results']['channel']['item']['long']
     print content
-    api.update_status(status=content,lat=latitude,long=longitude)
+    # api.update_status(status=content,lat=latitude,long=longitude)
+    last_tweet = content
 
-count = 1
 while(True):
     print "loop", count
+    
+    ydata = getWeather()
+    contentSpecial = makeSpecialTweet(ydata)
+    contentNormal = makeNormalTweet(ydata)
+    latitude = ydata['query']['results']['channel']['item']['lat']
+    longitude = ydata['query']['results']['channel']['item']['long']
+    
     now = datetime.now()
-    time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
-    time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
-    time3 = now.replace(hour=15, minute=30, second=0, microsecond=0)
-    time4 = now.replace(hour=20, minute=0, second=0, microsecond=0)
     
-    if (now  > time4 and now < time4.replace(second=LOOP_SLEEP_TIME)):
+    if (last_tweet == contentNormal):
+        #posting tweet will fail if same as last tweet
         print "Time:", datetime.now().time().strftime("%H:%M:%S")
-        print "time4"
-        doTweet()
-    elif (now > time3 and now < time3.replace(second=LOOP_SLEEP_TIME)):
+        print "Duplicate tweet:", contentNormal
+    elif (last_tweet == contentSpecial):
+        #posting tweet will fail if same as last tweet
         print "Time:", datetime.now().time().strftime("%H:%M:%S")
-        print "time3"
-        doTweet()
-    elif (now > time2 and now < time2.replace(second=LOOP_SLEEP_TIME)):
+        print "Duplicate tweet:", contentSpecial
+    elif (contentSpecial != "normal"):
+        #post special weather event at non-timed time
         print "Time:", datetime.now().time().strftime("%H:%M:%S")
-        print "time2"
-        doTweet()
-    elif (now > time1 and now < time1.replace(second=LOOP_SLEEP_TIME)):
-        print "Time:", datetime.now().time().strftime("%H:%M:%S")
-        print "time1"
-        doTweet()
-    
-    time.sleep(LOOP_SLEEP_TIME)
+        doTweet(contentSpecial, latitude, longitude)
+        time.sleep(840) #sleep for 14 mins (plus the 1 minute at the end of the loop) so there aren't a ton of similar tweets in a row
+    else:
+        #standard timed tweet
+        time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
+        time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
+        time3 = now.replace(hour=15, minute=30, second=0, microsecond=0)
+        time4 = now.replace(hour=20, minute=0, second=0, microsecond=0)
+        
+        if (now > time4 and now < time4.replace(minute=time4.minute + 1)):
+            print "Time:", datetime.now().time().strftime("%H:%M:%S")
+            print "time4"
+            doTweet(contentNormal, latitude, longitude)
+        elif (now > time3 and now < time3.replace(minute=time3.minute + 1)):
+            print "Time:", datetime.now().time().strftime("%H:%M:%S")
+            print "time3"
+            doTweet(contentNormal, latitude, longitude)
+        elif (now > time2 and now < time2.replace(minute=time2.minute + 1)):
+            print "Time:", datetime.now().time().strftime("%H:%M:%S")
+            print "time2"
+            doTweet(contentNormal, latitude, longitude)
+        elif (now > time1 and now < time1.replace(minute=time1.minute + 1)):
+            print "Time:", datetime.now().time().strftime("%H:%M:%S")
+            print "time1"
+            doTweet(contentNormal, latitude, longitude)
+        
+    time.sleep(60)
     count = count + 1
