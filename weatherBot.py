@@ -89,7 +89,7 @@ def doTweet(content, latitude, longitude):
     api = tweepy.API(auth)
     
     print content
-    # api.update_status(status=content,lat=latitude,long=longitude)
+    api.update_status(status=content,lat=latitude,long=longitude)
     last_tweet = content
 
 while(True):
