@@ -86,27 +86,23 @@ while(True):
     print "loop", count
     now = datetime.now()
     time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
-    time1late = time1.replace(second=LOOP_SLEEP_TIME) #LOOP_SLEEP_TIME after so the tweet won't be triggered every time
     time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
-    time2late = time2.replace(second=LOOP_SLEEP_TIME)
     time3 = now.replace(hour=15, minute=30, second=0, microsecond=0)
-    time3late = time3.replace(second=LOOP_SLEEP_TIME)
     time4 = now.replace(hour=20, minute=0, second=0, microsecond=0)
-    time4late = time4.replace(second=LOOP_SLEEP_TIME)
     
-    if (now  > time4 and now < time4late):
+    if (now  > time4 and now < time4.replace(second=LOOP_SLEEP_TIME)):
         print "Time:", datetime.now().time().strftime("%H:%M:%S")
         print "time4"
         doTweet()
-    elif (now > time3 and now < time3late):
+    elif (now > time3 and now < time3.replace(second=LOOP_SLEEP_TIME)):
         print "Time:", datetime.now().time().strftime("%H:%M:%S")
         print "time3"
         doTweet()
-    elif (now > time2 and now < time2late):
+    elif (now > time2 and now < time2.replace(second=LOOP_SLEEP_TIME)):
         print "Time:", datetime.now().time().strftime("%H:%M:%S")
         print "time2"
         doTweet()
-    elif (now > time1 and now < time1late):
+    elif (now > time1 and now < time1.replace(second=LOOP_SLEEP_TIME)):
         print "Time:", datetime.now().time().strftime("%H:%M:%S")
         print "time1"
         doTweet()
