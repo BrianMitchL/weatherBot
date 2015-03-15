@@ -94,7 +94,7 @@ def makeSpecialTweet(ydata):
     elif (temp >= 100):
         return "Holy fuck it's " + str(temp) + "ºF. I could literally (figuratively) melt."
     elif (temp == 69):
-        return "Teehee, it's 69" + "ºF."
+        return "Teehee, it's 69ºF."
     elif (code == 3200):
         return "Someone fucked up, apparently the current condition is \"not available\" http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
     else:
