@@ -7,11 +7,14 @@
 
 from datetime import datetime
 import sys, time, random, logging, urllib2, urllib, json
+from os.path import expanduser
 import tweepy, daemon
 from keys import keys
 
 #Contants
 WOEID = '2454256' #Yahoo! Weather location ID
+TWEET_LOCATION = True #include location in tweet
+LOG_PATHNAME = expanduser("~") + '/weatherBot.log' #expanduser("~") returns the path to the current user's home dir
 
 CONSUMER_KEY = keys['consumer_key']
 CONSUMER_SECRET = keys['consumer_secret']
@@ -25,18 +28,23 @@ last_tweet = ""
 deg = "ºF"
 deg = deg.decode('utf-8')
 
-logging.basicConfig(filename='weatherBot.log', level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-#log to console
-console = logging.StreamHandler()
-console.setLevel(logging.DEBUG)
-#formatting for console log
-formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
-console.setFormatter(formatter)
-# add the handler to the root logger
-logging.getLogger('').addHandler(console)
-
-logger = logging.getLogger(__name__)
-logging.info("Starting weatherBot")
+def initialize_logger(log_pathname):
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG) #global level of debug, so debug or anything less can be used
+    
+    #console handler
+    console = logging.StreamHandler()
+    console.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
+    console.setFormatter(formatter)
+    logger.addHandler(console)
+    
+    #log file handler
+    log = logging.FileHandler(log_pathname, "w", encoding=None, delay="true") #delay="true" means file will not be created until logged to
+    log.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
+    log.setFormatter(formatter)
+    logger.addHandler(log)
 
 def getWeather():
     ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
@@ -93,7 +101,7 @@ def makeSpecialTweet(ydata):
     elif (code == 3200):
         return "Someone fucked up, apparently the current condition is \"not available\" http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
     else:
-        return "normal"
+        return "normal" #keep normal as is determines if the weather is normal (boring) or special (exciting!)
 
 def doTweet(content, latitude, longitude):
     global last_tweet
@@ -101,18 +109,20 @@ def doTweet(content, latitude, longitude):
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
     api = tweepy.API(auth)
     
-    logging.debug('Trying to tweet: ' + content)
+    logging.debug('Trying to tweet: %s', content)
     try:
-        api.update_status(status=content,lat=latitude,long=longitude)
+        api.update_status(status=content,lat=latitude,long=longitude) if TWEET_LOCATION else api.update_status(status=content)
         logging.info('Tweet success: ' + content)
     except tweepy.TweepError, e:
-        logging.warning('Tweet failed: ' + e.reason)
+        logging.error('Tweet failed: %s', e.reason)
+        logging.warning('Tweet skipped due to error: %s', content)
     last_tweet = content
 
 def main():
+    initialize_logger(LOG_PATHNAME)
     count = 1
     while(True):
-        logging.debug('loop ' + str(count))
+        logging.debug('loop %s', str(count))
         
         ydata = getWeather()
         contentSpecial = makeSpecialTweet(ydata)
@@ -120,14 +130,14 @@ def main():
         latitude = ydata['query']['results']['channel']['item']['lat']
         longitude = ydata['query']['results']['channel']['item']['long']
         
-        logging.debug('last tweet: ' + last_tweet)
+        logging.debug('last tweet: %s', last_tweet)
         
         if (last_tweet == contentNormal):
             #posting tweet will fail if same as last tweet
-            logging.debug('Duplicate normal tweet: ' + contentNormal)
+            logging.debug('Duplicate normal tweet: %s', contentNormal)
         elif (last_tweet == contentSpecial):
             #posting tweet will fail if same as last tweet
-            logging.debug('Duplicate special tweet: ' + contentSpecial)
+            logging.debug('Duplicate special tweet: %s', contentSpecial)
         elif (contentSpecial != "normal"):
             #post special weather event at non-timed time
             logging.debug('special event')
@@ -136,10 +146,10 @@ def main():
         else:
             #standard timed tweet
             now = datetime.now()
-            time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
-            time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
-            time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
-            time4 = now.replace(hour=18, minute=0, second=0, microsecond=0)
+            time1 = now.replace(hour=0, minute=13, second=0, microsecond=0) #the time of the first tweet to go out
+            time2 = now.replace(hour=0, minute=14, second=0, microsecond=0)
+            time3 = now.replace(hour=0, minute=15, second=0, microsecond=0)
+            time4 = now.replace(hour=0, minute=16, second=0, microsecond=0)
             time5 = now.replace(hour=22, minute=0, second=0, microsecond=0)
             
             if (now > time5 and now < time5.replace(minute=time5.minute + 1)):
