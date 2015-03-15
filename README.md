@@ -18,9 +18,17 @@ There are two mode to use weatherBot. One is running from a console, and the oth
 ```shell
 python weatherBot.py -d
 ```
+or
+```shell
+python3 weatherBot3.py -d
+```
 If you wish to run it in a console, just run normally:
 ```shell
 python weatherBot.py
+```
+or
+```shell
+python3 weatherBot3.py
 ```
 
 ### Setting Variables and Customizing

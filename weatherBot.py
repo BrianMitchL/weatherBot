@@ -45,6 +45,7 @@ def initialize_logger(log_pathname):
     formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
     log.setFormatter(formatter)
     logger.addHandler(log)
+    logger.info("Starting weatherBot")
 
 def getWeather():
     ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
@@ -112,7 +113,7 @@ def doTweet(content, latitude, longitude):
     logging.debug('Trying to tweet: %s', content)
     try:
         api.update_status(status=content,lat=latitude,long=longitude) if TWEET_LOCATION else api.update_status(status=content)
-        logging.info('Tweet success: ' + content)
+        logging.info('Tweet success: %s', content)
     except tweepy.TweepError, e:
         logging.error('Tweet failed: %s', e.reason)
         logging.warning('Tweet skipped due to error: %s', content)
@@ -146,10 +147,10 @@ def main():
         else:
             #standard timed tweet
             now = datetime.now()
-            time1 = now.replace(hour=0, minute=13, second=0, microsecond=0) #the time of the first tweet to go out
-            time2 = now.replace(hour=0, minute=14, second=0, microsecond=0)
-            time3 = now.replace(hour=0, minute=15, second=0, microsecond=0)
-            time4 = now.replace(hour=0, minute=16, second=0, microsecond=0)
+            time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
+            time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
+            time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
+            time4 = now.replace(hour=18, minute=0, second=0, microsecond=0)
             time5 = now.replace(hour=22, minute=0, second=0, microsecond=0)
             
             if (now > time5 and now < time5.replace(minute=time5.minute + 1)):
