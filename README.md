@@ -27,7 +27,7 @@ There is a constants section near the top of the weatherBot.py file where you ca
 * `TWEET_LOCATION` *defaults to true*
 * `LOG_PATHNAME` *defaults to '~/weatherBot.log'* **Note: The complete path name needs to be specified**
 
-The keys.py file is where the Twitter app consumer key and secret as well as the access token key and secret are entered so tweets can be posted. See [https://apps.twitter.com] to get your keys and secrets.
+The keys.py file is where the Twitter app consumer key and secret as well as the access token key and secret are entered so tweets can be posted. See https://apps.twitter.com to get your keys and secrets.
 
 The wording for tweets can be edited or added in the text list in `makeNormalTweet()` and the appropriate returns in `makeSpecialTweet()`. Additional special weather events can also be added as extra elif's in `makeSpecialTweet()`. Mind the order so more or less common ones are called when not desired.
 
