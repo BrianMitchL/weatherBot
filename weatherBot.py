@@ -11,7 +11,7 @@ import tweepy, daemon
 from keys import keys
 
 #Contants
-WOEID = '2454256' #Yahoo location ID
+WOEID = '2454256' #Yahoo! Weather location ID
 
 CONSUMER_KEY = keys['consumer_key']
 CONSUMER_SECRET = keys['consumer_secret']
@@ -25,8 +25,18 @@ last_tweet = ""
 deg = "ºF"
 deg = deg.decode('utf-8')
 
-#Change level to 'logging.DEBUG' for debugging
-logging.basicConfig(filename='weatherBot.log', level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(filename='weatherBot.log', level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+#log to console
+console = logging.StreamHandler()
+console.setLevel(logging.DEBUG)
+#formatting for console log
+formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
+console.setFormatter(formatter)
+# add the handler to the root logger
+logging.getLogger('').addHandler(console)
+
+logger = logging.getLogger(__name__)
+logging.info("Starting weatherBot")
 
 def getWeather():
     ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
@@ -151,4 +161,9 @@ def main():
         time.sleep(60)
         count = count + 1    
 
-main() #run the main method
+if __name__ == '__main__':
+    if "-d" in sys.argv:
+        with daemon.DaemonContext():
+            main()
+    else:
+        main()
