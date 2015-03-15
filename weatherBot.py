@@ -5,9 +5,9 @@
 #Copyright 2015 Brian Mitchell under the MIT license
 #See the GitHub repository: https://github.com/bman4789/weatherBot
 
-from datetime import datetime, timedelta
-import time, random
-import tweepy, urllib2, urllib, json
+from datetime import datetime
+import sys, time, random, logging, urllib2, urllib, json
+import tweepy, daemon
 from keys import keys
 
 #Contants
@@ -20,11 +20,13 @@ ACCESS_SECRET = keys['access_secret']
 
 #global variables
 last_tweet = ""
-count = 1
 
 #Grr unicode support in Python 2
 deg = "ºF"
 deg = deg.decode('utf-8')
+
+#Change level to 'logging.DEBUG' for debugging
+logging.basicConfig(filename='weatherBot.log', level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 def getWeather():
     ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
@@ -89,68 +91,64 @@ def doTweet(content, latitude, longitude):
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
     api = tweepy.API(auth)
     
-    print content
+    logging.debug('Trying to tweet: ' + content)
     try:
         api.update_status(status=content,lat=latitude,long=longitude)
-        print "Tweet"
+        logging.info('Tweet success: ' + content)
     except tweepy.TweepError, e:
-        print "Tweet failed:", e.reason
+        logging.warning('Tweet failed: ' + e.reason)
     last_tweet = content
 
-while(True):
-    print "loop", count
-    
-    ydata = getWeather()
-    contentSpecial = makeSpecialTweet(ydata)
-    contentNormal = makeNormalTweet(ydata)
-    latitude = ydata['query']['results']['channel']['item']['lat']
-    longitude = ydata['query']['results']['channel']['item']['long']
-    
-    now = datetime.now()
-    print "last tweet:", last_tweet
-    
-    if (last_tweet == contentNormal):
-        #posting tweet will fail if same as last tweet
-        print "Time:", datetime.now().time().strftime("%H:%M:%S")
-        print "Duplicate normal tweet:", contentNormal
-    elif (last_tweet == contentSpecial):
-        #posting tweet will fail if same as last tweet
-        print "Time:", datetime.now().time().strftime("%H:%M:%S")
-        print "Duplicate special tweet:", contentSpecial
-    elif (contentSpecial != "normal"):
-        #post special weather event at non-timed time
-        print "Time:", datetime.now().time().strftime("%H:%M:%S")
-        print "Special event"
-        doTweet(contentSpecial, latitude, longitude)
-        time.sleep(840) #sleep for 14 mins (plus the 1 minute at the end of the loop) so there aren't a ton of similar tweets in a row
-    else:
-        #standard timed tweet
-        time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
-        time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
-        time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
-        time4 = now.replace(hour=18, minute=0, second=0, microsecond=0)
-        time5 = now.replace(hour=22, minute=0, second=0, microsecond=0)
+def main():
+    count = 1
+    while(True):
+        logging.debug('loop ' + str(count))
         
-        if (now > time5 and now < time5.replace(minute=time5.minute + 1)):
-            print "Time:", datetime.now().time().strftime("%H:%M:%S")
-            print "time5"
-            doTweet(contentNormal, latitude, longitude)
-        elif (now > time4 and now < time4.replace(minute=time4.minute + 1)):
-            print "Time:", datetime.now().time().strftime("%H:%M:%S")
-            print "time4"
-            doTweet(contentNormal, latitude, longitude)
-        elif (now > time3 and now < time3.replace(minute=time3.minute + 1)):
-            print "Time:", datetime.now().time().strftime("%H:%M:%S")
-            print "time3"
-            doTweet(contentNormal, latitude, longitude)
-        elif (now > time2 and now < time2.replace(minute=time2.minute + 1)):
-            print "Time:", datetime.now().time().strftime("%H:%M:%S")
-            print "time2"
-            doTweet(contentNormal, latitude, longitude)
-        elif (now > time1 and now < time1.replace(minute=time1.minute + 1)):
-            print "Time:", datetime.now().time().strftime("%H:%M:%S")
-            print "time1"
-            doTweet(contentNormal, latitude, longitude)
+        ydata = getWeather()
+        contentSpecial = makeSpecialTweet(ydata)
+        contentNormal = makeNormalTweet(ydata)
+        latitude = ydata['query']['results']['channel']['item']['lat']
+        longitude = ydata['query']['results']['channel']['item']['long']
         
-    time.sleep(60)
-    count = count + 1
+        logging.debug('last tweet: ' + last_tweet)
+        
+        if (last_tweet == contentNormal):
+            #posting tweet will fail if same as last tweet
+            logging.debug('Duplicate normal tweet: ' + contentNormal)
+        elif (last_tweet == contentSpecial):
+            #posting tweet will fail if same as last tweet
+            logging.debug('Duplicate special tweet: ' + contentSpecial)
+        elif (contentSpecial != "normal"):
+            #post special weather event at non-timed time
+            logging.debug('special event')
+            doTweet(contentSpecial, latitude, longitude)
+            time.sleep(840) #sleep for 14 mins (plus the 1 minute at the end of the loop) so there aren't a ton of similar tweets in a row
+        else:
+            #standard timed tweet
+            now = datetime.now()
+            time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
+            time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
+            time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
+            time4 = now.replace(hour=18, minute=0, second=0, microsecond=0)
+            time5 = now.replace(hour=22, minute=0, second=0, microsecond=0)
+            
+            if (now > time5 and now < time5.replace(minute=time5.minute + 1)):
+                logging.debug('time5')
+                doTweet(contentNormal, latitude, longitude)
+            elif (now > time4 and now < time4.replace(minute=time4.minute + 1)):
+                logging.debug('time4')
+                doTweet(contentNormal, latitude, longitude)
+            elif (now > time3 and now < time3.replace(minute=time3.minute + 1)):
+                logging.debug('time3')
+                doTweet(contentNormal, latitude, longitude)
+            elif (now > time2 and now < time2.replace(minute=time2.minute + 1)):
+                logging.debug('time2')
+                doTweet(contentNormal, latitude, longitude)
+            elif (now > time1 and now < time1.replace(minute=time1.minute + 1)):
+                logging.debug('time1')
+                doTweet(contentNormal, latitude, longitude)
+        
+        time.sleep(60)
+        count = count + 1    
+
+main() #run the main method
