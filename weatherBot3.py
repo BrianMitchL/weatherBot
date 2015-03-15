@@ -110,10 +110,10 @@ def doTweet(content, latitude, longitude):
     try:
         api.update_status(status=content,lat=latitude,long=longitude) if TWEET_LOCATION else api.update_status(status=content)
         logging.info('Tweet success: %s', content)
+        last_tweet = content
     except tweepy.TweepError as e:
         logging.error('Tweet failed: %s', e.reason)
         logging.warning('Tweet skipped due to error: %s', content)
-    last_tweet = content
 
 def main():
     initialize_logger(LOG_PATHNAME)
