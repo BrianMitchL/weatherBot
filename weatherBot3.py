@@ -41,7 +41,7 @@ def initialize_logger(log_pathname):
     formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
     log.setFormatter(formatter)
     logger.addHandler(log)
-    logger.info("Starting weatherBot")
+    logger.info("Starting weatherBot with Python %s", sys.version)
 
 def getWeather():
     ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
