@@ -57,11 +57,19 @@ def getWeather():
 def makeNormalTweet(ydata):
     temp = ydata['query']['results']['channel']['item']['condition']['temp'] + deg
     condition = ydata['query']['results']['channel']['item']['condition']['text']
+    city = ydata['query']['results']['channel']['location']['city']
+    region = ydata['query']['results']['channel']['location']['region']
     
     #List of possible tweets that will be used. A random one will be chosen every time.
-    text = ["The weather is fucking boring. " + temp + " and " + condition + ".",
-    "Great, it's fucking " + condition + " and " + temp + ".",
-    "What a normal fucking day, it's " + condition + " and " + temp + "."]
+    text = [
+        "The weather is fucking boring. " + temp + " and " + condition + ".",
+        "Great, it's fucking " + condition + " and " + temp + ".",
+        "What a normal fucking day, it's " + condition + " and " + temp + ".",
+        "Whoopie fucking do, it's " + temp + " and " + condition + ".",
+        temp + " and " + condition + ".",
+        temp + " and " + condition + ". What did you expect?",
+        "Welcome to " + city + ", " + region + ", where it's " + condition + " and " + temp + ".",
+    ]
     
     return random.choice(text)
 
