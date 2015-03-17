@@ -1,7 +1,7 @@
 # weatherBot
 A Twitter bot for weather. Yahoo! Weather is used for weather information. A WOEID is used for the location. I have not added support for easy/constant changing for using Celcius or other measurements. In other words, Fahrenheit and MPH are currently hardcoded. If you would like to see this as a feature, submit a pull request, or bug me to implement it 😜.
 
-_**Note: This bot uses vulgar language. Any language or wording suggestions are appreciated and should be submitted as an issue.**_
+_**Note: Any language or wording suggestions are appreciated and should be submitted as an issue. Feel free to add new choices for normal tweets and submit a pull request!**_
 
 An example bot can be found at [@MorrisMNWeather](https://twitter.com/MorrisMNWeather).
 
