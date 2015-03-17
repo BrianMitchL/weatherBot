@@ -58,13 +58,14 @@ def makeNormalTweet(ydata):
     
     #List of possible tweets that will be used. A random one will be chosen every time.
     text = [
-        "The weather is fucking boring. " + temp + " and " + condition + ".",
-        "Great, it's fucking " + condition + " and " + temp + ".",
-        "What a normal fucking day, it's " + condition + " and " + temp + ".",
-        "Whoopie fucking do, it's " + temp + " and " + condition + ".",
+        "The weather is boring. " + temp + " and " + condition + ".",
+        "Great, it's " + condition + " and " + temp + ".",
+        "What a normal day, it's " + condition + " and " + temp + ".",
+        "Whoopie do, it's " + temp + " and " + condition + ".",
         temp + " and " + condition + ".",
         temp + " and " + condition + ". What did you expect?",
         "Welcome to " + city + ", " + region + ", where it's " + condition + " and " + temp + ".",
+        "Breaking news: it's " + condition + " and " + temp + ".",
     ]
     
     return random.choice(text)
@@ -78,15 +79,17 @@ def makeSpecialTweet(ydata):
     condition = ydata['query']['results']['channel']['item']['condition']['text']
     
     if (windchill <= -30):
-        return "Wow, mother nature is a bitch. The windchill is " + str(windchill) + "ºF and the wind is blowing at " + windspeed + " mph. My face hurts."
+        return "Wow, mother nature hates us. The windchill is " + str(windchill) + "ºF and the wind is blowing at " + windspeed + " mph. My face hurts."
+    elif (code == 23 or code == 24):
+        return "Looks like we've got some wind at " + windspeed + " mph."
     elif (code == 0 or code == 1 or code == 2):
         return "HOLY SHIT, THERE'S A " + condition.upper() + "!"
     elif (code == 3):
-        return "Guys, there are severe fucking thunderstorms right now."
+        return "IT BE STORMIN'! Severe thunderstorms right now."
     elif (code == 4):
         return "Meh, just a thunderstorm."
     elif (code == 17 or code == 35):
-        return "IT'S FUCKIN' HAILIN'!"
+        return "IT'S HAILIN'!"
     elif (code == 20):
         return "Do you even fog bro?"
     elif (code == 13 or code == 15 or code == 16 or code == 41 or code == 43):
@@ -96,15 +99,15 @@ def makeSpecialTweet(ydata):
     elif (humidity == 100 and (code != 10 or code != 11 or code != 12 or code != 37 or code != 38 or code != 39 or code != 40 or code != 45 or code != 47)):
         return "Damn, it's 100% humid. Glad I'm not a toilet so water doesn't condense on me."
     elif (humidity < 5):
-        return "It's dry as fuck. " + str(humidity) + "% humid right now."
+        return "It's dry as strained pasta. " + str(humidity) + "% humid right now."
     elif (temp <= -20):
-        return "It's fucking " + str(temp) + "ºF. Too fucking cold."
+        return "It's " + str(temp) + "ºF. Too cold."
     elif (temp >= 100):
-        return "Holy fuck it's " + str(temp) + "ºF. I could literally (figuratively) melt."
+        return "Holy moly it's " + str(temp) + "ºF. I could literally (figuratively) melt."
     elif (temp == 69):
         return "Teehee, it's 69ºF."
     elif (code == 3200):
-        return "Someone fucked up, apparently the current condition is \"not available\" http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
+        return "Someone messed up, apparently the current condition is \"not available\" http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
     else:
         return "normal" #keep normal as is determines if the weather is normal (boring) or special (exciting!)
 
