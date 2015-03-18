@@ -70,6 +70,7 @@ def makeNormalTweet(ydata):
         temp + " and " + condition + ". What did you expect?",
         "Welcome to " + city + ", " + region + ", where it's " + condition + " and " + temp + ".",
         "Breaking news: it's " + condition + " and " + temp + ".",
+        "We got some " + condition + " going on.",
     ]
     
     return random.choice(text)
@@ -96,8 +97,10 @@ def makeSpecialTweet(ydata):
         return "IT'S HAILIN'!"
     elif (code == 20):
         return "Do you even fog bro?"
-    elif (code == 13 or code == 15 or code == 16 or code == 41 or code == 43):
-        return condition.capitalize() + "."
+    elif (code == 5 or code == 6 or code == 7):
+        return "What a mix! Currently, there's" + condition + " falling from the sky."
+    elif (code == 13 orcode == 14 or code == 15 or code == 16 or code == 41 or code == 43):
+        return condition.capitalize() + ". Bundle up."
     elif (code == 8 or code == 9):
         return "Drizzlin' yo."
     elif (humidity == 100 and (code != 10 or code != 11 or code != 12 or code != 37 or code != 38 or code != 39 or code != 40 or code != 45 or code != 47)):
