@@ -94,7 +94,7 @@ def makeSpecialTweet(ydata):
     elif (code == 20):
         return "Do you even fog bro?"
     elif (code == 5 or code == 6 or code == 7):
-        return "What a mix! Currently, there's" + condition + " falling from the sky."
+        return "What a mix! Currently, there's " + condition.lower() + " falling from the sky."
     elif (code == 13 or code == 14 or code == 15 or code == 16 or code == 41 or code == 43):
         return condition.capitalize() + ". Bundle up."
     elif (code == 8 or code == 9):
