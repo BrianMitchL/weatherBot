@@ -62,20 +62,20 @@ def makeNormalTweet(ydata):
     
     #List of possible tweets that will be used. A random one will be chosen every time.
     text = [
-        "The weather is boring. " + temp + " and " + condition + ".",
+        "The weather is boring. " + temp + " and " + condition.lower() + ".",
         "Great, it's " + condition + " and " + temp + ".",
-        "What a normal day, it's " + condition + " and " + temp + ".",
-        "Whoopie do, it's " + temp + " and " + condition + ".",
-        temp + " and " + condition + ".",
-        temp + " and " + condition + ". What did you expect?",
-        "Welcome to " + city + ", " + region + ", where it's " + condition + " and " + temp + ".",
-        "Breaking news: it's " + condition + " and " + temp + ".",
-        "We got some " + condition + " going on.",
+        "What a normal day, it's " + condition.lower() + " and " + temp + ".",
+        "Whoopie do, it's " + temp + " and " + condition.lower() + ".",
+        temp + " and " + condition.lower() + ".",
+        temp + " and " + condition.lower() + ". What did you expect?",
+        "Welcome to " + city + ", " + region + ", where it's " + condition.lower() + " and " + temp + ".",
+        "Breaking news: it's " + condition.lower() + " and " + temp + ".",
+        "We got some " + condition.lower() + " at " + temp + " going on.",
     ]
     
     return random.choice(text)
 
-def makeSpecialTweet(ydata):
+def makeSpecialTweet(ydata, now):
     windchill = int(ydata['query']['results']['channel']['wind']['chill'])
     windspeed = int(ydata['query']['results']['channel']['wind']['speed'])
     humidity = int(ydata['query']['results']['channel']['atmosphere']['humidity'])
@@ -103,7 +103,7 @@ def makeSpecialTweet(ydata):
         return condition.capitalize() + ". Bundle up."
     elif (code == 8 or code == 9):
         return "Drizzlin' yo."
-    elif (humidity == 100 and (code != 10 or code != 11 or code != 12 or code != 37 or code != 38 or code != 39 or code != 40 or code != 45 or code != 47)):
+    elif (humidity == 100 and (code != 10 or code != 11 or code != 12 or code != 37 or code != 38 or code != 39 or code != 40 or code != 45 or code != 47) and (now.replace(hour=9, minute=0, second=0, microsecond=0) < now) and (now.replace(hour=11, minute=59, second=59, microsecond=0) > now)):
         return "Damn, it's 100% humid. Glad I'm not a toilet so water doesn't condense on me."
     elif (humidity < 5):
         return "It's dry as strained pasta. " + str(humidity) + "% humid right now."
@@ -140,7 +140,9 @@ def main():
         logging.debug('loop %s', str(count))
         
         ydata = getWeather()
-        contentSpecial = makeSpecialTweet(ydata)
+        now = datetime.now()
+        
+        contentSpecial = makeSpecialTweet(ydata, now)
         contentNormal = makeNormalTweet(ydata)
         latitude = ydata['query']['results']['channel']['item']['lat']
         longitude = ydata['query']['results']['channel']['item']['long']
@@ -160,7 +162,6 @@ def main():
             time.sleep(840) #sleep for 14 mins (plus the 1 minute at the end of the loop) so there aren't a ton of similar tweets in a row
         else:
             #standard timed tweet
-            now = datetime.now()
             time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
             time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
             time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
