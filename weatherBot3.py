@@ -136,6 +136,8 @@ def main():
         logging.debug('loop %s', str(count))
         
         ydata = getWeather()
+        now = datetime.now()
+        
         contentSpecial = makeSpecialTweet(ydata, now)
         contentNormal = makeNormalTweet(ydata)
         latitude = ydata['query']['results']['channel']['item']['lat']
@@ -156,7 +158,6 @@ def main():
             time.sleep(840) #sleep for 14 mins (plus the 1 minute at the end of the loop) so there aren't a ton of similar tweets in a row
         else:
             #standard timed tweet
-            now = datetime.now()
             time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
             time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
             time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
