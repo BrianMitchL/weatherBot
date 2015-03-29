@@ -82,7 +82,7 @@ def makeSpecialTweet(ydata, now):
     if (windchill <= -30):
         return "Wow, mother nature hates us. The windchill is " + str(windchill) + "ºF and the wind is blowing at " + windspeed + " mph. My face hurts."
     elif (code == 23 or code == 24):
-        return "Looks like we've got some wind at " + windspeed + " mph."
+        return "Looks like we've got some wind at " + str(windspeed) + " mph."
     elif (code == 0 or code == 1 or code == 2):
         return "HOLY SHIT, THERE'S A " + condition.upper() + "!"
     elif (code == 3):
@@ -99,6 +99,8 @@ def makeSpecialTweet(ydata, now):
         return condition.capitalize() + ". Bundle up."
     elif (code == 8 or code == 9):
         return "Drizzlin' yo."
+    elif (windspeed >= 30):
+        return "Hold onto your hats, the wind is blowing at " + str(windspeed) + " mph."
     elif (humidity == 100 and (code != 10 or code != 11 or code != 12 or code != 37 or code != 38 or code != 39 or code != 40 or code != 45 or code != 47) and (now.replace(hour=9, minute=0, second=0, microsecond=0) < now) and (now.replace(hour=11, minute=59, second=59, microsecond=0) > now)):
         return "Damn, it's 100% humid. Glad I'm not a toilet so water doesn't condense on me."
     elif (humidity < 5):
@@ -136,7 +138,7 @@ def main():
         logging.debug('loop %s', str(count))
         
         ydata = getWeather()
-        logging.debug('fetched weather')
+        logging.debug('fetched weather: %s', ydata)
         now = datetime.now()
         
         contentSpecial = makeSpecialTweet(ydata, now)
