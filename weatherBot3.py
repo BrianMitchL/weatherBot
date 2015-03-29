@@ -136,6 +136,7 @@ def main():
         logging.debug('loop %s', str(count))
         
         ydata = getWeather()
+        logging.debug('fetched weather')
         now = datetime.now()
         
         contentSpecial = makeSpecialTweet(ydata, now)
