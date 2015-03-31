@@ -6,29 +6,21 @@ _**Note: Any language or wording suggestions are appreciated and should be submi
 An example bot can be found at [@MorrisMNWeather](https://twitter.com/MorrisMNWeather).
 
 ## Install Dependencies
-Run the following from the repository root directory to install the needed dependencies. If pip is not installed, install it via yum, apt-get, homebrew, or whatever works on your system.
+Run the following from the repository root directory to install the needed dependencies. If pip (or pip3 if python 3) is not installed, install it via yum, apt-get, homebrew, or whatever works on your system.
 ```shell
 pip install -r requirements.txt
 ```
 
 ## Use
-Use weatherBot.py for Python 2.7 (tested with 2.7.6) and weatherBot3.py for Python 3 (tested with 3.4.3).
+weatherBot.py has been tested for Python 2.7 (tested with 2.7.6) and Python 3 (tested with 3.4.3).
 
 There are two mode to use weatherBot. One is running from a console, and the other is by forking the process into a daemon. By default, the debug level is logged to the console and the info level is logged to the log file. The idea with this is that you run the script from the console to test and debug, and daemonize it to run it in "production." To run from as a daemon, pass in the `-d` flag:
 ```shell
 python weatherBot.py -d
 ```
-or
-```shell
-python3 weatherBot3.py -d
-```
 If you wish to run it in a console, just run normally:
 ```shell
 python weatherBot.py
-```
-or
-```shell
-python3 weatherBot3.py
 ```
 
 ### Setting Variables and Customizing
