@@ -6,10 +6,17 @@
 #See the GitHub repository: https://github.com/bman4789/weatherBot
 
 from datetime import datetime
-import sys, time, random, logging, urllib2, urllib, json
+import sys, time, random, logging, json
 from os.path import expanduser
 import tweepy, daemon
 from keys import keys
+#python 2 and 3 compatibility for urllib stuff
+try:
+    from urllib.request import urlopen
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
+    from urllib import urlopen
 
 #Contants
 WOEID = '2454256' #Yahoo! Weather location ID
@@ -23,10 +30,9 @@ ACCESS_SECRET = keys['access_secret']
 
 #global variables
 last_tweet = ""
-
-#Grr unicode support in Python 2
 deg = "ºF"
-deg = deg.decode('utf-8')
+if sys.version < '3':
+    deg = deg.decode('utf-8')
 
 def initialize_logger(log_pathname):
     logger = logging.getLogger()
@@ -50,9 +56,12 @@ def initialize_logger(log_pathname):
 def getWeather():
     ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
     yql_query = "select * from weather.forecast where woeid=" + WOEID
-    yql_url = ybaseurl + urllib.urlencode({'q':yql_query}) + "&format=json"
-    yresult = urllib2.urlopen(yql_url).read()
-    return json.loads(yresult)
+    yql_url = ybaseurl + urlencode({'q':yql_query}) + "&format=json"
+    yresult = urlopen(yql_url).read()
+    if sys.version < '3':
+        return json.loads(yresult)
+    else:
+        return json.loads(yresult.decode('utf8'))
 
 def makeNormalTweet(ydata):
     temp = ydata['query']['results']['channel']['item']['condition']['temp'] + deg
@@ -63,7 +72,7 @@ def makeNormalTweet(ydata):
     #List of possible tweets that will be used. A random one will be chosen every time.
     text = [
         "The weather is boring. " + temp + " and " + condition.lower() + ".",
-        "Great, it's " + condition + " and " + temp + ".",
+        "Great, it's " + condition.lower() + " and " + temp + ".",
         "What a normal day, it's " + condition.lower() + " and " + temp + ".",
         "Whoopie do, it's " + temp + " and " + condition.lower() + ".",
         temp + " and " + condition.lower() + ".",
@@ -131,7 +140,7 @@ def doTweet(content, latitude, longitude):
         api.update_status(status=content,lat=latitude,long=longitude) if TWEET_LOCATION else api.update_status(status=content)
         logging.info('Tweet success: %s', content)
         last_tweet = content
-    except tweepy.TweepError, e:
+    except tweepy.TweepError as e:
         logging.error('Tweet failed: %s', e.reason)
         logging.warning('Tweet skipped due to error: %s', content)
 
@@ -142,50 +151,55 @@ def main():
         logging.debug('loop %s', str(count))
         
         ydata = getWeather()
-        logging.debug('fetched weather')
-        now = datetime.now()
-        
-        contentSpecial = makeSpecialTweet(ydata, now)
-        contentNormal = makeNormalTweet(ydata)
-        latitude = ydata['query']['results']['channel']['item']['lat']
-        longitude = ydata['query']['results']['channel']['item']['long']
-        
-        logging.debug('last tweet: %s', last_tweet)
-        
-        if (last_tweet == contentNormal):
-            #posting tweet will fail if same as last tweet
-            logging.debug('Duplicate normal tweet: %s', contentNormal)
-        elif (last_tweet == contentSpecial):
-            #posting tweet will fail if same as last tweet
-            logging.debug('Duplicate special tweet: %s', contentSpecial)
-        elif (contentSpecial != "normal"):
-            #post special weather event at non-timed time
-            logging.debug('special event')
-            doTweet(contentSpecial, latitude, longitude)
-            time.sleep(840) #sleep for 14 mins (plus the 1 minute at the end of the loop) so there aren't a ton of similar tweets in a row
+        logging.debug('fetched weather: %s', ydata)
+        #sometimes YQL returns 'None' as the results, huh
+        if (ydata['query']['results'] == "None"):
+            logging.eror('YQL error, recieved: %s', ydata)
         else:
-            #standard timed tweet
-            time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
-            time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
-            time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
-            time4 = now.replace(hour=18, minute=0, second=0, microsecond=0)
-            time5 = now.replace(hour=22, minute=0, second=0, microsecond=0)
+            now = datetime.now()
             
-            if (now > time5 and now < time5.replace(minute=time5.minute + 1)):
-                logging.debug('time5')
-                doTweet(contentNormal, latitude, longitude)
-            elif (now > time4 and now < time4.replace(minute=time4.minute + 1)):
-                logging.debug('time4')
-                doTweet(contentNormal, latitude, longitude)
-            elif (now > time3 and now < time3.replace(minute=time3.minute + 1)):
-                logging.debug('time3')
-                doTweet(contentNormal, latitude, longitude)
-            elif (now > time2 and now < time2.replace(minute=time2.minute + 1)):
-                logging.debug('time2')
-                doTweet(contentNormal, latitude, longitude)
-            elif (now > time1 and now < time1.replace(minute=time1.minute + 1)):
-                logging.debug('time1')
-                doTweet(contentNormal, latitude, longitude)
+            contentSpecial = makeSpecialTweet(ydata, now)
+            contentNormal = makeNormalTweet(ydata)
+            latitude = ydata['query']['results']['channel']['item']['lat']
+            longitude = ydata['query']['results']['channel']['item']['long']
+            
+            logging.debug('last tweet: %s', last_tweet)
+            print(contentNormal)
+            print(contentSpecial)
+            if (last_tweet == contentNormal):
+                #posting tweet will fail if same as last tweet
+                logging.debug('Duplicate normal tweet: %s', contentNormal)
+            elif (last_tweet == contentSpecial):
+                #posting tweet will fail if same as last tweet
+                logging.debug('Duplicate special tweet: %s', contentSpecial)
+            elif (contentSpecial != "normal"):
+                #post special weather event at non-timed time
+                logging.debug('special event')
+                doTweet(contentSpecial, latitude, longitude)
+                time.sleep(840) #sleep for 14 mins (plus the 1 minute at the end of the loop) so there aren't a ton of similar tweets in a row
+            else:
+                #standard timed tweet
+                time1 = now.replace(hour=7, minute=0, second=0, microsecond=0) #the time of the first tweet to go out
+                time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
+                time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
+                time4 = now.replace(hour=18, minute=0, second=0, microsecond=0)
+                time5 = now.replace(hour=22, minute=0, second=0, microsecond=0)
+                
+                if (now > time5 and now < time5.replace(minute=time5.minute + 1)):
+                    logging.debug('time5')
+                    doTweet(contentNormal, latitude, longitude)
+                elif (now > time4 and now < time4.replace(minute=time4.minute + 1)):
+                    logging.debug('time4')
+                    doTweet(contentNormal, latitude, longitude)
+                elif (now > time3 and now < time3.replace(minute=time3.minute + 1)):
+                    logging.debug('time3')
+                    doTweet(contentNormal, latitude, longitude)
+                elif (now > time2 and now < time2.replace(minute=time2.minute + 1)):
+                    logging.debug('time2')
+                    doTweet(contentNormal, latitude, longitude)
+                elif (now > time1 and now < time1.replace(minute=time1.minute + 1)):
+                    logging.debug('time1')
+                    doTweet(contentNormal, latitude, longitude)
         
         time.sleep(60)
         count = count + 1    
