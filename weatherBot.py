@@ -36,7 +36,7 @@ if sys.version < '3':
     deg = deg.decode('utf-8')
     
 #if UNIT has an issue, set it to metric
-if (UNIT != 'c' or UNIT != 'f'):
+if (UNIT != 'c' and UNIT != 'f'):
     UNIT = 'c'
 
 def initialize_logger(log_pathname):
@@ -114,7 +114,7 @@ def make_normal_tweet(ydata):
 
 def make_special_tweet(ydata, now):
     wind_chill = int(ydata['query']['results']['channel']['wind']['chill'])
-    wind_speed = int(ydata['query']['results']['channel']['wind']['speed'])
+    wind_speed = float(ydata['query']['results']['channel']['wind']['speed'])
     wind = ydata['query']['results']['channel']['wind']['speed'] + " " + ydata['query']['results']['channel']['units']['speed']
     wind_direction = get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
     humidity = int(ydata['query']['results']['channel']['atmosphere']['humidity'])
@@ -143,15 +143,15 @@ def make_special_tweet(ydata, now):
         return condition.capitalize() + ". Bundle up."
     elif (code == 8 or code == 9):
         return "Drizzlin' yo."
-    elif ((UNIT == 'f' and wind_speed >= 35) or (UNIT == 'c' and wind_speed >= 56)):
+    elif ((UNIT == 'f' and wind_speed >= 35.0) or (UNIT == 'c' and wind_speed >= 56.0)):
         return "Hold onto your hats, the wind is blowing at " + wind + " coming from the " + wind_direction + "."
     elif (humidity == 100 and (code != 10 or code != 11 or code != 12 or code != 37 or code != 38 or code != 39 or code != 40 or code != 45 or code != 47) and (now.replace(hour=9, minute=0, second=0, microsecond=0) < now) and (now.replace(hour=11, minute=59, second=59, microsecond=0) > now)):
         return "Damn, it's 100% humid. Glad I'm not a toilet so water doesn't condense on me."
     elif (humidity < 5):
         return "It's dry as strained pasta. " + str(humidity) + "% humid right now."
-    elif ((UNIT == 'f' and temp <= -20) or (UNIT == 'c' and temp <= 28)):
+    elif ((UNIT == 'f' and temp <= -20) or (UNIT == 'c' and temp <= -28)):
         return "It's " + str(temp) + temp_deg + ". Too cold."
-    elif ((UNIT == 'f' and temp >= 100) or (UNIT == 'c' and temp <= 37)):
+    elif ((UNIT == 'f' and temp >= 100) or (UNIT == 'c' and temp >= 37)):
         return "Holy moly it's " + str(temp) + temp_deg + ". I could literally (figuratively) melt."
     elif (UNIT == 'f' and temp == 69):
         return "Teehee, it's 69" + temp_deg + "."
@@ -182,7 +182,7 @@ def main():
         logging.debug('loop %s', str(count))
         
         ydata = get_weather()
-        logging.debug('fetched weather: %s', ydata)
+        # logging.debug('fetched weather: %s', ydata)
         #sometimes YQL returns 'None' as the results, huh
         if (ydata['query']['results'] == "None"):
             logging.eror('YQL error, recieved: %s', ydata)
