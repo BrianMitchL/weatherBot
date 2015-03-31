@@ -20,6 +20,7 @@ except ImportError:
 
 #Contants
 WOEID = '2454256' #Yahoo! Weather location ID
+UNIT = 'f' #units. 'c' for metric, 'f' for imperial. This changes all units, not just temperature
 TWEET_LOCATION = True #include location in tweet
 LOG_PATHNAME = expanduser("~") + '/weatherBot.log' #expanduser("~") returns the path to the current user's home dir
 
@@ -30,9 +31,13 @@ ACCESS_SECRET = keys['access_secret']
 
 #global variables
 last_tweet = ""
-deg = "ºF"
+deg = "º"
 if sys.version < '3':
     deg = deg.decode('utf-8')
+    
+#if UNIT has an issue, set it to metric
+if (UNIT != 'c' or UNIT != 'f'):
+    UNIT = 'c'
 
 def initialize_logger(log_pathname):
     logger = logging.getLogger()
@@ -55,7 +60,7 @@ def initialize_logger(log_pathname):
 
 def get_weather():
     ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
-    yql_query = "select * from weather.forecast where woeid=" + WOEID
+    yql_query = "select * from weather.forecast where woeid=" + WOEID + " and u=\"" + UNIT + "\""
     yql_url = ybaseurl + urlencode({'q':yql_query}) + "&format=json"
     yresult = urlopen(yql_url).read()
     if sys.version < '3':
@@ -63,8 +68,31 @@ def get_weather():
     else:
         return json.loads(yresult.decode('utf8'))
 
+def get_wind_direction(degrees):
+    try:
+        degrees = int(degrees)
+    except ValueError:
+        return ''
+    
+    if degrees < 23 or degrees >= 338:
+        return 'N'
+    elif degrees < 68:
+        return 'NE'
+    elif degrees < 113:
+        return 'E'
+    elif degrees < 158:
+        return 'SE'
+    elif degrees < 203:
+        return 'S'
+    elif degrees < 248:
+        return 'SW'
+    elif degrees < 293:
+        return 'W'
+    elif degrees < 338:
+        return 'NW'
+
 def make_normal_tweet(ydata):
-    temp = ydata['query']['results']['channel']['item']['condition']['temp'] + deg
+    temp = ydata['query']['results']['channel']['item']['condition']['temp'] + deg + ydata['query']['results']['channel']['units']['temperature']
     condition = ydata['query']['results']['channel']['item']['condition']['text']
     city = ydata['query']['results']['channel']['location']['city']
     region = ydata['query']['results']['channel']['location']['region']
@@ -85,17 +113,20 @@ def make_normal_tweet(ydata):
     return random.choice(text)
 
 def make_special_tweet(ydata, now):
-    windchill = int(ydata['query']['results']['channel']['wind']['chill'])
-    windspeed = int(ydata['query']['results']['channel']['wind']['speed'])
+    wind_chill = int(ydata['query']['results']['channel']['wind']['chill'])
+    wind_speed = int(ydata['query']['results']['channel']['wind']['speed'])
+    wind = ydata['query']['results']['channel']['wind']['speed'] + " " + ydata['query']['results']['channel']['units']['speed']
+    wind_direction = get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
     humidity = int(ydata['query']['results']['channel']['atmosphere']['humidity'])
     temp = int(ydata['query']['results']['channel']['item']['condition']['temp'])
     code = int(ydata['query']['results']['channel']['item']['condition']['code'])
     condition = ydata['query']['results']['channel']['item']['condition']['text']
+    temp_deg = deg + ydata['query']['results']['channel']['units']['temperature']
     
-    if (windchill <= -30):
-        return "Wow, mother nature hates us. The windchill is " + str(windchill) + deg + " and the wind is blowing at " + windspeed + " mph. My face hurts."
+    if ((UNIT == 'f' and wind_chill <= -30) or (UNIT == 'c' and wind_chill <= -34)):
+        return "Wow, mother nature hates us. The windchill is " + str(wind_chill) + temp_deg + " and the wind is blowing at " + wind + " from the " + wind_direction + ". My face hurts."
     elif (code == 23 or code == 24):
-        return "Looks like we've got some wind at " + str(windspeed) + " mph."
+        return "Looks like we've got some wind at " + wind + " coming from the " + wind_direction + "."
     elif (code == 0 or code == 1 or code == 2):
         return "HOLY SHIT, THERE'S A " + condition.upper() + "!"
     elif (code == 3):
@@ -112,18 +143,18 @@ def make_special_tweet(ydata, now):
         return condition.capitalize() + ". Bundle up."
     elif (code == 8 or code == 9):
         return "Drizzlin' yo."
-    elif (windspeed >= 35):
-        return "Hold onto your hats, the wind is blowing at " + str(windspeed) + " mph."
+    elif ((UNIT == 'f' and wind_speed >= 35) or (UNIT == 'c' and wind_speed >= 56)):
+        return "Hold onto your hats, the wind is blowing at " + wind + " coming from the " + wind_direction + "."
     elif (humidity == 100 and (code != 10 or code != 11 or code != 12 or code != 37 or code != 38 or code != 39 or code != 40 or code != 45 or code != 47) and (now.replace(hour=9, minute=0, second=0, microsecond=0) < now) and (now.replace(hour=11, minute=59, second=59, microsecond=0) > now)):
         return "Damn, it's 100% humid. Glad I'm not a toilet so water doesn't condense on me."
     elif (humidity < 5):
         return "It's dry as strained pasta. " + str(humidity) + "% humid right now."
-    elif (temp <= -20):
-        return "It's " + str(temp) + deg + ". Too cold."
-    elif (temp >= 100):
-        return "Holy moly it's " + str(temp) + deg + ". I could literally (figuratively) melt."
-    elif (temp == 69):
-        return "Teehee, it's 69" + deg + "."
+    elif ((UNIT == 'f' and temp <= -20) or (UNIT == 'c' and temp <= 28)):
+        return "It's " + str(temp) + temp_deg + ". Too cold."
+    elif ((UNIT == 'f' and temp >= 100) or (UNIT == 'c' and temp <= 37)):
+        return "Holy moly it's " + str(temp) + temp_deg + ". I could literally (figuratively) melt."
+    elif (UNIT == 'f' and temp == 69):
+        return "Teehee, it's 69" + temp_deg + "."
     elif (code == 3200):
         return "Someone messed up, apparently the current condition is \"not available\" http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
     else:

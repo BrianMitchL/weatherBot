@@ -1,5 +1,5 @@
-# weatherBot
-A Twitter bot for weather. Yahoo! Weather is used for weather information. A WOEID is used for the location. I have not added support for easy/constant changing for using Celcius or other measurements. In other words, Fahrenheit and MPH are currently hardcoded. If you would like to see this as a feature, submit a pull request, or bug me to implement it 😜.
+# weatherBot [![Python Version](https://img.shields.io/badge/python-2.7%2C%203.4-blue.svg)](https://www.python.org)
+A Twitter bot for weather. Yahoo! Weather is used for weather information. A WOEID is used for the location. Metic or imperial units can be specified.
 
 _**Note: Any language or wording suggestions are appreciated and should be submitted as an issue. Feel free to add new choices for normal tweets and submit a pull request!**_
 
@@ -14,7 +14,7 @@ pip install -r requirements.txt
 ## Use
 weatherBot.py has been tested for Python 2.7 (tested with 2.7.6) and Python 3 (tested with 3.4.3).
 
-There are two mode to use weatherBot. One is running from a console, and the other is by forking the process into a daemon. By default, the debug level is logged to the console and the info level is logged to the log file. The idea with this is that you run the script from the console to test and debug, and daemonize it to run it in "production." To run from as a daemon, pass in the `-d` flag:
+There are two modes in weatherBot. One is running from a console, and the other is by forking the process into a daemon. By default, the debug level is logged to the console and the info level is logged to the log file. The idea with this is that you run the script from the console to test and debug, and daemonize it to run it in "production." To run from as a daemon, pass in the `-d` flag:
 ```shell
 python weatherBot.py -d
 ```
@@ -26,6 +26,7 @@ python weatherBot.py
 ### Setting Variables and Customizing
 There is a constants section near the top of the weatherBot.py file where you can set constants. The following are constants that can be set in the weatherBot.py file
 * `WOEID` *defaults to 2454256 (Morris, MN)*
+* `UNIT` *defaults to imperial. 'c' for metric, 'f' for imperial. This changes all units, not just temperature*
 * `TWEET_LOCATION` *defaults to true*
 * `LOG_PATHNAME` *defaults to '~/weatherBot.log'* **Note: The complete path name needs to be specified**
 
