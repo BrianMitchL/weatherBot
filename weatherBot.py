@@ -123,7 +123,6 @@ def make_special_tweet(ydata, now):
         wind_direction = get_wind_direction(0)
     wind_chill = int(ydata['query']['results']['channel']['wind']['chill'])
     wind = ydata['query']['results']['channel']['wind']['speed'] + " " + ydata['query']['results']['channel']['units']['speed']
-    wind_direction = get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
     humidity = int(ydata['query']['results']['channel']['atmosphere']['humidity'])
     temp = int(ydata['query']['results']['channel']['item']['condition']['temp'])
     code = int(ydata['query']['results']['channel']['item']['condition']['code'])
@@ -192,7 +191,7 @@ def main():
         logging.debug('fetched weather: %s', ydata)
         #sometimes YQL returns 'None' as the results, huh
         if (ydata['query']['results'] == "None"):
-            logging.eror('YQL error, recieved: %s', ydata)
+            logging.error('YQL error, recieved: %s', ydata)
         else:
             now = datetime.now()
             
