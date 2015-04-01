@@ -113,8 +113,15 @@ def make_normal_tweet(ydata):
     return random.choice(text)
 
 def make_special_tweet(ydata, now):
+    if (ydata['query']['results']['channel']['wind']['speed'] != ""):
+        wind_speed = float(ydata['query']['results']['channel']['wind']['speed'])
+    else:
+        wind_speed = 0.0
+    if (ydata['query']['results']['channel']['wind']['direction'] != ""):
+        wind_direction = get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
+    else:
+        wind_direction = get_wind_direction(0)
     wind_chill = int(ydata['query']['results']['channel']['wind']['chill'])
-    wind_speed = float(ydata['query']['results']['channel']['wind']['speed'])
     wind = ydata['query']['results']['channel']['wind']['speed'] + " " + ydata['query']['results']['channel']['units']['speed']
     wind_direction = get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
     humidity = int(ydata['query']['results']['channel']['atmosphere']['humidity'])
@@ -182,7 +189,7 @@ def main():
         logging.debug('loop %s', str(count))
         
         ydata = get_weather()
-        # logging.debug('fetched weather: %s', ydata)
+        logging.debug('fetched weather: %s', ydata)
         #sometimes YQL returns 'None' as the results, huh
         if (ydata['query']['results'] == "None"):
             logging.eror('YQL error, recieved: %s', ydata)
