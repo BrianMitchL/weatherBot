@@ -1,4 +1,4 @@
-# weatherBot [![Python Version](https://img.shields.io/badge/python-2.7%2C%203.4-blue.svg)](https://www.python.org)
+# weatherBot [![Python Version](https://img.shields.io/badge/python-2.7%2C%203.3%2C%203.4-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/bman4789/weatherBot.svg?branch=master)](https://travis-ci.org/bman4789/weatherBot) [![Coverage Status](https://coveralls.io/repos/bman4789/weatherBot/badge.svg)](https://coveralls.io/r/bman4789/weatherBot)
 A Twitter bot for weather. Yahoo! Weather is used for weather information. A WOEID is used for the location. Metic or imperial units can be specified.
 
 _**Note: Any language or wording suggestions are appreciated and should be submitted as an issue. Feel free to add new choices for normal tweets and submit a pull request!**_
@@ -36,6 +36,11 @@ The wording for tweets can be edited or added in the text list in `makeNormalTwe
 
 Timing of daily scheduled tweets are done by setting the hour and minute in the else condition of the while loop in `main()`. *Note: if a tweet is set to go out when minute=59, set the .replace in the appropriate if statement below it to roll over the next minute to the hour. The minute field only accepts 0..59*
 
+## Testing
+There arn't very many tests at the moment, but to run what there is, simply run:
+```shell
+python test.py
+```
 ## Tools Used
 * [Tweepy](https://github.com/tweepy/tweepy)
 * [Yahoo! Weather](https://developer.yahoo.com/weather/)
