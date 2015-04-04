@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#keys.py
+# keys.py
 
 keys = dict(
     consumer_key = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
