@@ -219,7 +219,6 @@ def main():
             logging.debug('last tweet: %s', last_tweet)
             logging.debug('special tweet: %s', content_special)
             logging.debug('normal_tweet: %s', content_normal)
-            do_tweet(content_normal)
             if last_tweet == content_normal:
                 # Posting tweet will fail if same as last tweet
                 logging.debug('Duplicate normal tweet: %s', content_normal)
