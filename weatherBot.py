@@ -6,7 +6,7 @@
 #See the GitHub repository: https://github.com/bman4789/weatherBot
 
 from datetime import datetime
-import sys, time, random, logging, json
+import sys, time, random, logging, json, traceback
 from os.path import expanduser
 import tweepy, daemon
 from keys import keys
@@ -244,9 +244,15 @@ def main():
         time.sleep(60)
         count = count + 1    
 
+def run():
+    try:
+        main()
+    except Exception:
+        logging.error('We got an exception!', exc_info=True)
+
 if __name__ == '__main__':
     if "-d" in sys.argv:
         with daemon.DaemonContext():
-            main()
+            run()
     else:
-        main()
+        run()
