@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#weatherBot tests
-#Copyright 2015 Brian Mitchell under the MIT license
-#See the GitHub repository: https://github.com/bman4789/weatherBot
+# weatherBot tests
+# Copyright 2015 Brian Mitchell under the MIT license
+# See the GitHub repository: https://github.com/bman4789/weatherBot
 
-import unittest, sys
+import unittest
+import sys
 from datetime import datetime
+
 from weatherBot import get_wind_direction
 from weatherBot import make_special_tweet
 from weatherBot import get_weather_variables
 import weatherBot
+
 
 class TestWB(unittest.TestCase):
     
@@ -27,54 +30,55 @@ class TestWB(unittest.TestCase):
         pass
         
     def test_make_special_tweet(self):
-        self.assertEqual( make_special_tweet(ydataNorm, now), 'normal')
+        get_weather_variables(ydataNorm)
+        self.assertEqual(make_special_tweet(now), 'normal')
         
     def test_get_wind_direction(self):
-        self.assertEqual( get_wind_direction(0), 'N')
-        self.assertEqual( get_wind_direction(338), 'N')
-        self.assertEqual( get_wind_direction(65), 'NE')
-        self.assertEqual( get_wind_direction(110), 'E')
-        self.assertEqual( get_wind_direction(150), 'SE')
-        self.assertEqual( get_wind_direction(200), 'S')
-        self.assertEqual( get_wind_direction(240), 'SW')
-        self.assertEqual( get_wind_direction(290), 'W')
-        self.assertEqual( get_wind_direction(330), 'NW')
-        self.assertEqual( get_wind_direction(400), 'N')
-        self.assertEqual( get_wind_direction(-4), 'N')
+        self.assertEqual(get_wind_direction(0), 'N')
+        self.assertEqual(get_wind_direction(338), 'N')
+        self.assertEqual(get_wind_direction(65), 'NE')
+        self.assertEqual(get_wind_direction(110), 'E')
+        self.assertEqual(get_wind_direction(150), 'SE')
+        self.assertEqual(get_wind_direction(200), 'S')
+        self.assertEqual(get_wind_direction(240), 'SW')
+        self.assertEqual(get_wind_direction(290), 'W')
+        self.assertEqual(get_wind_direction(330), 'NW')
+        self.assertEqual(get_wind_direction(400), 'N')
+        self.assertEqual(get_wind_direction(-4), 'N')
         
     def test_get_normal_weather_variables(self):
         get_weather_variables(ydataNorm)
-        self.assertEqual( weatherBot.wind_speed, 9.0)
-        self.assertEqual( weatherBot.wind_direction, 'NW')
-        self.assertEqual( weatherBot.wind_chill, 37)
-        self.assertEqual( weatherBot.wind_speed_and_unit, '9 mph')
-        self.assertEqual( weatherBot.humidity, 70)
-        self.assertEqual( weatherBot.temp, 43)
-        self.assertEqual( weatherBot.code, 33)
-        self.assertEqual( weatherBot.condition, 'Fair')
-        self.assertEqual( weatherBot.deg_unit, deg + 'F')
-        self.assertEqual( weatherBot.temp_and_unit, '43' + deg + 'F')
-        self.assertEqual( weatherBot.city, 'Morris')
-        self.assertEqual( weatherBot.region, 'MN')
-        self.assertEqual( weatherBot.latitude, '45.59')
-        self.assertEqual( weatherBot.longitude, '-95.9')
+        self.assertEqual(weatherBot.wind_speed, 9.0)
+        self.assertEqual(weatherBot.wind_direction, 'NW')
+        self.assertEqual(weatherBot.wind_chill, 37)
+        self.assertEqual(weatherBot.wind_speed_and_unit, '9 mph')
+        self.assertEqual(weatherBot.humidity, 70)
+        self.assertEqual(weatherBot.temp, 43)
+        self.assertEqual(weatherBot.code, 33)
+        self.assertEqual(weatherBot.condition, 'Fair')
+        self.assertEqual(weatherBot.deg_unit, deg + 'F')
+        self.assertEqual(weatherBot.temp_and_unit, '43' + deg + 'F')
+        self.assertEqual(weatherBot.city, 'Morris')
+        self.assertEqual(weatherBot.region, 'MN')
+        self.assertEqual(weatherBot.latitude, '45.59')
+        self.assertEqual(weatherBot.longitude, '-95.9')
         
     def test_get_empty_weather_variables(self):
         get_weather_variables(ydataEmpty)
-        self.assertEqual( weatherBot.wind_speed, 0.0)
-        self.assertEqual( weatherBot.wind_direction, 'N')
-        self.assertEqual( weatherBot.wind_chill, 37)
-        self.assertEqual( weatherBot.wind_speed_and_unit, '0 mph')
-        self.assertEqual( weatherBot.humidity, 70)
-        self.assertEqual( weatherBot.temp, 43)
-        self.assertEqual( weatherBot.code, 33)
-        self.assertEqual( weatherBot.condition, 'Fair')
-        self.assertEqual( weatherBot.deg_unit, deg + 'F')
-        self.assertEqual( weatherBot.temp_and_unit, '43' + deg + 'F')
-        self.assertEqual( weatherBot.city, 'Morris')
-        self.assertEqual( weatherBot.region, 'MN')
-        self.assertEqual( weatherBot.latitude, '45.59')
-        self.assertEqual( weatherBot.longitude, '-95.9')
+        self.assertEqual(weatherBot.wind_speed, 0.0)
+        self.assertEqual(weatherBot.wind_direction, 'N')
+        self.assertEqual(weatherBot.wind_chill, 37)
+        self.assertEqual(weatherBot.wind_speed_and_unit, '0 mph')
+        self.assertEqual(weatherBot.humidity, 70)
+        self.assertEqual(weatherBot.temp, 43)
+        self.assertEqual(weatherBot.code, 33)
+        self.assertEqual(weatherBot.condition, 'Fair')
+        self.assertEqual(weatherBot.deg_unit, deg + 'F')
+        self.assertEqual(weatherBot.temp_and_unit, '43' + deg + 'F')
+        self.assertEqual(weatherBot.city, 'Morris')
+        self.assertEqual(weatherBot.region, 'MN')
+        self.assertEqual(weatherBot.latitude, '45.59')
+        self.assertEqual(weatherBot.longitude, '-95.9')
         
 if __name__ == '__main__':
     unittest.main()
