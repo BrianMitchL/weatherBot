@@ -37,7 +37,7 @@ The wording for tweets can be edited or added in the text list in `make_normal_t
 Timing of daily scheduled tweets are done by setting the hour and minute in the else condition of the while loop in `main()`. *Note: if a tweet is set to go out when minute=59, set the .replace in the appropriate if statement below it to roll over the next minute to the hour. The minute field only accepts 0..59*
 
 ## Testing
-There aren't very many tests at the moment, but to run what there is, simply run:
+Tests have been written for a fair amount of the code. It's hard (or I don't know how) to test tweeting and fetching weather data, so that somewhat limits what tests can be written. The JSON object that Yahoo! Weather returns is hardcoded for each test with values that would make it qualify for a given condition.
 ```shell
 python test.py
 ```
