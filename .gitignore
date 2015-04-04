@@ -53,3 +53,9 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# IDEs
+.idea/
+
+# keys.py that contains private keys
+keys.py
