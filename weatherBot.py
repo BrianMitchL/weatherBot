@@ -49,6 +49,7 @@ if sys.version < '3':
 if UNIT != 'c' and UNIT != 'f':
     UNIT = 'c'
 
+
 def initialize_logger(log_pathname):
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)  # global level of debug, so debug or anything less can be used
@@ -104,15 +105,15 @@ def get_wind_direction(degrees):
 
 def get_weather_variables(ydata):
     global wind_speed, wind_direction, wind_chill, wind_speed_and_unit, humidity, temp, code, \
-        condition, deg_unit, temp_and_unit, city, region, latitude, longitude
+        condition, deg_unit, temp_and_unit, city, region, latitude, longitude, units
+    units = ydata['query']['results']['channel']['units']
     # Sometimes, YQL returns empty strings for wind speed and direction
     if ydata['query']['results']['channel']['wind']['speed'] != "":
         wind_speed = float(ydata['query']['results']['channel']['wind']['speed'])
-        wind_speed_and_unit = ydata['query']['results']['channel']['wind']['speed'] + " " + \
-                              ydata['query']['results']['channel']['units']['speed']
+        wind_speed_and_unit = ydata['query']['results']['channel']['wind']['speed'] + " " + units['speed']
     else:
         wind_speed = 0.0
-        wind_speed_and_unit = "0 " + ydata['query']['results']['channel']['units']['speed']
+        wind_speed_and_unit = "0 " + units['speed']
     if ydata['query']['results']['channel']['wind']['direction'] != "":
         wind_direction = get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
     else:
@@ -122,9 +123,8 @@ def get_weather_variables(ydata):
     temp = int(ydata['query']['results']['channel']['item']['condition']['temp'])
     code = int(ydata['query']['results']['channel']['item']['condition']['code'])
     condition = ydata['query']['results']['channel']['item']['condition']['text']
-    deg_unit = deg + ydata['query']['results']['channel']['units']['temperature']
-    temp_and_unit = ydata['query']['results']['channel']['item']['condition']['temp'] + deg + \
-                    ydata['query']['results']['channel']['units']['temperature']
+    deg_unit = deg + units['temperature']
+    temp_and_unit = ydata['query']['results']['channel']['item']['condition']['temp'] + deg + units['temperature']
     city = ydata['query']['results']['channel']['location']['city']
     region = ydata['query']['results']['channel']['location']['region']
     latitude = ydata['query']['results']['channel']['item']['lat']
@@ -146,8 +146,8 @@ def make_normal_tweet():
     return random.choice(text)
 
 
-def make_special_tweet(now):
-    if (UNIT == 'f' and wind_chill <= -30) or (UNIT == 'c' and wind_chill <= -34):
+def make_special_tweet():
+    if (units['temperature'] == 'F' and wind_chill <= -30) or (units['temperature'] == 'C' and wind_chill <= -34):
         return "Wow, mother nature hates us. The windchill is " + str(wind_chill) + deg_unit + \
                " and the wind is blowing at " + wind_speed_and_unit + " from the " + wind_direction + ". My face hurts."
     elif code == 23 or code == 24:
@@ -168,23 +168,18 @@ def make_special_tweet(now):
         return condition.capitalize() + ". Bundle up."
     elif code == 8 or code == 9:
         return "Drizzlin' yo."
-    elif (UNIT == 'f' and wind_speed >= 35.0) or (UNIT == 'c' and wind_speed >= 56.0):
+    elif (units['speed'] == 'mph' and wind_speed >= 35.0) or (units['speed'] == 'km/h' and wind_speed >= 56.0):
         return "Hold onto your hats, the wind is blowing at " + wind_speed_and_unit + " coming from the " + wind_direction + "."
-    elif humidity == 100 and (code != 10 or code != 11 or code != 12 or code != 37 or code != 38 or code != 39 or
-                                      code != 40 or code != 45 or code != 47) and \
-            (now.replace(hour=9, minute=0, second=0, microsecond=0) < now) and \
-            (now.replace(hour=11, minute=59, second=59, microsecond=0) > now):
-        return "Damn, it's 100% humid. Glad I'm not a toilet so water doesn't condense on me."
-    elif humidity < 5:
+    elif humidity <= 5:
         return "It's dry as strained pasta. " + str(humidity) + "% humid right now."
-    elif (UNIT == 'f' and temp <= -20) or (UNIT == 'c' and temp <= -28):
+    elif (units['temperature'] == 'F' and temp <= -20) or (units['temperature'] == 'C' and temp <= -28):
         return "It's " + temp_and_unit + ". Too cold."
-    elif (UNIT == 'f' and temp >= 100) or (UNIT == 'c' and temp >= 37):
+    elif (units['temperature'] == 'F' and temp >= 100) or (units['temperature'] == 'C' and 37 <= temp <= 50):
         return "Holy moly it's " + temp_and_unit + ". I could literally (figuratively) melt."
-    elif UNIT == 'f' and temp == 69:
+    elif units['temperature'] == 'F' and temp == 69:
         return "Teehee, it's 69" + deg_unit + "."
     elif code == 3200:
-        return "Someone messed up, apparently the current condition is \"not available\" + " \
+        return "Someone messed up, apparently the current condition is \"not available\" " + \
                "http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
     else:
         return "normal"  # keep normal as is determines if the weather is normal (boring) or special (exciting!)
@@ -219,7 +214,7 @@ def main():
         else:
             get_weather_variables(ydata)
             now = datetime.now()
-            content_special = make_special_tweet(now)
+            content_special = make_special_tweet()
             content_normal = make_normal_tweet()
             logging.debug('last tweet: %s', last_tweet)
             logging.debug('special tweet: %s', content_special)
@@ -244,19 +239,19 @@ def main():
                 time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
                 time4 = now.replace(hour=18, minute=0, second=0, microsecond=0)
                 time5 = now.replace(hour=22, minute=0, second=0, microsecond=0)
-                if now > time5 and now < time5.replace(minute=time5.minute + 1):
+                if time5 <= now < time5.replace(minute=time5.minute + 1):
                     logging.debug('time5')
                     do_tweet(content_normal)
-                elif now > time4 and now < time4.replace(minute=time4.minute + 1):
+                elif time4 <= now < time4.replace(minute=time4.minute + 1):
                     logging.debug('time4')
                     do_tweet(content_normal)
-                elif now > time3 and now < time3.replace(minute=time3.minute + 1):
+                elif time3 <= now < time3.replace(minute=time3.minute + 1):
                     logging.debug('time3')
                     do_tweet(content_normal)
-                elif now > time2 and now < time2.replace(minute=time2.minute + 1):
+                elif time2 <= now < time2.replace(minute=time2.minute + 1):
                     logging.debug('time2')
                     do_tweet(content_normal)
-                elif now > time1 and now < time1.replace(minute=time1.minute + 1):
+                elif time1 <= now < time1.replace(minute=time1.minute + 1):
                     logging.debug('time1')
                     do_tweet(content_normal)
         time.sleep(60)
