@@ -12,15 +12,9 @@ import random
 import logging
 import json
 from os.path import expanduser
-
 import tweepy
 import daemon
-
 from keys import keys
-
-
-
-
 # Python 2 and 3 compatibility for urllib stuff
 try:
     from urllib.request import urlopen
@@ -28,6 +22,8 @@ try:
 except ImportError:
     from urllib import urlencode
     from urllib import urlopen
+
+
 
 # Constants
 WOEID = '2454256'  # Yahoo! Weather location ID
