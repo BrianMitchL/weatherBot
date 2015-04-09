@@ -68,12 +68,16 @@ def initialize_logger(log_pathname):
 def get_weather():
     ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
     yql_query = "select * from weather.forecast where woeid=" + WOEID + " and u=\"" + UNIT + "\""
-    yql_url = ybaseurl + urlencode({'q':yql_query}) + "&format=json"
-    yresult = urlopen(yql_url).read()
-    if sys.version < '3':
-        return json.loads(yresult)
-    else:
-        return json.loads(yresult.decode('utf8'))
+    yql_url = ybaseurl + urlencode({'q': yql_query}) + "&format=json"
+    try:
+        yresult = urlopen(yql_url).read()
+        if sys.version < '3':
+            return json.loads(yresult)
+        else:
+            return json.loads(yresult.decode('utf8'))
+    except urllib.error.URLError as err:
+        logging.error('Tried to load: %s', yql_url)
+        logging.error(err)
 
 
 def get_wind_direction(degrees):
