@@ -138,6 +138,10 @@ def make_normal_tweet():
         "Welcome to " + city + ", " + region + ", where it's " + condition.lower() + " and " + temp_and_unit + ".",
         "Breaking news: it's " + condition.lower() + " and " + temp_and_unit + ".",
         "We got some " + condition.lower() + " at " + temp_and_unit + " going on.",
+        "Well, would you look at that, it's " + temp_and_unit + " and " + condition.lower() + ".",
+        "Great Scott, it's " + condition.lower() + " and " + temp_and_unit + "!",
+        "It's " + temp_and_unit + " and " + condition.lower() + ", oh boy!",
+        "Only in " + city + ", " + region + " would it be " + temp_and_unit + " and " + condition.lower() + " right now.",
     ]
     return random.choice(text)
 
