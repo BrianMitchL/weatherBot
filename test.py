@@ -7,11 +7,11 @@
 
 import unittest
 import sys
-from datetime import datetime
 
 from weatherBot import get_wind_direction
 from weatherBot import make_special_tweet
 from weatherBot import get_weather_variables
+from weatherBot import make_normal_tweet
 import weatherBot
 
 
@@ -210,6 +210,13 @@ class TestWB(unittest.TestCase):
         self.assertEqual(weatherBot.region, 'MN')
         self.assertEqual(weatherBot.latitude, '45.59')
         self.assertEqual(weatherBot.longitude, '-95.9')
+
+    def test_normal_tweet(self):
+        get_weather_variables(ydataNorm)
+        returned = make_normal_tweet()
+        self.assertTrue('fair' in returned)
+        self.assertTrue('43' + deg + 'F' in returned)
+
         
 if __name__ == '__main__':
     unittest.main()
