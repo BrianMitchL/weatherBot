@@ -213,7 +213,7 @@ def main():
         ydata = get_weather()
         logging.debug('fetched weather: %s', ydata)
         # sometimes YQL returns 'None' as the results, huh
-        if ydata['query']['results'] == "None":
+        if ydata['query']['results']['channel'] is None:
             logging.error('YQL error, received: %s', ydata)
         else:
             get_weather_variables(ydata)
