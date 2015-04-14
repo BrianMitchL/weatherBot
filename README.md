@@ -12,7 +12,7 @@ pip install -r requirements.txt
 ```
 
 ## Use
-weatherBot.py has been tested for Python 2.7 (tested with 2.7.6) and Python 3 (tested with 3.4.3).
+weatherBot.py has been tested for Python 2.7 (tested with 2.7.6) and Python 3 (tested with 3.4.3). Python 3.3 should work, but 3.2 will NOT.
 
 There are two modes in weatherBot. One is running from a console, and the other is by forking the process into a daemon. By default, the debug level is logged to the console and the info level is logged to the log file. The idea with this is that you run the script from the console to test and debug, and daemonize it to run it in "production." To run from as a daemon, pass in the `-d` flag:
 ```shell
