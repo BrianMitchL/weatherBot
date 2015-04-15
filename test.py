@@ -231,16 +231,22 @@ class TestWB(unittest.TestCase):
         """Testing if the system version is in the log and log file"""
         with LogCapture() as l:
             logger = logging.getLogger()
-            logger.info("info")
+            logger.info('info')
             initialize_logger(os.getcwd() + '/weatherBotTest.log')
-        l.check(('root', 'INFO', 'info'), ('root', 'INFO', 'Starting weatherBot with Python ' + sys.version))
+            logger.debug('debug')
+            logger.warning('uh oh')
+        l.check(('root', 'INFO', 'info'), ('root', 'INFO', 'Starting weatherBot with Python ' + sys.version), ('root', 'DEBUG', 'debug'), ('root', 'WARNING', 'uh oh'))
         path = os.path.join(os.getcwd(), 'weatherBotTest.log')
         with open(path, 'rb') as input:
             data = input.read()
         if PY3:
             self.assertTrue(bytes(sys.version, 'UTF-8') in data)
+            self.assertFalse(bytes('debug', 'UTF-8') in data)
+            self.assertTrue(bytes('uh oh', 'UTF-8') in data)
         else:
             self.assertTrue(sys.version in data)
+            self.assertFalse('debug' in data)
+            self.assertTrue('uh oh' in data)
 
         
 if __name__ == '__main__':
