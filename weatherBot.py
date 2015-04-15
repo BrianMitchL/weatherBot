@@ -15,13 +15,16 @@ from os.path import expanduser
 import tweepy
 import daemon
 from keys import keys
-# Python 2 and 3 compatibility for urllib stuff
+# Python 3 imports
 try:
     from urllib.request import urlopen
     from urllib.parse import urlencode
+    from urllib.error import URLError
 except ImportError:
+    # Python 2 imports
     from urllib import urlencode
-    from urllib import urlopen
+    from urllib2 import urlopen
+    from urllib2 import URLError
 
 
 
@@ -75,7 +78,7 @@ def get_weather():
             return json.loads(yresult)
         else:
             return json.loads(yresult.decode('utf8'))
-    except urllib.error.URLError as err:
+    except (URLError, IOError) as err:
         logging.error('Tried to load: %s', yql_url)
         logging.error(err)
 
@@ -104,99 +107,107 @@ def get_wind_direction(degrees):
 
 
 def get_weather_variables(ydata):
-    global wind_speed, wind_direction, wind_chill, wind_speed_and_unit, humidity, temp, code, \
-        condition, deg_unit, temp_and_unit, city, region, latitude, longitude, units
-    units = ydata['query']['results']['channel']['units']
-    # Sometimes, YQL returns empty strings for wind speed and direction
-    if ydata['query']['results']['channel']['wind']['speed'] != "":
-        wind_speed = float(ydata['query']['results']['channel']['wind']['speed'])
-        wind_speed_and_unit = ydata['query']['results']['channel']['wind']['speed'] + " " + units['speed']
-    else:
-        wind_speed = 0.0
-        wind_speed_and_unit = "0 " + units['speed']
-    if ydata['query']['results']['channel']['wind']['direction'] != "":
-        wind_direction = get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
-    else:
-        wind_direction = get_wind_direction(0)
-    wind_chill = int(ydata['query']['results']['channel']['wind']['chill'])
-    humidity = int(ydata['query']['results']['channel']['atmosphere']['humidity'])
-    temp = int(ydata['query']['results']['channel']['item']['condition']['temp'])
-    code = int(ydata['query']['results']['channel']['item']['condition']['code'])
-    condition = ydata['query']['results']['channel']['item']['condition']['text']
-    deg_unit = deg + units['temperature']
-    temp_and_unit = ydata['query']['results']['channel']['item']['condition']['temp'] + deg + units['temperature']
-    city = ydata['query']['results']['channel']['location']['city']
-    region = ydata['query']['results']['channel']['location']['region']
-    latitude = ydata['query']['results']['channel']['item']['lat']
-    longitude = ydata['query']['results']['channel']['item']['long']
+    try:
+        weather_data = {}
+        units = ydata['query']['results']['channel']['units']
+        weather_data['units'] = ydata['query']['results']['channel']['units']
+        # Sometimes, YQL returns empty strings for wind speed and direction
+        if ydata['query']['results']['channel']['wind']['speed'] != "":
+            weather_data['wind_speed'] = float(ydata['query']['results']['channel']['wind']['speed'])
+            weather_data['wind_speed_and_unit'] = ydata['query']['results']['channel']['wind']['speed'] + " " + units['speed']
+        else:
+            weather_data['wind_speed'] = 0.0
+            weather_data['wind_speed_and_unit'] = "0 " + units['speed']
+        if ydata['query']['results']['channel']['wind']['direction'] != "":
+            weather_data['wind_direction'] = get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
+        else:
+            weather_data['wind_direction'] = get_wind_direction(0)
+        weather_data['wind_chill'] = int(ydata['query']['results']['channel']['wind']['chill'])
+        weather_data['humidity'] = int(ydata['query']['results']['channel']['atmosphere']['humidity'])
+        weather_data['temp'] = int(ydata['query']['results']['channel']['item']['condition']['temp'])
+        weather_data['code'] = int(ydata['query']['results']['channel']['item']['condition']['code'])
+        weather_data['condition'] = ydata['query']['results']['channel']['item']['condition']['text']
+        weather_data['deg_unit'] = deg + units['temperature']
+        weather_data['temp_and_unit'] = ydata['query']['results']['channel']['item']['condition']['temp'] + deg + units['temperature']
+        weather_data['city'] = ydata['query']['results']['channel']['location']['city']
+        weather_data['region'] = ydata['query']['results']['channel']['location']['region']
+        weather_data['latitude'] = ydata['query']['results']['channel']['item']['lat']
+        weather_data['longitude'] = ydata['query']['results']['channel']['item']['long']
+        weather_data['valid'] = True
+        logging.debug("Weather data: %s", weather_data)
+        return weather_data
+    except TypeError as err:
+        logging.error("ydata: %s", ydata)
+        logging.error(err)
+        return {'valid': False}
 
 
-def make_normal_tweet():
+def make_normal_tweet(weather_data):
     text = [
-        "The weather is boring. " + temp_and_unit + " and " + condition.lower() + ".",
-        "Great, it's " + condition.lower() + " and " + temp_and_unit + ".",
-        "What a normal day, it's " + condition.lower() + " and " + temp_and_unit + ".",
-        "Whoopie do, it's " + temp_and_unit + " and " + condition.lower() + ".",
-        temp_and_unit + " and " + condition.lower() + ".",
-        temp_and_unit + " and " + condition.lower() + ". What did you expect?",
-        "Welcome to " + city + ", " + region + ", where it's " + condition.lower() + " and " + temp_and_unit + ".",
-        "Breaking news: it's " + condition.lower() + " and " + temp_and_unit + ".",
-        "We got some " + condition.lower() + " at " + temp_and_unit + " going on.",
-        "Well, would you look at that, it's " + temp_and_unit + " and " + condition.lower() + ".",
-        "Great Scott, it's " + condition.lower() + " and " + temp_and_unit + "!",
-        "It's " + temp_and_unit + " and " + condition.lower() + ", oh boy!",
-        "Only in " + city + ", " + region + " would it be " + temp_and_unit + " and " + condition.lower() + " right now.",
+        "The weather is boring. " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
+        "Great, it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
+        "What a normal day, it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
+        "Whoopie do, it's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
+        weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
+        weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ". What did you expect?",
+        "Welcome to " + weather_data['city'] + ", " + weather_data['region'] + ", where it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
+        "Breaking news: it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
+        "We got some " + weather_data['condition'].lower() + " at " + weather_data['temp_and_unit'] + " going on.",
+        "Well, would you look at that, it's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
+        "Great Scott, it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + "!",
+        "It's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ", oh boy!",
+        "Only in " + weather_data['city'] + ", " + weather_data['region'] + " would it be " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + " right now.",
     ]
     return random.choice(text)
 
 
-def make_special_tweet():
-    if (units['temperature'] == 'F' and wind_chill <= -30) or (units['temperature'] == 'C' and wind_chill <= -34):
-        return "Wow, mother nature hates us. The windchill is " + str(wind_chill) + deg_unit + \
-               " and the wind is blowing at " + wind_speed_and_unit + " from the " + wind_direction + ". My face hurts."
-    elif code == 23 or code == 24:
-        return "Looks like we've got some wind at " + wind_speed_and_unit + " coming from the " + wind_direction + "."
-    elif code == 0 or code == 1 or code == 2:
-        return "HOLY SHIT, THERE'S A " + condition.upper() + "!"
-    elif code == 3:
+def make_special_tweet(weather_data):
+    if (weather_data['units']['temperature'] == 'F' and weather_data['wind_chill'] <= -30) or (weather_data['units']['temperature'] == 'C' and weather_data['wind_chill'] <= -34):
+        return "Wow, mother nature hates us. The windchill is " + str(weather_data['wind_chill']) + weather_data['deg_unit'] + \
+               " and the wind is blowing at " + weather_data['wind_speed_and_unit'] + " from the " + weather_data['wind_direction'] + ". My face hurts."
+    elif weather_data['code'] == 23 or weather_data['code'] == 24:
+        return "Looks like we've got some wind at " + weather_data['wind_speed_and_unit'] + " coming from the " + weather_data['wind_direction'] + "."
+    elif weather_data['code'] == 0 or weather_data['code'] == 1 or weather_data['code'] == 2:
+        return "HOLY SHIT, THERE'S A " + weather_data['condition'].upper() + "!"
+    elif weather_data['code'] == 3:
         return "IT BE STORMIN'! Severe thunderstorms right now."
-    elif code == 4:
+    elif weather_data['code'] == 4:
         return "Meh, just a thunderstorm."
-    elif code == 17 or code == 35:
+    elif weather_data['code'] == 17 or weather_data['code'] == 35:
         return "IT'S HAILIN'!"
-    elif code == 20:
+    elif weather_data['code'] == 20:
         return "Do you even fog bro?"
-    elif code == 5 or code == 6 or code == 7:
-        return "What a mix! Currently, there's " + condition.lower() + " falling from the sky."
-    elif code == 13 or code == 14 or code == 15 or code == 16 or code == 41 or code == 43:
-        return condition.capitalize() + ". Bundle up."
-    elif code == 8 or code == 9:
+    elif weather_data['code'] == 5 or weather_data['code'] == 6 or weather_data['code'] == 7:
+        return "What a mix! Currently, there's " + weather_data['condition'].lower() + " falling from the sky."
+    elif weather_data['code'] == 13 or weather_data['code'] == 14 or weather_data['code'] == 15 or weather_data['code'] == 16 or weather_data['code'] == 41 or weather_data['code'] == 43:
+        return weather_data['condition'].capitalize() + ". Bundle up."
+    elif weather_data['code'] == 8 or weather_data['code'] == 9:
         return "Drizzlin' yo."
-    elif (units['speed'] == 'mph' and wind_speed >= 35.0) or (units['speed'] == 'km/h' and wind_speed >= 56.0):
-        return "Hold onto your hats, the wind is blowing at " + wind_speed_and_unit + " coming from the " + wind_direction + "."
-    elif humidity <= 5:
-        return "It's dry as strained pasta. " + str(humidity) + "% humid right now."
-    elif (units['temperature'] == 'F' and temp <= -20) or (units['temperature'] == 'C' and temp <= -28):
-        return "It's " + temp_and_unit + ". Too cold."
-    elif (units['temperature'] == 'F' and temp >= 100) or (units['temperature'] == 'C' and 37 <= temp <= 50):
-        return "Holy moly it's " + temp_and_unit + ". I could literally (figuratively) melt."
-    elif units['temperature'] == 'F' and temp == 69:
-        return "Teehee, it's 69" + deg_unit + "."
-    elif code == 3200:
+    elif (weather_data['units']['speed'] == 'mph' and weather_data['wind_speed'] >= 35.0) or (weather_data['units']['speed'] == 'km/h' and weather_data['wind_speed'] >= 56.0):
+        return "Hold onto your hats, the wind is blowing at " + weather_data['wind_speed_and_unit'] + " coming from the " + weather_data['wind_direction'] + "."
+    elif weather_data['humidity'] <= 5:
+        return "It's dry as strained pasta. " + str(weather_data['humidity']) + "% humid right now."
+    elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] <= -20) or (weather_data['units']['temperature'] == 'C' and weather_data['temp'] <= -28):
+        return "It's " + weather_data['temp_and_unit'] + ". Too cold."
+    elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 100) or (weather_data['units']['temperature'] == 'C' and 37 <= weather_data['temp'] <= 50):
+        return "Holy moly it's " + weather_data['temp_and_unit'] + ". I could literally (figuratively) melt."
+    elif weather_data['units']['temperature'] == 'F' and weather_data['temp'] == 69:
+        return "Teehee, it's 69" + weather_data['deg_unit'] + "."
+    elif weather_data['code'] == 3200:
         return "Someone messed up, apparently the current condition is \"not available\" " + \
                "http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
     else:
         return "normal"  # keep normal as is determines if the weather is normal (boring) or special (exciting!)
 
 
-def do_tweet(content):
+def do_tweet(content, weather_data):
     global last_tweet
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
     api = tweepy.API(auth)
     logging.debug('Trying to tweet: %s', content)
     try:
-        api.update_status(status=content, lat=latitude, long=longitude) if TWEET_LOCATION else \
+        api.update_status(status=content, lat=weather_data['latitude'], long=weather_data['longitude']) if TWEET_LOCATION else \
             api.update_status(status=content)
         logging.info('Tweet success: %s', content)
         last_tweet = content
@@ -205,58 +216,47 @@ def do_tweet(content):
         logging.warning('Tweet skipped due to error: %s', content)
 
 
+def tweet_logic(weather_data):
+    now = datetime.now()
+    content_special = make_special_tweet(weather_data)
+    content_normal = make_normal_tweet(weather_data)
+    logging.debug('last tweet: %s', last_tweet)
+    logging.debug('special tweet: %s', content_special)
+    logging.debug('normal tweet: %s', content_normal)
+    if last_tweet == content_normal:
+        # Posting tweet will fail if same as last tweet
+        logging.debug('Duplicate normal tweet: %s', content_normal)
+    elif last_tweet == content_special:
+        # Posting tweet will fail if same as last tweet
+        logging.debug('Duplicate special tweet: %s', content_special)
+    elif content_special != "normal":
+        # Post special weather event at non-timed time
+        logging.debug('special event')
+        do_tweet(content_special, weather_data)
+        time.sleep(840)
+        # Sleep for 14 minutes (plus the 1 minute at the end of the loop) to limit high numbers of similar tweets
+    else:
+        # Standard timed tweet
+        timed_tweet(now.replace(hour=7, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+        timed_tweet(now.replace(hour=12, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+        timed_tweet(now.replace(hour=15, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+        timed_tweet(now.replace(hour=18, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+        timed_tweet(now.replace(hour=22, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+
+
+def timed_tweet(time, now, content_normal, weather_data):
+    if time <= now < time.replace(minute=time.minute + 1):
+        do_tweet(content_normal, weather_data)
+
+
 def main():
     initialize_logger(LOG_PATHNAME)
     count = 1
     while True:
         logging.debug('loop %s', str(count))
-        ydata = get_weather()
-        logging.debug('fetched weather: %s', ydata)
-        # sometimes YQL returns 'None' as the results, huh
-        if ydata['query']['results']['channel'] is None:
-            logging.error('YQL error, received: %s', ydata)
-        else:
-            get_weather_variables(ydata)
-            now = datetime.now()
-            content_special = make_special_tweet()
-            content_normal = make_normal_tweet()
-            logging.debug('last tweet: %s', last_tweet)
-            logging.debug('special tweet: %s', content_special)
-            logging.debug('normal_tweet: %s', content_normal)
-            if last_tweet == content_normal:
-                # Posting tweet will fail if same as last tweet
-                logging.debug('Duplicate normal tweet: %s', content_normal)
-            elif last_tweet == content_special:
-                # Posting tweet will fail if same as last tweet
-                logging.debug('Duplicate special tweet: %s', content_special)
-            elif content_special != "normal":
-                # Post special weather event at non-timed time
-                logging.debug('special event')
-                do_tweet(content_special)
-                time.sleep(840)
-                # Sleep for 14 minutes (plus the 1 minute at the end of the loop) to limit high numbers of similar tweets
-            else:
-                # Standard timed tweet
-                time1 = now.replace(hour=7, minute=0, second=0, microsecond=0)  # the time of the first tweet to go out
-                time2 = now.replace(hour=12, minute=0, second=0, microsecond=0)
-                time3 = now.replace(hour=15, minute=0, second=0, microsecond=0)
-                time4 = now.replace(hour=18, minute=0, second=0, microsecond=0)
-                time5 = now.replace(hour=22, minute=0, second=0, microsecond=0)
-                if time5 <= now < time5.replace(minute=time5.minute + 1):
-                    logging.debug('time5')
-                    do_tweet(content_normal)
-                elif time4 <= now < time4.replace(minute=time4.minute + 1):
-                    logging.debug('time4')
-                    do_tweet(content_normal)
-                elif time3 <= now < time3.replace(minute=time3.minute + 1):
-                    logging.debug('time3')
-                    do_tweet(content_normal)
-                elif time2 <= now < time2.replace(minute=time2.minute + 1):
-                    logging.debug('time2')
-                    do_tweet(content_normal)
-                elif time1 <= now < time1.replace(minute=time1.minute + 1):
-                    logging.debug('time1')
-                    do_tweet(content_normal)
+        weather_data = get_weather_variables(get_weather())
+        if weather_data['valid'] is True:
+            tweet_logic(weather_data)
         time.sleep(60)
         count += 1
 
