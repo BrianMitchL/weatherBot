@@ -26,8 +26,6 @@ except ImportError:
     from urllib2 import urlopen
     from urllib2 import URLError
 
-
-
 # Constants
 WOEID = '2454256'  # Yahoo! Weather location ID
 UNIT = 'f'  # units. 'c' for metric, 'f' for imperial. This changes all units, not just temperature
@@ -136,7 +134,7 @@ def get_weather_variables(ydata):
         weather_data['valid'] = True
         logging.debug("Weather data: %s", weather_data)
         return weather_data
-    except TypeError as err:
+    except (KeyError, TypeError) as err:
         logging.error("ydata: %s", ydata)
         logging.error(err)
         return {'valid': False}
