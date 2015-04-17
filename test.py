@@ -29,7 +29,7 @@ class TestWB(unittest.TestCase):
     def setUp(self):
         global ydataNorm, deg, WOEID, UNIT
         
-        deg = 'º'
+        deg = ' º'
         if not PY3:
             deg = deg.decode('utf-8')
         WOEID = '2454256'

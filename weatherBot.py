@@ -39,7 +39,7 @@ ACCESS_SECRET = keys['access_secret']
 
 # Global variables
 last_tweet = ""
-deg = "º"
+deg = " º"
 if sys.version < '3':
     deg = deg.decode('utf-8')
 # if UNIT has an issue, set it to metric
