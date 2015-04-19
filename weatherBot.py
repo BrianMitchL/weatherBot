@@ -205,10 +205,13 @@ def do_tweet(content, weather_data):
     api = tweepy.API(auth)
     logging.debug('Trying to tweet: %s', content)
     try:
-        api.update_status(status=content, lat=weather_data['latitude'], long=weather_data['longitude']) if TWEET_LOCATION else \
-            api.update_status(status=content)
+        if TWEET_LOCATION:
+            status = api.update_status(status=content, lat=weather_data['latitude'], long=weather_data['longitude'])
+        else:
+            status = api.update_status(status=content)
         logging.info('Tweet success: %s', content)
         last_tweet = content
+        return status
     except tweepy.TweepError as e:
         logging.error('Tweet failed: %s', e.reason)
         logging.warning('Tweet skipped due to error: %s', content)

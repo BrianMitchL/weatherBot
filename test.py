@@ -9,6 +9,8 @@ import unittest
 import sys
 import logging
 import os
+import random
+import tweepy
 from testfixtures import LogCapture
 
 from weatherBot import get_wind_direction
@@ -17,6 +19,8 @@ from weatherBot import get_weather_variables
 from weatherBot import make_normal_tweet
 from weatherBot import initialize_logger
 from weatherBot import get_weather
+from weatherBot import do_tweet
+from keys import keys
 
 if sys.version > '3':
     PY3 = True
@@ -262,6 +266,25 @@ class TestWB(unittest.TestCase):
         ydata = get_weather()
         self.assertEqual(ydata['query']['results']['channel']['location']['city'], 'Morris')
         self.assertEqual(ydata['query']['results']['channel']['location']['region'], 'MN')
+
+    def test_do_tweet(self):
+        TWEET_LOCATION = False
+        CONSUMER_KEY = keys['consumer_key']
+        CONSUMER_SECRET = keys['consumer_secret']
+        ACCESS_KEY = keys['access_key']
+        ACCESS_SECRET = keys['access_secret']
+        weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'ºF', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
+        content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
+        status = do_tweet(content, weather_data)
+        self.assertEqual(status.text, content)
+        self.assertEqual(status.text, content)
+
+        # test destroy
+        auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+        auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
+        api = tweepy.API(auth)
+        deleted = api.destroy_status(id=status.id)
+        self.assertEqual(deleted.id, status.id)
 
 if __name__ == '__main__':
     unittest.main()
