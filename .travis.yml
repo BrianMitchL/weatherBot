@@ -1,14 +1,18 @@
 language: python
 python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-# command to install dependencies
+- '2.7'
+- '3.3'
+- '3.4'
 install:
-  - "pip install -r requirements.txt"
-  - "pip install coveralls"
-# command to run tests
+- pip install -r requirements.txt
+- pip install coveralls
 script:
-  - "coverage run --source=weatherBot test.py"
-after_success: 
-  - coveralls
+- coverage run --source=weatherBot test.py
+after_success:
+- coveralls
+env:
+  matrix:
+  - secure: QIQYiGVxorHEvDIrSWsgA3Wa30R20sBA2GdoOam0uIGc5PuqF7UwgNEPPLbiJNOWZNr1sViWOt5i2ZMAJ8joWyAXj838sf6A3y37XhOKyB3h7zHGNVldxDFZ6BA6PG/Ai/21/QwYdKEXKqEItNazHqqRZwQjBzJAd40BxQSjAJ0=
+  - secure: Jfv/iYhi/fYIkJCGovrhvRNkdwREXCgMGhpcSMPolM9qvVCQGQXnY4jebaTc8sZAczSy5rmDa3SVl9XzYYopPP+6zGQMh7kRmS5+yLN8jWUFNqKpwNiFcrXqqpip8VX5D+I5OiOveGIzOQOGqMLixVOcZuPWoW60GXz3rQVpxug=
+  - secure: Iab9+Vq0fQ67jB3eftF+Lv44j9UMt5Nz5mgUyam8POeUPounFfS+gbplQzbu2U2Y17+zY0RauezGpsw6V+C3Pw4Bb2ebESvoyMFdCN9yKhPwJ8YfMSYqb1NAZBgYaa+EMCcqm+Wa62EuFBFobcnkUBXffx8sZLURQAMup6lgUTQ=
+  - secure: g1Ez+6RsJZBIdgAbgK00eZdJGHrE/7Okb6s+z2MLIz2MSEUVhp9RvOFp5XWDB/0XUZOZs6xVdthvHZNzsvmNtFGU3FPJCp/KYuWGMRDbzMLS0cISSOWJpo6TQoSCF9379LAdqZaYn/pZ74SSxds16Q+AtssH7SuqupMsXpJPYfc=
