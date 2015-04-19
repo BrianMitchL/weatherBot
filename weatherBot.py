@@ -11,10 +11,11 @@ import time
 import random
 import logging
 import json
+import os
 from os.path import expanduser
 import tweepy
 import daemon
-from keys import keys
+from keys import set_env_vars
 # Python 3 imports
 try:
     from urllib.request import urlopen
@@ -31,11 +32,6 @@ WOEID = '2454256'  # Yahoo! Weather location ID
 UNIT = 'f'  # units. 'c' for metric, 'f' for imperial. This changes all units, not just temperature
 TWEET_LOCATION = True  # include location in tweet
 LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns the path to the current user's home dir
-
-CONSUMER_KEY = keys['consumer_key']
-CONSUMER_SECRET = keys['consumer_secret']
-ACCESS_KEY = keys['access_key']
-ACCESS_SECRET = keys['access_secret']
 
 # Global variables
 last_tweet = ""
@@ -200,8 +196,8 @@ def make_special_tweet(weather_data):
 
 def do_tweet(content, weather_data):
     global last_tweet
-    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-    auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
+    auth = tweepy.OAuthHandler(os.environ.get('WEATHERBOT_CONSUMER_KEY'), os.environ.get('WEATHERBOT_CONSUMER_SECRET'))
+    auth.set_access_token(os.environ.get('WEATHERBOT_ACCESS_KEY'), os.environ.get('WEATHERBOT_ACCESS_SECRET'))
     api = tweepy.API(auth)
     logging.debug('Trying to tweet: %s', content)
     try:
@@ -252,6 +248,11 @@ def timed_tweet(time, now, content_normal, weather_data):
 
 def main():
     initialize_logger(LOG_PATHNAME)
+    if os.environ.get('WEATHERBOT_CONSUMER_KEY') is not 'None' \
+            or os.environ.get('WEATHERBOT_CONSUMER_SECRET') is not 'None' \
+            or os.environ.get('WEATHERBOT_ACCESS_KEY') is not 'None' \
+            or os.environ.get('WEATHERBOT_ACCESS_SECRET') is not 'None':
+        set_env_vars()  # set keys and secrets if not in env variables
     count = 1
     while True:
         logging.debug('loop %s', str(count))
