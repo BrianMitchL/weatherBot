@@ -266,13 +266,12 @@ class TestWB(unittest.TestCase):
         self.assertEqual(ydata['query']['results']['channel']['location']['city'], 'Morris')
         self.assertEqual(ydata['query']['results']['channel']['location']['region'], 'MN')
 
-    def test_do_tweet_env(self):
+    def test_do_tweet(self):
         """Testing tweeting a test tweet using keys from env variables"""
         TWEET_LOCATION = False
         weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'ºF', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
         content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
         status = do_tweet(content, weather_data)
-        self.assertEqual(status.text, content)
         self.assertEqual(status.text, content)
 
         # test destroy
@@ -281,6 +280,22 @@ class TestWB(unittest.TestCase):
         api = tweepy.API(auth)
         deleted = api.destroy_status(id=status.id)
         self.assertEqual(deleted.id, status.id)
+
+    def test_do_tweet_with_location(self):
+        """Testing tweeting a test tweet with location using keys from env variables"""
+        TWEET_LOCATION = True
+        weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'ºF', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
+        content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
+        status = do_tweet(content, weather_data)
+        self.assertEqual(status.text, content)
+
+        # test destroy
+        auth = tweepy.OAuthHandler(os.environ.get('WEATHERBOT_CONSUMER_KEY'), os.environ.get('WEATHERBOT_CONSUMER_SECRET'))
+        auth.set_access_token(os.environ.get('WEATHERBOT_ACCESS_KEY'), os.environ.get('WEATHERBOT_ACCESS_SECRET'))
+        api = tweepy.API(auth)
+        deleted = api.destroy_status(id=status.id)
+        self.assertEqual(deleted.id, status.id)
+
 
 if __name__ == '__main__':
     unittest.main()
