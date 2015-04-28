@@ -46,10 +46,21 @@ Tests have been written for a fair amount of the code. It's hard (or I don't kno
 python test.py
 ```
 
-## Deploying to Heroku
-This bot can easily be deployed to Heroku. Install the heroku-toolbelt, run `heroku create`, and `git push heroku master` to get started.
-You will need to also set the appropriate timezone of the server. For example, `heroku config:add TZ="America/Chicago"`. see [here](http://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for more timezone formats.
-Furthermore, the twitter keys need to be added. The format to do so is `heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=1931463259-xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx`
+## Deploying to [Heroku](https://www.heroku.com/)
+This bot can easily be deployed to Heroku. Install the heroku-toolbelt and run the following to get started:
+```shell
+heroku login
+heroku create
+git push heroku master
+```
+You will need to also set the appropriate timezone of the server. For example,
+```shell
+heroku config:add TZ="America/Chicago"
+```To see  more timezone formats, go [here](http://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
+Furthermore, the twitter keys need to be added. The format to do so is:
+```shell
+heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=1931463259-xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx
+```
 
 ## Tools Used
 * [Tweepy](https://github.com/tweepy/tweepy)
