@@ -259,7 +259,6 @@ def main():
         weather_data = get_weather_variables(get_weather())
         if weather_data['valid'] is True:
             tweet_logic(weather_data)
-            do_tweet('testing', weather_data)
         time.sleep(60)
 
 
