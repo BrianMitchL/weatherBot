@@ -255,14 +255,11 @@ def main():
             or os.environ.get('WEATHERBOT_ACCESS_KEY') is not 'None' \
             or os.environ.get('WEATHERBOT_ACCESS_SECRET') is not 'None':
         set_env_vars()  # set keys and secrets if not in env variables
-    count = 1
     while True:
-        logging.debug('loop %s', str(count))
         weather_data = get_weather_variables(get_weather())
         if weather_data['valid'] is True:
             tweet_logic(weather_data)
         time.sleep(60)
-        count += 1
 
 
 def run():
