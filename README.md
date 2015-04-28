@@ -37,8 +37,9 @@ They names of the environmental variables are as follows: `WEATHERBOT_CONSUMER_K
 The wording for tweets can be edited or added in the text list in `make_normal_tweet()` and the appropriate returns in `make_special_tweet()`. Additional special weather events can also be added as extra elif's in `make_special_tweet()`. Mind the order so more or less common ones are called when not desired.
 
 Timing of daily scheduled tweets are done by setting the hour and minute in last few lines of the `timed_tweet()` method.
-*Note: if a tweet is set to go out when minute=59, set the .replace in the appropriate if statement below it to roll over the next minute to the hour. The minute field only accepts 0..59*
-*Note: the times entered here are triggered by the host's time as returned by datetime. If the host machine and weather location do not match, but sure to set accordingly here.*
+**Note: if a tweet is set to go out when minute=59, set the .replace in the appropriate if statement below it to roll over the next minute to the hour. The minute field only accepts 0..59**
+
+**Note: the times entered here are triggered by the host's time as returned by datetime. If the host machine and weather location do not match, but sure to set accordingly here.**
 
 ## Testing
 Tests have been written for a fair amount of the code. It's hard (or I don't know how) to test tweeting and fetching weather data, so that somewhat limits what tests can be written. The JSON object that Yahoo! Weather returns is hardcoded for each test with values that would make it qualify for a given condition. Note: to make tweeting tests pass, the consumer and secret keys/tokens need to be stored as an environmental variable.
