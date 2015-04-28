@@ -32,17 +32,25 @@ There is a constants section near the top of the weatherBot.py file where you ca
 
 
 The Twitter app consumer key and secret as well as the access token key and secret are located either in environmental variables or in the keys.py file. The script will pull in the keys from the environmental variables over the keys.py file. See https://apps.twitter.com to get your keys and secrets.
-They names of the environmental variables are as follows: WEATHERBOT_CONSUMER_KEY, WEATHERBOT_CONSUMER_SECRET, WEATHERBOT_ACCESS_KEY, and WEATHERBOT_ACCESS_SECRET.
+They names of the environmental variables are as follows: `WEATHERBOT_CONSUMER_KEY`, `WEATHERBOT_CONSUMER_SECRET`, `WEATHERBOT_ACCESS_KEY`, and `WEATHERBOT_ACCESS_SECRET`.
 
 The wording for tweets can be edited or added in the text list in `make_normal_tweet()` and the appropriate returns in `make_special_tweet()`. Additional special weather events can also be added as extra elif's in `make_special_tweet()`. Mind the order so more or less common ones are called when not desired.
 
-Timing of daily scheduled tweets are done by setting the hour and minute in the else condition of the while loop in `main()`. *Note: if a tweet is set to go out when minute=59, set the .replace in the appropriate if statement below it to roll over the next minute to the hour. The minute field only accepts 0..59*
+Timing of daily scheduled tweets are done by setting the hour and minute in last few lines of the `timed_tweet()` method.
+*Note: if a tweet is set to go out when minute=59, set the .replace in the appropriate if statement below it to roll over the next minute to the hour. The minute field only accepts 0..59*
+*Note: the times entered here are triggered by the host's time as returned by datetime. If the host machine and weather location do not match, but sure to set accordingly here.*
 
 ## Testing
 Tests have been written for a fair amount of the code. It's hard (or I don't know how) to test tweeting and fetching weather data, so that somewhat limits what tests can be written. The JSON object that Yahoo! Weather returns is hardcoded for each test with values that would make it qualify for a given condition. Note: to make tweeting tests pass, the consumer and secret keys/tokens need to be stored as an environmental variable.
 ```shell
 python test.py
 ```
+
+## Deploying to Heroku
+This bot can easily be deployed to Heroku. Install the heroku-toolbelt, run `heroku create`, and `git push heroku master` to get started.
+You will need to also set the appropriate timezone of the server. For example, `heroku config:add TZ="America/Chicago"`. see [here](http://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for more timezone formats.
+Furthermore, the twitter keys need to be added. The format to do so is `heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=1931463259-xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx`
+
 ## Tools Used
 * [Tweepy](https://github.com/tweepy/tweepy)
 * [Yahoo! Weather](https://developer.yahoo.com/weather/)
