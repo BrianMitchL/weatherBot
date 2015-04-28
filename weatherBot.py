@@ -250,10 +250,10 @@ def timed_tweet(time, now, content_normal, weather_data):
 
 def main():
     initialize_logger(LOG_PATHNAME)
-    if os.environ.get('WEATHERBOT_CONSUMER_KEY') is not 'None' \
-            or os.environ.get('WEATHERBOT_CONSUMER_SECRET') is not 'None' \
-            or os.environ.get('WEATHERBOT_ACCESS_KEY') is not 'None' \
-            or os.environ.get('WEATHERBOT_ACCESS_SECRET') is not 'None':
+    if os.environ.get('WEATHERBOT_CONSUMER_KEY') is 'None' \
+            or os.environ.get('WEATHERBOT_CONSUMER_SECRET') is 'None' \
+            or os.environ.get('WEATHERBOT_ACCESS_KEY') is 'None' \
+            or os.environ.get('WEATHERBOT_ACCESS_SECRET') is 'None':
         set_env_vars()  # set keys and secrets if not in env variables
     while True:
         weather_data = get_weather_variables(get_weather())
