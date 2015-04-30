@@ -32,6 +32,7 @@ WOEID = '2454256'  # Yahoo! Weather location ID
 UNIT = 'f'  # units. 'c' for metric, 'f' for imperial. This changes all units, not just temperature
 TWEET_LOCATION = True  # include location in tweet
 LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns the path to the current user's home dir
+HASHTAG = " #MorrisWeather"  # if not hashtag is desired, set HASHTAG to be an empty string
 
 # Global variables
 last_tweet = ""
@@ -201,6 +202,7 @@ def do_tweet(content, weather_data):
     auth = tweepy.OAuthHandler(os.environ.get('WEATHERBOT_CONSUMER_KEY'), os.environ.get('WEATHERBOT_CONSUMER_SECRET'))
     auth.set_access_token(os.environ.get('WEATHERBOT_ACCESS_KEY'), os.environ.get('WEATHERBOT_ACCESS_SECRET'))
     api = tweepy.API(auth)
+    content += HASHTAG
     logging.debug('Trying to tweet: %s', content)
     try:
         if TWEET_LOCATION:

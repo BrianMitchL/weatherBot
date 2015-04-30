@@ -29,6 +29,7 @@ There is a constants section near the top of the weatherBot.py file where you ca
 * `UNIT` *defaults to imperial. 'c' for metric, 'f' for imperial. This changes all units, not just temperature*
 * `TWEET_LOCATION` *defaults to true*
 * `LOG_PATHNAME` *defaults to '~/weatherBot.log'* **Note: The complete path name needs to be specified**
+* `HASHTAG` *defaults to " #MorrisWeather". This is a string that will be added to the end of every tweet. If no hashtag or end text is desired, simply set the variable to be an empty string*
 
 
 The Twitter app consumer key and secret as well as the access token key and secret are located either in environmental variables or in the keys.py file. The script will pull in the keys from the environmental variables over the keys.py file. See https://apps.twitter.com to get your keys and secrets.
