@@ -199,8 +199,8 @@ def make_special_tweet(weather_data):
 
 def do_tweet(content, weather_data):
     global last_tweet
-    auth = tweepy.OAuthHandler(os.environ.get('WEATHERBOT_CONSUMER_KEY'), os.environ.get('WEATHERBOT_CONSUMER_SECRET'))
-    auth.set_access_token(os.environ.get('WEATHERBOT_ACCESS_KEY'), os.environ.get('WEATHERBOT_ACCESS_SECRET'))
+    auth = tweepy.OAuthHandler(os.getenv('WEATHERBOT_CONSUMER_KEY'), os.getenv('WEATHERBOT_CONSUMER_SECRET'))
+    auth.set_access_token(os.getenv('WEATHERBOT_ACCESS_KEY'), os.getenv('WEATHERBOT_ACCESS_SECRET'))
     api = tweepy.API(auth)
     content += HASHTAG
     logging.debug('Trying to tweet: %s', content)
@@ -252,11 +252,7 @@ def timed_tweet(time, now, content_normal, weather_data):
 
 def main():
     initialize_logger(LOG_PATHNAME)
-    if os.environ.get('WEATHERBOT_CONSUMER_KEY') is 'None' \
-            or os.environ.get('WEATHERBOT_CONSUMER_SECRET') is 'None' \
-            or os.environ.get('WEATHERBOT_ACCESS_KEY') is 'None' \
-            or os.environ.get('WEATHERBOT_ACCESS_SECRET') is 'None':
-        set_env_vars()  # set keys and secrets if not in env variables
+    set_env_vars()
     while True:
         weather_data = get_weather_variables(get_weather())
         if weather_data['valid'] is True:

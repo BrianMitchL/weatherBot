@@ -13,6 +13,7 @@ import random
 import tweepy
 from testfixtures import LogCapture
 
+from keys import set_env_vars
 from weatherBot import get_wind_direction
 from weatherBot import make_special_tweet
 from weatherBot import get_weather_variables
@@ -295,7 +296,7 @@ class TestWB(unittest.TestCase):
         weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43º F', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
         content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
         status = do_tweet(content, weather_data)
-        self.assertEqual(status.text, content)
+        self.assertEqual(status.text, content + HASHTAG)
 
         # test destroy
         auth = tweepy.OAuthHandler(os.environ.get('WEATHERBOT_CONSUMER_KEY'), os.environ.get('WEATHERBOT_CONSUMER_SECRET'))
@@ -310,7 +311,7 @@ class TestWB(unittest.TestCase):
         weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43º F', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
         content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
         status = do_tweet(content, weather_data)
-        self.assertEqual(status.text, content)
+        self.assertEqual(status.text, content + HASHTAG)
 
         # test destroy
         auth = tweepy.OAuthHandler(os.environ.get('WEATHERBOT_CONSUMER_KEY'), os.environ.get('WEATHERBOT_CONSUMER_SECRET'))
@@ -321,4 +322,5 @@ class TestWB(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    set_env_vars()
     unittest.main()
