@@ -294,7 +294,6 @@ class TestWB(unittest.TestCase):
         TWEET_LOCATION = False
         weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43º F', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
         content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
-        content += HASHTAG
         status = do_tweet(content, weather_data)
         self.assertEqual(status.text, content)
 
@@ -310,7 +309,6 @@ class TestWB(unittest.TestCase):
         TWEET_LOCATION = True
         weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43º F', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
         content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
-        content += HASHTAG
         status = do_tweet(content, weather_data)
         self.assertEqual(status.text, content)
 
