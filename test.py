@@ -12,12 +12,14 @@ import os
 import random
 import tweepy
 from testfixtures import LogCapture
+from datetime import datetime
 
 from keys import set_env_vars
 from weatherBot import get_wind_direction
 from weatherBot import make_special_tweet
 from weatherBot import get_weather_variables
 from weatherBot import make_normal_tweet
+from weatherBot import make_forecast
 from weatherBot import initialize_logger
 from weatherBot import get_weather
 from weatherBot import do_tweet
@@ -228,6 +230,7 @@ class TestWB(unittest.TestCase):
         self.assertEqual(weather_data['region'], 'MN')
         self.assertEqual(weather_data['latitude'], '45.59')
         self.assertEqual(weather_data['longitude'], '-95.9')
+        self.assertEqual(weather_data['forecast'], [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}])
         self.assertTrue(weather_data['valid'])
         
     def test_get_empty_weather_variables(self):
@@ -248,6 +251,7 @@ class TestWB(unittest.TestCase):
         self.assertEqual(weather_data['region'], 'MN')
         self.assertEqual(weather_data['latitude'], '45.59')
         self.assertEqual(weather_data['longitude'], '-95.9')
+        self.assertEqual(weather_data['forecast'], [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}])
         self.assertTrue(weather_data['valid'])
 
     def test_get_weather_variables_error(self):
@@ -262,6 +266,22 @@ class TestWB(unittest.TestCase):
         returned = make_normal_tweet(weather_data)
         self.assertTrue('fair' in returned)
         self.assertTrue('43' + deg + 'F' in returned)
+
+    def test_make_forecast(self):
+        """Testing if forecast contains the conditions, high, and low temperatures"""
+        weather_data = get_weather_variables(ydataNorm)
+        now = datetime.now().replace(year=2015, month=4, day=2)
+        returned = make_forecast(now, weather_data)
+        self.assertTrue('partly cloudy/wind' in returned)
+        self.assertTrue('23' + deg + 'F' in returned)
+        self.assertTrue('59' + deg + 'F' in returned)
+
+    def test_make_forecast_error(self):
+        """Testing if error condition tweet is returned"""
+        weather_data = get_weather_variables(ydataNorm)
+        now = datetime.now().replace(year=2015, month=4, day=10)
+        returned = make_forecast(now, weather_data)
+        self.assertTrue('not available' in returned)
 
     def test_logging(self):
         """Testing if the system version is in the log and log file"""

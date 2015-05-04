@@ -128,6 +128,7 @@ def get_weather_variables(ydata):
         weather_data['region'] = ydata['query']['results']['channel']['location']['region']
         weather_data['latitude'] = ydata['query']['results']['channel']['item']['lat']
         weather_data['longitude'] = ydata['query']['results']['channel']['item']['long']
+        weather_data['forecast'] = ydata['query']['results']['channel']['item']['forecast']
         weather_data['valid'] = True
         logging.debug("Weather data: %s", weather_data)
         return weather_data
@@ -199,6 +200,21 @@ def make_special_tweet(weather_data):
         return "normal"  # keep normal as is determines if the weather is normal (boring) or special (exciting!)
 
 
+def make_forecast(dt, weather_data):
+    # Could use '%-d', but it does not work on all platforms (*cough *cough Windows *cough)
+    date = dt.strftime('X%d %b %Y').replace('X0', '').replace('X', '')
+    endings = ["Exciting!", "Nice!", "Sweet!", "Wow!", "I can't wait!", "Nifty!",
+               "Excellent!", "What a day!", "This should be interesting!"]
+    for day in weather_data['forecast']:
+        if day['date'] == date:
+            logging.debug('Found a forecast: %s', day)
+            return "The forecast for today is " + day['text'].lower() + " with a high of " + day['high'] + \
+                   weather_data['deg_unit'] + " and a low of " + day['low'] + weather_data['deg_unit'] + \
+                   ". " + random.choice(endings)
+    return "Sorry, today's forecast is \"not available\" " \
+           "http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif Go yell at @bman4789"
+
+
 def do_tweet(content, weather_data):
     global last_tweet
     auth = tweepy.OAuthHandler(os.getenv('WEATHERBOT_CONSUMER_KEY'), os.getenv('WEATHERBOT_CONSUMER_SECRET'))
@@ -240,6 +256,7 @@ def tweet_logic(weather_data):
         # Sleep for 14 minutes (plus the 1 minute at the end of the loop) to limit high numbers of similar tweets
     else:
         # Standard timed tweet
+        timed_tweet(now.replace(hour=6, minute=0, second=0, microsecond=0), now, make_forecast(now, weather_data), weather_data)
         timed_tweet(now.replace(hour=7, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
         timed_tweet(now.replace(hour=12, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
         timed_tweet(now.replace(hour=15, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
