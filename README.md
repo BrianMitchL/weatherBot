@@ -5,7 +5,7 @@ _**Note: Any language or wording suggestions are appreciated and should be submi
 
 An example bot can be found at [@MorrisMNWeather](https://twitter.com/MorrisMNWeather).
 
-The bot can tweet the current weather condition and temperature at scheduled times. If a special weather event is happening, it will tweet that (outside of the scheduled times). The bot can also tweet the current day's forecasted condition, and high and low temperature.
+weatherBot can tweet the current weather condition and temperature at scheduled times. If a special weather event is happening, it will tweet that (outside of the scheduled times). weatherBot can also tweet the current day's forecasted condition, and high and low temperature.
 
 ## Install Dependencies
 Run the following from the repository root directory to install the needed dependencies. If pip (or pip3 if python 3) is not installed, install it via easy_install.
@@ -37,7 +37,7 @@ There is a constants section near the top of the weatherBot.py file where you ca
 The Twitter app consumer key and secret as well as the access token key and secret are located either in environmental variables or in the keys.py file. The script will pull in the keys from the environmental variables over the keys.py file. See https://apps.twitter.com to get your keys and secrets.
 They names of the environmental variables are as follows: `WEATHERBOT_CONSUMER_KEY`, `WEATHERBOT_CONSUMER_SECRET`, `WEATHERBOT_ACCESS_KEY`, and `WEATHERBOT_ACCESS_SECRET`.
 
-The wording for tweets can be edited or added in the text list in `make_normal_tweet()` and the appropriate returns in `make_special_tweet()`. Additional special weather events can also be added as extra elif's in `make_special_tweet()`. Mind the order so more or less common ones are called when not desired.
+The wording for tweets can be edited or added in the text list in `make_normal_tweet()`, `make_forecast()`, and the appropriate returns in `make_special_tweet()`. Additional special weather events can also be added as extra elif's in `make_special_tweet()`. Mind the order so more or less common ones are called when not desired.
 
 Timing of daily scheduled current conditions and forecasts are done by setting the hour and minute in last few lines of the `timed_tweet()` method.
 **Note: if a tweet is set to go out when minute=59, set the .replace in the appropriate if statement below it to roll over the next minute to the hour. The minute field only accepts 0..59**
@@ -51,7 +51,7 @@ python test.py
 ```
 
 ## Deploying to [Heroku](https://www.heroku.com/)
-This bot can easily be deployed to Heroku. Install the heroku-toolbelt and run the following to get started:
+weatherBot can easily be deployed to Heroku. Install the heroku-toolbelt and run the following to get started:
 ```shell
 heroku login
 heroku create
