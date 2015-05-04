@@ -154,6 +154,8 @@ def make_normal_tweet(weather_data):
         "Only in " + weather_data['city'] + ", " + weather_data['region'] + " would it be " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + " right now.",
         "Golly gee wilikers, it's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
         "It is currently " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
+        "Big surprise, it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
+        "Look up, it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + "."
     ]
     return random.choice(text)
 
