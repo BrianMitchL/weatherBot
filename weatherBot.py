@@ -63,9 +63,9 @@ def initialize_logger(log_pathname):
     logger.info("Starting weatherBot with Python %s", sys.version)
 
 
-def get_weather():
+def get_weather(woeid, unit):
     ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
-    yql_query = "select * from weather.forecast where woeid=" + WOEID + " and u=\"" + UNIT + "\""
+    yql_query = "select * from weather.forecast where woeid=" + woeid + " and u=\"" + unit + "\""
     yql_url = ybaseurl + urlencode({'q': yql_query}) + "&format=json"
     try:
         yresult = urlopen(yql_url).read()
@@ -215,14 +215,14 @@ def make_forecast(dt, weather_data):
            "http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif Go yell at @bman4789"
 
 
-def do_tweet(content, weather_data):
+def do_tweet(content, weather_data, tweet_location):
     auth = tweepy.OAuthHandler(os.getenv('WEATHERBOT_CONSUMER_KEY'), os.getenv('WEATHERBOT_CONSUMER_SECRET'))
     auth.set_access_token(os.getenv('WEATHERBOT_ACCESS_KEY'), os.getenv('WEATHERBOT_ACCESS_SECRET'))
     api = tweepy.API(auth)
     content += HASHTAG
     logging.debug('Trying to tweet: %s', content)
     try:
-        if TWEET_LOCATION:
+        if tweet_location:
             status = api.update_status(status=content, lat=weather_data['latitude'], long=weather_data['longitude'])
         else:
             status = api.update_status(status=content)
@@ -248,21 +248,21 @@ def tweet_logic(weather_data):
     if content_special != "normal" and now > last_special + timedelta(minutes=30):
         # Post special weather event at any time. Do not tweet more than one special event every 30 minutes
         logging.debug("Special event")
-        do_tweet(content_special, weather_data)
+        do_tweet(content_special, weather_data, TWEET_LOCATION)
         last_special = now
 
 
 def timed_tweet(tweet_at, now, content, weather_data):
     if tweet_at <= now < tweet_at + timedelta(minutes=1):
         logging.debug("Timed tweet or forecast")
-        do_tweet(content, weather_data)
+        do_tweet(content, weather_data, TWEET_LOCATION)
 
 
 def main():
     initialize_logger(LOG_PATHNAME)
     set_env_vars()
     while True:
-        weather_data = get_weather_variables(get_weather())
+        weather_data = get_weather_variables(get_weather(WOEID, UNIT))
         if weather_data['valid'] is True:
             tweet_logic(weather_data)
         time.sleep(60)
