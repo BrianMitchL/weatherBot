@@ -6,6 +6,7 @@
 # See the GitHub repository: https://github.com/bman4789/weatherBot
 
 from datetime import datetime
+from datetime import timedelta
 import sys
 import time
 import random
@@ -35,7 +36,7 @@ LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns th
 HASHTAG = " #MorrisWeather"  # if not hashtag is desired, set HASHTAG to be an empty string
 
 # Global variables
-last_tweet = ""
+last_special = datetime.now()
 deg = "º "
 if sys.version < '3':
     deg = deg.decode('utf-8')
@@ -216,7 +217,6 @@ def make_forecast(dt, weather_data):
 
 
 def do_tweet(content, weather_data):
-    global last_tweet
     auth = tweepy.OAuthHandler(os.getenv('WEATHERBOT_CONSUMER_KEY'), os.getenv('WEATHERBOT_CONSUMER_SECRET'))
     auth.set_access_token(os.getenv('WEATHERBOT_ACCESS_KEY'), os.getenv('WEATHERBOT_ACCESS_SECRET'))
     api = tweepy.API(auth)
@@ -228,7 +228,6 @@ def do_tweet(content, weather_data):
         else:
             status = api.update_status(status=content)
         logging.info('Tweet success: %s', content)
-        last_tweet = content
         return status
     except tweepy.TweepError as e:
         logging.error('Tweet failed: %s', e.reason)
@@ -236,37 +235,28 @@ def do_tweet(content, weather_data):
 
 
 def tweet_logic(weather_data):
+    global last_special
     now = datetime.now()
     content_special = make_special_tweet(weather_data)
     content_normal = make_normal_tweet(weather_data)
-    logging.debug('last tweet: %s', last_tweet)
-    logging.debug('special tweet: %s', content_special)
-    logging.debug('normal tweet: %s', content_normal)
-    if last_tweet == content_normal:
-        # Posting tweet will fail if same as last tweet
-        logging.debug('Duplicate normal tweet: %s', content_normal)
-    elif last_tweet == content_special:
-        # Posting tweet will fail if same as last tweet
-        logging.debug('Duplicate special tweet: %s', content_special)
-    elif content_special != "normal":
-        # Post special weather event at non-timed time
-        logging.debug('special event')
+    # Standard timed tweet
+    timed_tweet(now.replace(hour=6, minute=0, second=0, microsecond=0), now, make_forecast(now, weather_data), weather_data)
+    timed_tweet(now.replace(hour=7, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+    timed_tweet(now.replace(hour=12, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+    timed_tweet(now.replace(hour=15, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+    timed_tweet(now.replace(hour=18, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+    timed_tweet(now.replace(hour=22, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+    if content_special != "normal" and now > last_special + timedelta(minutes=30):
+        # Post special weather event at any time. Do not tweet more than one special event every 30 minutes
+        logging.debug("Special event")
         do_tweet(content_special, weather_data)
-        time.sleep(840)
-        # Sleep for 14 minutes (plus the 1 minute at the end of the loop) to limit high numbers of similar tweets
-    else:
-        # Standard timed tweet
-        timed_tweet(now.replace(hour=6, minute=0, second=0, microsecond=0), now, make_forecast(now, weather_data), weather_data)
-        timed_tweet(now.replace(hour=7, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
-        timed_tweet(now.replace(hour=12, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
-        timed_tweet(now.replace(hour=15, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
-        timed_tweet(now.replace(hour=18, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
-        timed_tweet(now.replace(hour=22, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
+        last_special = now
 
 
-def timed_tweet(time, now, content_normal, weather_data):
-    if time <= now < time.replace(minute=time.minute + 1):
-        do_tweet(content_normal, weather_data)
+def timed_tweet(tweet_at, now, content, weather_data):
+    if tweet_at <= now < tweet_at + timedelta(minutes=1):
+        logging.debug("Timed tweet or forecast")
+        do_tweet(content, weather_data)
 
 
 def main():
