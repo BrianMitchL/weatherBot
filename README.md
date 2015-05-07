@@ -14,7 +14,7 @@ pip install -r requirements.txt
 ```
 
 ## Use
-weatherBot.py has been tested for Python 2.7 (tested with 2.7.6) and Python 3 (tested with 3.4.3). Python 3.3 should work, but 3.2 will NOT.
+weatherBot.py has been tested for Python 2.7 (tested with 2.7.6 and 2.7.9) and Python 3 (tested with 3.4.3). Python 3.3 should work, but 3.2 will NOT. If you are using Python 2, version 2.7.9 is highly recommended in order to use the new SSL libraries that don't throw warnings..
 
 There are two modes in weatherBot. One is running from a console, and the other is by forking the process into a daemon. By default, the debug level is logged to the console and the info level is logged to the log file. The idea with this is that you run the script from the console to test and debug, and daemonize it to run it in "production." To run from as a daemon, pass in the `-d` flag:
 ```shell
@@ -40,7 +40,6 @@ They names of the environmental variables are as follows: `WEATHERBOT_CONSUMER_K
 The wording for tweets can be edited or added in the text list in `make_normal_tweet()`, `make_forecast()`, and the appropriate returns in `make_special_tweet()`. Additional special weather events can also be added as extra elif's in `make_special_tweet()`. Mind the order so more or less common ones are called when not desired.
 
 Timing of daily scheduled current conditions and forecasts are done by setting the hour and minute in last few lines of the `timed_tweet()` method.
-**Note: if a tweet is set to go out when minute=59, set the .replace in the appropriate if statement below it to roll over the next minute to the hour. The minute field only accepts 0..59**
 
 **Note: the times entered here are triggered by the host's time as returned by datetime. If the host machine and weather location do not match, but sure to set accordingly here.**
 
