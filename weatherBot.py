@@ -36,7 +36,7 @@ LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns th
 HASHTAG = " #MorrisWeather"  # if not hashtag is desired, set HASHTAG to be an empty string
 
 # Global variables
-deg = "º "
+deg = "º"
 if sys.version < '3':
     deg = deg.decode('utf-8')
 # if UNIT has an issue, set it to metric
