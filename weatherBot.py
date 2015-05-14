@@ -36,6 +36,7 @@ LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns th
 HASHTAG = " #MorrisWeather"  # if not hashtag is desired, set HASHTAG to be an empty string
 
 # Global variables
+last_special = datetime.now()
 deg = "º"
 if sys.version < '3':
     deg = deg.decode('utf-8')
@@ -234,8 +235,8 @@ def do_tweet(content, weather_data, tweet_location):
 
 
 def tweet_logic(weather_data):
+    global last_special
     now = datetime.now()
-    last_special = now - timedelta(minutes=30)
     content_special = make_special_tweet(weather_data)
     content_normal = make_normal_tweet(weather_data)
     # Standard timed tweet
