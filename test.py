@@ -35,6 +35,161 @@ class TestWB(unittest.TestCase):
             deg = deg.decode('utf-8')
         ydataNorm = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '37', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
 
+    def test_logging(self):
+        """Testing if the system version is in the log and log file"""
+        with LogCapture() as l:
+            logger = logging.getLogger()
+            logger.info('info')
+            weatherBot.initialize_logger(os.getcwd() + '/weatherBotTest.log')
+            logger.debug('debug')
+            logger.warning('uh oh')
+        l.check(('root', 'INFO', 'info'), ('root', 'INFO', 'Starting weatherBot with Python ' + sys.version), ('root', 'DEBUG', 'debug'), ('root', 'WARNING', 'uh oh'))
+        path = os.path.join(os.getcwd(), 'weatherBotTest.log')
+        with open(path, 'rb') as path:
+            data = path.read()
+        if PY3:
+            self.assertTrue(bytes(sys.version, 'UTF-8') in data)
+            self.assertFalse(bytes('debug', 'UTF-8') in data)
+            self.assertTrue(bytes('uh oh', 'UTF-8') in data)
+        else:
+            self.assertTrue(sys.version in data)
+            self.assertFalse('debug' in data)
+            self.assertTrue('uh oh' in data)
+        os.remove(os.getcwd() + '/weatherBotTest.log')
+
+    def test_query_yql(self):
+        """Testing making a YQL call (weather.forecast object)"""
+        # demo query
+        query = "select * from weather.forecast where woeid=2502265"
+        data = weatherBot.query_yql(query)
+        self.assertEqual(data['query']['results']['channel']['title'], 'Yahoo! Weather - Sunnyvale, CA')
+        self.assertEqual(data['query']['results']['channel']['description'], 'Yahoo! Weather for Sunnyvale, CA')
+        query = "select * from weather.forecast where something is not right"
+        data = weatherBot.query_yql(query)
+        self.assertEqual(data, '')
+
+    def test_restful_query(self):
+        """Testing getting a restful query call"""
+        flickr_query = 'https://api.flickr.com/services/rest/?method=flickr.places.findByLatLon&api_key=' \
+            + os.getenv('WEATHERBOT_FLICKR_KEY') + '&lat=44.9342&lon=-93.167&format=json&nojsoncallback=1'
+        data = weatherBot.restful_query(flickr_query)
+        self.assertEqual(data['places']['place'][0]['woeid'], '55806857')
+        self.assertEqual(data['places']['place'][0]['name'], 'Macalester - Groveland, St. Paul, MN, US, United States')
+        flickr_query = 'https://api.flickr.com/services/rest/?'
+        data = weatherBot.restful_query(flickr_query)
+        self.assertEqual(data, '')
+
+    def test_convert_to_json(self):
+        """Testing converting data into json form"""
+        raw_data = b'{"places":{"place":[{"place_id":"eJP0vvNUV7I10ALSrw","woeid":"55806857","latitude":"44.9342",' \
+            b'"longitude":"-93.167","place_url":"\\/United+States\\/Minnesota\\/St.+Paul\\/Macalester+-+Groveland",' \
+            b'"place_type":"neighbourhood","place_type_id":"22","timezone":"America\\/Chicago",' \
+            b'"name":"Macalester - Groveland, St. Paul, MN, US, United States","woe_name":"Macalester - Groveland"}],' \
+            b'"latitude":"44.9342","longitude":"-93.167","accuracy":"16","total":1},"stat":"ok"}'
+        json = weatherBot.convert_to_json(raw_data)
+        self.assertEqual(json['places']['place'][0]['woeid'], '55806857')
+        raw_data = b'{"places":whoops}'
+        json = weatherBot.convert_to_json(raw_data)
+        self.assertEqual(json, '')
+
+    def test_get_woeid_from_variable_location(self):
+        """Testing getting a woeid from twitter account's recent tweets"""
+        woeid = 'not a number'
+        new_woeid = weatherBot.get_woeid_from_variable_location(woeid, 'MorrisMNWeather')
+        if not PY3:
+            self.assertTrue(type(new_woeid) is unicode)
+        else:
+            self.assertTrue(type(new_woeid) is str)
+        self.assertEqual(new_woeid, '2454256')
+        self.assertEqual(weatherBot.get_woeid_from_variable_location(woeid, 'twitter'), 'not a number')
+
+    def test_get_weather_f(self):
+        """Testing getting the weather with fahrenheit as the unit"""
+        woeid = '2454256'
+        unit = 'f'
+        ydata = weatherBot.get_weather(woeid, unit)
+        self.assertEqual(ydata['query']['results']['channel']['location']['city'], 'Morris')
+        self.assertEqual(ydata['query']['results']['channel']['location']['region'], 'MN')
+        self.assertEqual(ydata['query']['results']['channel']['units']['temperature'], 'F')
+
+    def test_get_weather_c(self):
+        """Testing getting the weather with celsius as the unit"""
+        woeid = '12781740'
+        unit = 'c'
+        ydata = weatherBot.get_weather(woeid, unit)
+        self.assertEqual(ydata['query']['results']['channel']['location']['city'], 'St. Paul')
+        self.assertEqual(ydata['query']['results']['channel']['location']['region'], 'MN')
+        self.assertEqual(ydata['query']['results']['channel']['units']['temperature'], 'C')
+
+    def test_get_wind_direction(self):
+        """Testing if wind direction conversions are successful"""
+        self.assertEqual(weatherBot.get_wind_direction(0), 'N')
+        self.assertEqual(weatherBot.get_wind_direction(338), 'N')
+        self.assertEqual(weatherBot.get_wind_direction(65), 'NE')
+        self.assertEqual(weatherBot.get_wind_direction(110), 'E')
+        self.assertEqual(weatherBot.get_wind_direction(150), 'SE')
+        self.assertEqual(weatherBot.get_wind_direction(200), 'S')
+        self.assertEqual(weatherBot.get_wind_direction(240), 'SW')
+        self.assertEqual(weatherBot.get_wind_direction(290), 'W')
+        self.assertEqual(weatherBot.get_wind_direction(330), 'NW')
+        self.assertEqual(weatherBot.get_wind_direction(400), 'N')
+        self.assertEqual(weatherBot.get_wind_direction(-4), 'N')
+        self.assertEqual(weatherBot.get_wind_direction('five'), '')
+
+    def test_get_normal_weather_variables(self):
+        """Testing if weather data fields copied successfully"""
+        weather_data = weatherBot.get_weather_variables(ydataNorm)
+        self.assertEqual(weather_data['wind_speed'], 9.0)
+        self.assertEqual(weather_data['wind_direction'], 'NW')
+        self.assertEqual(weather_data['wind_chill'], 37)
+        self.assertEqual(weather_data['wind_speed_and_unit'], '9 mph')
+        self.assertEqual(weather_data['humidity'], 70)
+        self.assertEqual(weather_data['temp'], 43)
+        self.assertEqual(weather_data['code'], 33)
+        self.assertEqual(weather_data['condition'], 'fair')
+        self.assertEqual(weather_data['deg_unit'], deg + 'F')
+        self.assertEqual(weather_data['temp_and_unit'], '43' + deg + 'F')
+        self.assertEqual(weather_data['city'], 'Morris')
+        self.assertEqual(weather_data['region'], 'MN')
+        self.assertEqual(weather_data['latitude'], '45.59')
+        self.assertEqual(weather_data['longitude'], '-95.9')
+        self.assertEqual(weather_data['forecast'], [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}])
+        self.assertTrue(weather_data['valid'])
+
+    def test_get_empty_weather_variables(self):
+        """Testing if variables with a fallback are set correctly"""
+        ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '37', 'direction': '', 'speed': ''}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
+        weather_data = weatherBot.get_weather_variables(ydata)
+        self.assertEqual(weather_data['wind_speed'], 0.0)
+        self.assertEqual(weather_data['wind_direction'], 'N')
+        self.assertEqual(weather_data['wind_chill'], 37)
+        self.assertEqual(weather_data['wind_speed_and_unit'], '0 mph')
+        self.assertEqual(weather_data['humidity'], 70)
+        self.assertEqual(weather_data['temp'], 43)
+        self.assertEqual(weather_data['code'], 33)
+        self.assertEqual(weather_data['condition'], 'fair')
+        self.assertEqual(weather_data['deg_unit'], deg + 'F')
+        self.assertEqual(weather_data['temp_and_unit'], '43' + deg + 'F')
+        self.assertEqual(weather_data['city'], 'Morris')
+        self.assertEqual(weather_data['region'], 'MN')
+        self.assertEqual(weather_data['latitude'], '45.59')
+        self.assertEqual(weather_data['longitude'], '-95.9')
+        self.assertEqual(weather_data['forecast'], [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}])
+        self.assertTrue(weather_data['valid'])
+
+    def test_get_weather_variables_error(self):
+        """Testing if getting weather variables with a malformed input is valid"""
+        ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {}, 'count': 1}}}
+        weather_data = weatherBot.get_weather_variables(ydata)
+        self.assertFalse(weather_data['valid'])
+
+    def test_normal_tweet(self):
+        """Testing if normal tweet contains the condition and temperature"""
+        weather_data = weatherBot.get_weather_variables(ydataNorm)
+        returned = weatherBot.make_normal_tweet(weather_data)
+        self.assertTrue('fair' in returned)
+        self.assertTrue('43' + deg + 'F' in returned)
+
     def test_make_special_tweet_normal(self):
         """Testing if normal event is triggered"""
         weather_data = weatherBot.get_weather_variables(ydataNorm)
@@ -190,75 +345,6 @@ class TestWB(unittest.TestCase):
         weather_data2 = weatherBot.get_weather_variables(ydata_c)
         self.assertEqual(weatherBot.make_special_tweet(weather_data2), 'Wow, mother nature hates us. The windchill is -38' + deg + 'C and the wind is blowing at 42 km/h from the S. My face hurts.')
 
-    def test_get_wind_direction(self):
-        """Testing if wind direction conversions are successful"""
-        self.assertEqual(weatherBot.get_wind_direction(0), 'N')
-        self.assertEqual(weatherBot.get_wind_direction(338), 'N')
-        self.assertEqual(weatherBot.get_wind_direction(65), 'NE')
-        self.assertEqual(weatherBot.get_wind_direction(110), 'E')
-        self.assertEqual(weatherBot.get_wind_direction(150), 'SE')
-        self.assertEqual(weatherBot.get_wind_direction(200), 'S')
-        self.assertEqual(weatherBot.get_wind_direction(240), 'SW')
-        self.assertEqual(weatherBot.get_wind_direction(290), 'W')
-        self.assertEqual(weatherBot.get_wind_direction(330), 'NW')
-        self.assertEqual(weatherBot.get_wind_direction(400), 'N')
-        self.assertEqual(weatherBot.get_wind_direction(-4), 'N')
-        self.assertEqual(weatherBot.get_wind_direction('five'), '')
-        
-    def test_get_normal_weather_variables(self):
-        """Testing if weather data fields copied successfully"""
-        weather_data = weatherBot.get_weather_variables(ydataNorm)
-        self.assertEqual(weather_data['wind_speed'], 9.0)
-        self.assertEqual(weather_data['wind_direction'], 'NW')
-        self.assertEqual(weather_data['wind_chill'], 37)
-        self.assertEqual(weather_data['wind_speed_and_unit'], '9 mph')
-        self.assertEqual(weather_data['humidity'], 70)
-        self.assertEqual(weather_data['temp'], 43)
-        self.assertEqual(weather_data['code'], 33)
-        self.assertEqual(weather_data['condition'], 'fair')
-        self.assertEqual(weather_data['deg_unit'], deg + 'F')
-        self.assertEqual(weather_data['temp_and_unit'], '43' + deg + 'F')
-        self.assertEqual(weather_data['city'], 'Morris')
-        self.assertEqual(weather_data['region'], 'MN')
-        self.assertEqual(weather_data['latitude'], '45.59')
-        self.assertEqual(weather_data['longitude'], '-95.9')
-        self.assertEqual(weather_data['forecast'], [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}])
-        self.assertTrue(weather_data['valid'])
-        
-    def test_get_empty_weather_variables(self):
-        """Testing if variables with a fallback are set correctly"""
-        ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '37', 'direction': '', 'speed': ''}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-        weather_data = weatherBot.get_weather_variables(ydata)
-        self.assertEqual(weather_data['wind_speed'], 0.0)
-        self.assertEqual(weather_data['wind_direction'], 'N')
-        self.assertEqual(weather_data['wind_chill'], 37)
-        self.assertEqual(weather_data['wind_speed_and_unit'], '0 mph')
-        self.assertEqual(weather_data['humidity'], 70)
-        self.assertEqual(weather_data['temp'], 43)
-        self.assertEqual(weather_data['code'], 33)
-        self.assertEqual(weather_data['condition'], 'fair')
-        self.assertEqual(weather_data['deg_unit'], deg + 'F')
-        self.assertEqual(weather_data['temp_and_unit'], '43' + deg + 'F')
-        self.assertEqual(weather_data['city'], 'Morris')
-        self.assertEqual(weather_data['region'], 'MN')
-        self.assertEqual(weather_data['latitude'], '45.59')
-        self.assertEqual(weather_data['longitude'], '-95.9')
-        self.assertEqual(weather_data['forecast'], [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}])
-        self.assertTrue(weather_data['valid'])
-
-    def test_get_weather_variables_error(self):
-        """Testing if getting weather variables with a malformed input is valid"""
-        ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {}, 'count': 1}}}
-        weather_data = weatherBot.get_weather_variables(ydata)
-        self.assertFalse(weather_data['valid'])
-
-    def test_normal_tweet(self):
-        """Testing if normal tweet contains the condition and temperature"""
-        weather_data = weatherBot.get_weather_variables(ydataNorm)
-        returned = weatherBot.make_normal_tweet(weather_data)
-        self.assertTrue('fair' in returned)
-        self.assertTrue('43' + deg + 'F' in returned)
-
     def test_make_forecast(self):
         """Testing if forecast contains the conditions, high, and low temperatures"""
         weather_data = weatherBot.get_weather_variables(ydataNorm)
@@ -274,44 +360,6 @@ class TestWB(unittest.TestCase):
         now = datetime.now().replace(year=2015, month=4, day=10)
         returned = weatherBot.make_forecast(now, weather_data)
         self.assertTrue('not available' in returned)
-
-    def test_logging(self):
-        """Testing if the system version is in the log and log file"""
-        with LogCapture() as l:
-            logger = logging.getLogger()
-            logger.info('info')
-            weatherBot.initialize_logger(os.getcwd() + '/weatherBotTest.log')
-            logger.debug('debug')
-            logger.warning('uh oh')
-        l.check(('root', 'INFO', 'info'), ('root', 'INFO', 'Starting weatherBot with Python ' + sys.version), ('root', 'DEBUG', 'debug'), ('root', 'WARNING', 'uh oh'))
-        path = os.path.join(os.getcwd(), 'weatherBotTest.log')
-        with open(path, 'rb') as path:
-            data = path.read()
-        if PY3:
-            self.assertTrue(bytes(sys.version, 'UTF-8') in data)
-            self.assertFalse(bytes('debug', 'UTF-8') in data)
-            self.assertTrue(bytes('uh oh', 'UTF-8') in data)
-        else:
-            self.assertTrue(sys.version in data)
-            self.assertFalse('debug' in data)
-            self.assertTrue('uh oh' in data)
-        os.remove(os.getcwd() + '/weatherBotTest.log')
-
-    def test_get_weather_f(self):
-        woeid = '2454256'
-        unit = 'f'
-        ydata = weatherBot.get_weather(woeid, unit)
-        self.assertEqual(ydata['query']['results']['channel']['location']['city'], 'Morris')
-        self.assertEqual(ydata['query']['results']['channel']['location']['region'], 'MN')
-        self.assertEqual(ydata['query']['results']['channel']['units']['temperature'], 'F')
-
-    def test_get_weather_c(self):
-        woeid = '12781740'
-        unit = 'c'
-        ydata = weatherBot.get_weather(woeid, unit)
-        self.assertEqual(ydata['query']['results']['channel']['location']['city'], 'St. Paul')
-        self.assertEqual(ydata['query']['results']['channel']['location']['region'], 'MN')
-        self.assertEqual(ydata['query']['results']['channel']['units']['temperature'], 'C')
 
     def test_do_tweet(self):
         """Testing tweeting a test tweet using keys from env variables"""
@@ -342,48 +390,6 @@ class TestWB(unittest.TestCase):
         api = weatherBot.get_tweepy_api()
         deleted = api.destroy_status(id=status.id)
         self.assertEqual(deleted.id, status.id)
-
-    def test_get_woeid_from_variable_location(self):
-        woeid = 'not a number'
-        new_woeid = weatherBot.get_woeid_from_variable_location(woeid, 'MorrisMNWeather')
-        if not PY3:
-            self.assertTrue(type(new_woeid) is unicode)
-        else:
-            self.assertTrue(type(new_woeid) is str)
-        self.assertEqual(new_woeid, '2454256')
-        self.assertEqual(weatherBot.get_woeid_from_variable_location(woeid, 'twitter'), 'not a number')
-
-    def test_query_yql(self):
-        # demo query
-        query = "select * from weather.forecast where woeid=2502265"
-        data = weatherBot.query_yql(query)
-        self.assertEqual(data['query']['results']['channel']['title'], 'Yahoo! Weather - Sunnyvale, CA')
-        self.assertEqual(data['query']['results']['channel']['description'], 'Yahoo! Weather for Sunnyvale, CA')
-        query = "select * from weather.forecast where something is not right"
-        data = weatherBot.query_yql(query)
-        self.assertEqual(data, '')
-
-    def test_restful_query(self):
-        flickr_query = 'https://api.flickr.com/services/rest/?method=flickr.places.findByLatLon&api_key=' \
-            + os.getenv('WEATHERBOT_FLICKR_KEY') + '&lat=44.9342&lon=-93.167&format=json&nojsoncallback=1'
-        data = weatherBot.restful_query(flickr_query)
-        self.assertEqual(data['places']['place'][0]['woeid'], '55806857')
-        self.assertEqual(data['places']['place'][0]['name'], 'Macalester - Groveland, St. Paul, MN, US, United States')
-        flickr_query = 'https://api.flickr.com/services/rest/?'
-        data = weatherBot.restful_query(flickr_query)
-        self.assertEqual(data, '')
-
-    def test_convert_to_json(self):
-        raw_data = b'{"places":{"place":[{"place_id":"eJP0vvNUV7I10ALSrw","woeid":"55806857","latitude":"44.9342",' \
-            b'"longitude":"-93.167","place_url":"\\/United+States\\/Minnesota\\/St.+Paul\\/Macalester+-+Groveland",' \
-            b'"place_type":"neighbourhood","place_type_id":"22","timezone":"America\\/Chicago",' \
-            b'"name":"Macalester - Groveland, St. Paul, MN, US, United States","woe_name":"Macalester - Groveland"}],' \
-            b'"latitude":"44.9342","longitude":"-93.167","accuracy":"16","total":1},"stat":"ok"}'
-        json = weatherBot.convert_to_json(raw_data)
-        self.assertEqual(json['places']['place'][0]['woeid'], '55806857')
-        raw_data = b'{"places":whoops}'
-        json = weatherBot.convert_to_json(raw_data)
-        self.assertEqual(json, '')
 
     def test_do_tweet_with_variable_location(self):
         """Testing tweeting a test tweet using keys from env variables"""
