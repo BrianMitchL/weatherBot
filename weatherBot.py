@@ -73,6 +73,39 @@ def get_tweepy_api():
     return tweepy.API(auth)
 
 
+def query_yql(query):
+    ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
+    yql_url = ybaseurl + urlencode({'q': query}) + "&format=json"
+    try:
+        yresult = urlopen(yql_url).read()
+        return convert_to_json(yresult)
+    except (URLError, IOError) as err:
+        logging.error('Tried to load: %s', yql_url)
+        logging.error(err)
+        return ''
+
+
+def restful_query(encoded_query):
+    try:
+        result = urlopen(encoded_query).read()
+        return convert_to_json(result)
+    except (URLError, IOError) as err:
+        logging.error('Tried to load: %s', encoded_query)
+        logging.error(err)
+        return ''
+
+
+def convert_to_json(data):
+    try:
+        if sys.version < '3':
+            return json.loads(data)
+        else:
+            return json.loads(data.decode('utf8'))
+    except ValueError as err:
+        logging.error("Failed to convert to json: %s", err)
+        return ''
+
+
 def get_woeid_from_variable_location(woeid, username):
     api = get_tweepy_api()
     # gets the 20 most recent tweets from the given profile
@@ -86,7 +119,7 @@ def get_woeid_from_variable_location(woeid, username):
             flickr_query = "https://api.flickr.com/services/rest/?method=flickr.places.findByLatLon&api_key=" \
                 + os.getenv('WEATHERBOT_FLICKR_KEY') + "&lat=" + str(lat) + "&lon=" + str(lon) \
                 + "&format=json&nojsoncallback=1"
-            data = query_flickr(flickr_query)
+            data = restful_query(flickr_query)
             try:
                 return data['places']['place'][0]['woeid']
             except (ValueError, KeyError) as err:
@@ -110,39 +143,6 @@ def get_woeid_from_variable_location(woeid, username):
     # fallback to hardcoded location if there is no valid data
     logging.error('Could not find tweet with location, falling back to hardcoded location')
     return woeid
-
-
-def query_yql(query):
-    ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
-    yql_url = ybaseurl + urlencode({'q': query}) + "&format=json"
-    try:
-        yresult = urlopen(yql_url).read()
-        return convert_to_json(yresult)
-    except (URLError, IOError) as err:
-        logging.error('Tried to load: %s', yql_url)
-        logging.error(err)
-        return ''
-
-
-def query_flickr(encoded_query):
-    try:
-        flickr_result = urlopen(encoded_query).read()
-        return convert_to_json(flickr_result)
-    except (URLError, IOError) as err:
-        logging.error('Tried to load: %s', encoded_query)
-        logging.error(err)
-        return ''
-
-
-def convert_to_json(data):
-    try:
-        if sys.version < '3':
-            return json.loads(data)
-        else:
-            return json.loads(data.decode('utf8'))
-    except ValueError as err:
-        logging.error("Failed to convert to json: %s", err)
-        return ''
 
 
 def get_weather(woeid, unit):

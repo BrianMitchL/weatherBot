@@ -359,13 +359,19 @@ class TestWB(unittest.TestCase):
         data = weatherBot.query_yql(query)
         self.assertEqual(data['query']['results']['channel']['title'], 'Yahoo! Weather - Sunnyvale, CA')
         self.assertEqual(data['query']['results']['channel']['description'], 'Yahoo! Weather for Sunnyvale, CA')
+        query = "select * from weather.forecast where something is not right"
+        data = weatherBot.query_yql(query)
+        self.assertEqual(data, '')
 
-    def test_query_flickr(self):
+    def test_restful_query(self):
         flickr_query = 'https://api.flickr.com/services/rest/?method=flickr.places.findByLatLon&api_key=' \
             + os.getenv('WEATHERBOT_FLICKR_KEY') + '&lat=44.9342&lon=-93.167&format=json&nojsoncallback=1'
-        data = weatherBot.query_flickr(flickr_query)
+        data = weatherBot.restful_query(flickr_query)
         self.assertEqual(data['places']['place'][0]['woeid'], '55806857')
         self.assertEqual(data['places']['place'][0]['name'], 'Macalester - Groveland, St. Paul, MN, US, United States')
+        flickr_query = 'https://api.flickr.com/services/rest/?'
+        data = weatherBot.restful_query(flickr_query)
+        self.assertEqual(data, '')
 
     def test_convert_to_json(self):
         raw_data = b'{"places":{"place":[{"place_id":"eJP0vvNUV7I10ALSrw","woeid":"55806857","latitude":"44.9342",' \
