@@ -351,6 +351,7 @@ class TestWB(unittest.TestCase):
         else:
             self.assertTrue(type(new_woeid) is str)
         self.assertEqual(new_woeid, '2454256')
+        self.assertEqual(weatherBot.get_woeid_from_variable_location(woeid, 'twitter'), 'not a number')
 
     def test_query_yql(self):
         # demo query
