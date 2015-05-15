@@ -195,7 +195,7 @@ def get_weather_variables(ydata):
         weather_data['humidity'] = int(ydata['query']['results']['channel']['atmosphere']['humidity'])
         weather_data['temp'] = int(ydata['query']['results']['channel']['item']['condition']['temp'])
         weather_data['code'] = int(ydata['query']['results']['channel']['item']['condition']['code'])
-        weather_data['condition'] = ydata['query']['results']['channel']['item']['condition']['text']
+        weather_data['condition'] = ydata['query']['results']['channel']['item']['condition']['text'].lower()
         weather_data['deg_unit'] = deg + units['temperature']
         weather_data['temp_and_unit'] = ydata['query']['results']['channel']['item']['condition']['temp'] + deg + units['temperature']
         weather_data['city'] = ydata['query']['results']['channel']['location']['city']
@@ -214,23 +214,26 @@ def get_weather_variables(ydata):
 
 def make_normal_tweet(weather_data):
     text = [
-        "The weather is boring. " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
-        "Great, it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
-        "What a normal day, it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
-        "Whoopie do, it's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
-        weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
-        weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ". What did you expect?",
-        "Welcome to " + weather_data['city'] + ", " + weather_data['region'] + ", where it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
-        "Breaking news: it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
-        "We got some " + weather_data['condition'].lower() + " at " + weather_data['temp_and_unit'] + " going on.",
-        "Well, would you look at that, it's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
-        "Great Scott, it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + "!",
-        "It's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ", oh boy!",
-        "Only in " + weather_data['city'] + ", " + weather_data['region'] + " would it be " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + " right now.",
+        "The weather is boring. " + weather_data['temp_and_unit'] + " and " + weather_data['condition'] + ".",
+        "Great, it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + ".",
+        "What a normal day, it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + ".",
+        "Whoopie do, it's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'] + ".",
+        weather_data['temp_and_unit'] + " and " + weather_data['condition'] + ".",
+        weather_data['temp_and_unit'] + " and " + weather_data['condition'] + ". What did you expect?",
+        "Welcome to " + weather_data['city'] + ", " + weather_data['region'] + ", where it's " + weather_data[
+            'condition'] + " and " + weather_data['temp_and_unit'] + ".",
+        "Breaking news: it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + ".",
+        "We got some " + weather_data['condition'] + " at " + weather_data['temp_and_unit'] + " going on.",
+        "Well, would you look at that, it's " + weather_data['temp_and_unit'] + " and " + weather_data[
+            'condition'] + ".",
+        "Great Scott, it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + "!",
+        "It's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'] + ", oh boy!",
+        "Only in " + weather_data['city'] + ", " + weather_data['region'] + " would it be " + weather_data[
+            'temp_and_unit'] + " and " + weather_data['condition'] + " right now.",
         "Golly gee wilikers, it's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
-        "It is currently " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
-        "Big surprise, it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + ".",
-        "Look up, it's " + weather_data['condition'].lower() + " and " + weather_data['temp_and_unit'] + "."
+        "It is currently " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + ".",
+        "Big surprise, it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + ".",
+        "Look up, it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + "."
     ]
     return random.choice(text)
 
@@ -252,7 +255,7 @@ def make_special_tweet(weather_data):
     elif weather_data['code'] == 20:
         return "Do you even fog bro?"
     elif weather_data['code'] == 5 or weather_data['code'] == 6 or weather_data['code'] == 7:
-        return "What a mix! Currently, there's " + weather_data['condition'].lower() + " falling from the sky."
+        return "What a mix! Currently, there's " + weather_data['condition'] + " falling from the sky."
     elif weather_data['code'] == 13 or weather_data['code'] == 14 or weather_data['code'] == 15 or weather_data['code'] == 16 or weather_data['code'] == 41 or weather_data['code'] == 43:
         return weather_data['condition'].capitalize() + ". Bundle up."
     elif weather_data['code'] == 8 or weather_data['code'] == 9:
