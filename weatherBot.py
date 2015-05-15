@@ -337,25 +337,21 @@ def timed_tweet(tweet_at, now, content, weather_data):
 
 
 def main():
-    initialize_logger(LOG_PATHNAME)
-    set_twitter_env_vars()
-    if VARIABLE_LOCATION:
-        set_flickr_env_vars()
-    updated_time = datetime.now()
-    woeid = WOEID
-    while True:
-        # check for new location every 30 minutes
-        if VARIABLE_LOCATION and updated_time + timedelta(minutes=30) < datetime.now():
-            woeid = get_woeid_from_variable_location(woeid, USER_FOR_LOCATION)
-        weather_data = get_weather_variables(get_weather(woeid, UNIT))
-        if weather_data['valid'] is True:
-            tweet_logic(weather_data)
-        time.sleep(60)
-
-
-def run():
     try:
-        main()
+        initialize_logger(LOG_PATHNAME)
+        set_twitter_env_vars()
+        if VARIABLE_LOCATION:
+            set_flickr_env_vars()
+        updated_time = datetime.now()
+        woeid = WOEID
+        while True:
+            # check for new location every 30 minutes
+            if VARIABLE_LOCATION and updated_time + timedelta(minutes=30) < datetime.now():
+                woeid = get_woeid_from_variable_location(woeid, USER_FOR_LOCATION)
+            weather_data = get_weather_variables(get_weather(woeid, UNIT))
+            if weather_data['valid'] is True:
+                tweet_logic(weather_data)
+            time.sleep(60)
     except Exception as err:
         logging.error(err)
         logging.error('We got an exception!', exc_info=True)
@@ -363,6 +359,6 @@ def run():
 if __name__ == '__main__':
     if "-d" in sys.argv:
         with daemon.DaemonContext():
-            run()
+            main()
     else:
-        run()
+        main()
