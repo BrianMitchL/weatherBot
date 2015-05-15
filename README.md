@@ -50,7 +50,7 @@ There is a constants section near the top of the weatherBot.py file where you ca
 
 
 The Twitter app consumer key and secret as well as the access token key and secret are located either in environmental variables or in the keys.py file. The script will pull in the keys from the environmental variables over the keys.py file. See https://apps.twitter.com to get your keys and secrets.
-They names of the environmental variables are as follows: `WEATHERBOT_CONSUMER_KEY`, `WEATHERBOT_CONSUMER_SECRET`, `WEATHERBOT_ACCESS_KEY`, and `WEATHERBOT_ACCESS_SECRET`.
+They names of the environmental variables are as follows: `WEATHERBOT_CONSUMER_KEY`, `WEATHERBOT_CONSUMER_SECRET`, `WEATHERBOT_ACCESS_KEY`, `WEATHERBOT_ACCESS_SECRET`, and `WEATHERBOT_FLICKR_KEY`. Entering keys into keys.py is not required if you have entered them as environmental variables. `WEATHERBOT_FLICKR_KEY` is not needed if variable location is not used.
 
 The wording for tweets can be edited or added in the text list in `make_normal_tweet()`, `make_forecast()`, and the appropriate returns in `make_special_tweet()`. Additional special weather events can also be added as extra elif's in `make_special_tweet()`. Mind the order so more or less common ones are called when not desired.
 

@@ -87,10 +87,6 @@ def get_woeid_from_variable_location(woeid, username):
                 + os.getenv('WEATHERBOT_FLICKR_KEY') + "&lat=" + str(lat) + "&lon=" + str(lon) \
                 + "&format=json&nojsoncallback=1"
             data = query_flickr(flickr_query)
-            # fallback to hardcoded location if there is no valid data
-            if data is '':
-                logging.error('Falling back to hardcoded location')
-                return woeid
             try:
                 return data['places']['place'][0]['woeid']
             except ValueError as err:
@@ -104,11 +100,12 @@ def get_woeid_from_variable_location(woeid, username):
             query = 'select woeid from geo.places where text="' + tweet.place.full_name.replace(',', '') \
                     + '" | truncate(count=1)'
             result = query_yql(query)
-            if result is not '':
+            try:
                 return result['query']['results']['place']['woeid']
-            else:
-                # fallback to hardcoded location if there is no valid data
+            except ValueError as err:
+                logging.error(err)
                 logging.error('Falling back to hardcoded location')
+                # fallback to hardcoded location if there is no valid data
                 return woeid
     # fallback to hardcoded location if there is no valid data
     logging.error('Could not find tweet with location, falling back to hardcoded location')

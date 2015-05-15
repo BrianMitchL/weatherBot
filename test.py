@@ -319,13 +319,12 @@ class TestWB(unittest.TestCase):
         variable_location = False
         weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
         content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
+        tweet_content = content + weatherBot.HASHTAG
         status = weatherBot.do_tweet(content, weather_data, tweet_location, variable_location)
-        self.assertEqual(status.text, content + weatherBot.HASHTAG)
+        self.assertEqual(status.text, tweet_content)
 
         # test destroy
-        auth = tweepy.OAuthHandler(os.environ.get('WEATHERBOT_CONSUMER_KEY'), os.environ.get('WEATHERBOT_CONSUMER_SECRET'))
-        auth.set_access_token(os.environ.get('WEATHERBOT_ACCESS_KEY'), os.environ.get('WEATHERBOT_ACCESS_SECRET'))
-        api = tweepy.API(auth)
+        api = weatherBot.get_tweepy_api()
         deleted = api.destroy_status(id=status.id)
         self.assertEqual(deleted.id, status.id)
 
@@ -335,39 +334,64 @@ class TestWB(unittest.TestCase):
         variable_location = False
         weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
         content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
+        tweet_content = content + weatherBot.HASHTAG
         status = weatherBot.do_tweet(content, weather_data, tweet_location, variable_location)
-        self.assertEqual(status.text, content + weatherBot.HASHTAG)
+        self.assertEqual(status.text, tweet_content)
 
         # test destroy
-        auth = tweepy.OAuthHandler(os.environ.get('WEATHERBOT_CONSUMER_KEY'), os.environ.get('WEATHERBOT_CONSUMER_SECRET'))
-        auth.set_access_token(os.environ.get('WEATHERBOT_ACCESS_KEY'), os.environ.get('WEATHERBOT_ACCESS_SECRET'))
-        api = tweepy.API(auth)
+        api = weatherBot.get_tweepy_api()
         deleted = api.destroy_status(id=status.id)
         self.assertEqual(deleted.id, status.id)
 
-    def test_get_tweepy_api(self):
-        # TODO Add test
-        pass
-
     def test_get_woeid_from_variable_location(self):
-        # TODO Add test
-        pass
+        woeid = 'not a number'
+        new_woeid = weatherBot.get_woeid_from_variable_location(woeid, 'MorrisMNWeather')
+        if not PY3:
+            self.assertTrue(type(new_woeid) is unicode)
+        else:
+            self.assertTrue(type(new_woeid) is str)
+        self.assertEqual(new_woeid, '2454256')
 
     def test_query_yql(self):
-        # TODO Add test
-        pass
+        # demo query
+        query = "select * from weather.forecast where woeid=2502265"
+        data = weatherBot.query_yql(query)
+        self.assertEqual(data['query']['results']['channel']['title'], 'Yahoo! Weather - Sunnyvale, CA')
+        self.assertEqual(data['query']['results']['channel']['description'], 'Yahoo! Weather for Sunnyvale, CA')
 
     def test_query_flickr(self):
-        # TODO Add test
-        pass
+        flickr_query = 'https://api.flickr.com/services/rest/?method=flickr.places.findByLatLon&api_key=' \
+            + os.getenv('WEATHERBOT_FLICKR_KEY') + '&lat=44.9342&lon=-93.167&format=json&nojsoncallback=1'
+        data = weatherBot.query_flickr(flickr_query)
+        self.assertEqual(data['places']['place'][0]['woeid'], '55806857')
+        self.assertEqual(data['places']['place'][0]['name'], 'Macalester - Groveland, St. Paul, MN, US, United States')
 
     def test_convert_to_json(self):
-        # TODO Add test
-        pass
+        raw_data = b'{"places":{"place":[{"place_id":"eJP0vvNUV7I10ALSrw","woeid":"55806857","latitude":"44.9342",' \
+            b'"longitude":"-93.167","place_url":"\\/United+States\\/Minnesota\\/St.+Paul\\/Macalester+-+Groveland",' \
+            b'"place_type":"neighbourhood","place_type_id":"22","timezone":"America\\/Chicago",' \
+            b'"name":"Macalester - Groveland, St. Paul, MN, US, United States","woe_name":"Macalester - Groveland"}],' \
+            b'"latitude":"44.9342","longitude":"-93.167","accuracy":"16","total":1},"stat":"ok"}'
+        json = weatherBot.convert_to_json(raw_data)
+        self.assertEqual(json['places']['place'][0]['woeid'], '55806857')
+        raw_data = b'{"places":whoops}'
+        json = weatherBot.convert_to_json(raw_data)
+        self.assertEqual(json, '')
 
     def test_do_tweet_with_variable_location(self):
-        # TODO Add test
-        pass
+        """Testing tweeting a test tweet using keys from env variables"""
+        tweet_location = True
+        variable_location = True
+        weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
+        content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
+        tweet_content = weather_data['city'] + ", " + weather_data['region'] + ": " + content + weatherBot.HASHTAG
+        status = weatherBot.do_tweet(content, weather_data, tweet_location, variable_location)
+        self.assertEqual(status.text, tweet_content)
+
+        # test destroy
+        api = weatherBot.get_tweepy_api()
+        deleted = api.destroy_status(id=status.id)
+        self.assertEqual(deleted.id, status.id)
 
 if __name__ == '__main__':
     set_twitter_env_vars()
