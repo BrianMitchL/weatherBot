@@ -23,11 +23,13 @@ try:
     from urllib.request import urlopen
     from urllib.parse import urlencode
     from urllib.error import URLError
+    from urllib.error import HTTPError
 except ImportError:
     # Python 2 imports
     from urllib import urlencode
     from urllib2 import urlopen
     from urllib2 import URLError
+    from urllib2 import HTTPError
 
 # Constants
 WOEID = '2454256'  # Yahoo! Weather location ID
@@ -79,7 +81,7 @@ def query_yql(query):
     try:
         yresult = urlopen(yql_url).read()
         return convert_to_json(yresult)
-    except (URLError, IOError) as err:
+    except (URLError, IOError, HTTPError) as err:
         logging.error('Tried to load: %s', yql_url)
         logging.error(err)
         return ''
@@ -89,7 +91,7 @@ def restful_query(encoded_query):
     try:
         result = urlopen(encoded_query).read()
         return convert_to_json(result)
-    except (URLError, IOError) as err:
+    except (URLError, IOError, HTTPError) as err:
         logging.error('Tried to load: %s', encoded_query)
         logging.error(err)
         return ''
