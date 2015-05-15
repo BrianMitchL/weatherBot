@@ -342,7 +342,7 @@ def main():
     woeid = WOEID
     while True:
         # check for new location every 30 minutes
-        if VARIABLE_LOCATION and updated_time + timedelta(minutes=30) > datetime.now():
+        if VARIABLE_LOCATION and updated_time + timedelta(minutes=30) < datetime.now():
             woeid = get_woeid_from_variable_location(woeid, USER_FOR_LOCATION)
         weather_data = get_weather_variables(get_weather(woeid, UNIT))
         if weather_data['valid'] is True:
