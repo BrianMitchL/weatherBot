@@ -83,7 +83,7 @@ heroku config:add TZ="America/Chicago"
 To see  more timezone formats, go [here](http://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
 Furthermore, the twitter keys need to be added. The format to do so is:
 ```shell
-heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx
+heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx WEATHERBOT_FLICKR_KEY=xxxxx
 ```
 
 ## Tools Used
