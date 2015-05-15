@@ -14,7 +14,8 @@ import tweepy
 from testfixtures import LogCapture
 from datetime import datetime
 
-from keys import set_env_vars
+from keys import set_twitter_env_vars
+from keys import set_flickr_env_vars
 import weatherBot
 
 if sys.version > '3':
@@ -315,9 +316,10 @@ class TestWB(unittest.TestCase):
     def test_do_tweet(self):
         """Testing tweeting a test tweet using keys from env variables"""
         tweet_location = False
+        variable_location = False
         weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
         content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
-        status = weatherBot.do_tweet(content, weather_data, tweet_location)
+        status = weatherBot.do_tweet(content, weather_data, tweet_location, variable_location)
         self.assertEqual(status.text, content + weatherBot.HASHTAG)
 
         # test destroy
@@ -330,9 +332,10 @@ class TestWB(unittest.TestCase):
     def test_do_tweet_with_location(self):
         """Testing tweeting a test tweet with location using keys from env variables"""
         tweet_location = True
+        variable_location = False
         weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'wind_speed': 9.0, 'wind_speed_and_unit': '9 mph', 'wind_chill': 37}
         content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
-        status = weatherBot.do_tweet(content, weather_data, tweet_location)
+        status = weatherBot.do_tweet(content, weather_data, tweet_location, variable_location)
         self.assertEqual(status.text, content + weatherBot.HASHTAG)
 
         # test destroy
@@ -342,7 +345,31 @@ class TestWB(unittest.TestCase):
         deleted = api.destroy_status(id=status.id)
         self.assertEqual(deleted.id, status.id)
 
+    def test_get_tweepy_api(self):
+        # TODO Add test
+        pass
+
+    def test_get_woeid_from_variable_location(self):
+        # TODO Add test
+        pass
+
+    def test_query_yql(self):
+        # TODO Add test
+        pass
+
+    def test_query_flickr(self):
+        # TODO Add test
+        pass
+
+    def test_convert_to_json(self):
+        # TODO Add test
+        pass
+
+    def test_do_tweet_with_variable_location(self):
+        # TODO Add test
+        pass
 
 if __name__ == '__main__':
-    set_env_vars()
+    set_twitter_env_vars()
+    set_flickr_env_vars()
     unittest.main()

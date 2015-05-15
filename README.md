@@ -7,6 +7,19 @@ An example bot can be found at [@MorrisMNWeather](https://twitter.com/MorrisMNWe
 
 weatherBot can tweet the current weather condition and temperature at scheduled times. If a special weather event is happening, it will tweet that (outside of the scheduled times). weatherBot can also tweet the current day's forecasted condition, and high and low temperature.
 
+## Features
+* Daily current conditions at scheduled times
+* Daily forecast at a scheduled time
+* Special weather event tweets that go out as soon as a "special" weather condition happens
+* Limiting how often the special event tweets are tweeted
+* Variable location for all tweets based on the locations in a user's recent tweets
+* Metric or imperial units
+* Geo location in each tweet
+* Python 2.7, 3.3, or 3.4 (see below for more)
+* Logs to the console and a file
+* Can be run as a daemon
+* Weather data from Yahoo! Weather
+
 ## Install Dependencies
 Run the following from the repository root directory to install the needed dependencies. If pip (or pip3 if python 3) is not installed, install it via easy_install.
 ```shell
@@ -25,13 +38,15 @@ If you wish to run it in a console, just run normally:
 python weatherBot.py
 ```
 
-### Setting Variables and Customizing
+## Setting Variables and Customizing
 There is a constants section near the top of the weatherBot.py file where you can set constants. The following are constants that can be set in the weatherBot.py file
 * `WOEID` *defaults to 2454256 (Morris, MN)*
 * `UNIT` *defaults to imperial. 'c' for metric, 'f' for imperial. This changes all units, not just temperature*
 * `TWEET_LOCATION` *defaults to true*
 * `LOG_PATHNAME` *defaults to '~/weatherBot.log'* **Note: The complete path name needs to be specified**
 * `HASHTAG` *defaults to " #MorrisWeather". This is a string that will be added to the end of every tweet. If no hashtag or end text is desired, simply set the variable to be an empty string*
+* `VARIABLE_LOCATION` *defaults to false* **See Variable Location for more**
+* `USER_FOR_LOCATION` *defaults to bman4789*
 
 
 The Twitter app consumer key and secret as well as the access token key and secret are located either in environmental variables or in the keys.py file. The script will pull in the keys from the environmental variables over the keys.py file. See https://apps.twitter.com to get your keys and secrets.
@@ -42,6 +57,11 @@ The wording for tweets can be edited or added in the text list in `make_normal_t
 Timing of daily scheduled current conditions and forecasts are done by setting the hour and minute in last few lines of the `timed_tweet()` method.
 
 **Note: the times entered here are triggered by the host's time as returned by datetime. If the host machine and weather location do not match, but sure to set accordingly here.**
+
+### Variable Location
+Enable `VARIABLE_LOCATION` to have the location for weather change. The Twitter username stored in the `USER_FOR_LOCATION` constant will be used to determine this location. The specified user must tweet with location fairly regularly (at least every 20 tweets), or the manually entered location will be used. The most recent tweet with a location will be used to get the location for weather.
+For example, say the given user tweets from Minneapolis, MN one day. Minneapolis will be used as the location indefinitely until a new tweet with location is posted (or that tweet is deleted, and the next newest location will be used).
+In addition to the location changing, the city or neighborhood (if specific coordinates and a large enough city) and region will be added to the beginning of each tweet. For example, in the same case as earlier, "Minneapolis, MN: " would be prefixed to every tweet.
 
 ## Testing
 Tests have been written for a fair amount of the code. It's hard (or I don't know how) to test tweeting and fetching weather data, so that somewhat limits what tests can be written. The JSON object that Yahoo! Weather returns is hardcoded for each test with values that would make it qualify for a given condition. Note: to make tweeting tests pass, the consumer and secret keys/tokens need to be stored as an environmental variable.
@@ -68,4 +88,7 @@ heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx
 
 ## Tools Used
 * [Tweepy](https://github.com/tweepy/tweepy)
-* [Yahoo! Weather](https://developer.yahoo.com/weather/)
+* [Yahoo! Weather API](https://developer.yahoo.com/weather/)
+* [Flickr API](https://www.flickr.com/services/api/)
+* [Yahoo Query Language](https://developer.yahoo.com/yql)
+* [Python Daemon](https://pypi.python.org/pypi/python-daemon/)

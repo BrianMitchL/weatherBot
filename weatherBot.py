@@ -16,7 +16,8 @@ import os
 from os.path import expanduser
 import tweepy
 import daemon
-from keys import set_env_vars
+from keys import set_twitter_env_vars
+from keys import set_flickr_env_vars
 # Python 3 imports
 try:
     from urllib.request import urlopen
@@ -34,6 +35,8 @@ UNIT = 'f'  # units. 'c' for metric, 'f' for imperial. This changes all units, n
 TWEET_LOCATION = True  # include location in tweet
 LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns the path to the current user's home dir
 HASHTAG = " #MorrisWeather"  # if not hashtag is desired, set HASHTAG to be an empty string
+VARIABLE_LOCATION = False  # whether or not to change the location based on a user's most recent tweet location
+USER_FOR_LOCATION = 'bman4789'  # username for account to track location with
 
 # Global variables
 last_special = datetime.now()
@@ -64,19 +67,90 @@ def initialize_logger(log_pathname):
     logger.info("Starting weatherBot with Python %s", sys.version)
 
 
-def get_weather(woeid, unit):
+def get_tweepy_api():
+    auth = tweepy.OAuthHandler(os.getenv('WEATHERBOT_CONSUMER_KEY'), os.getenv('WEATHERBOT_CONSUMER_SECRET'))
+    auth.set_access_token(os.getenv('WEATHERBOT_ACCESS_KEY'), os.getenv('WEATHERBOT_ACCESS_SECRET'))
+    return tweepy.API(auth)
+
+
+def get_woeid_from_variable_location(woeid, username):
+    api = get_tweepy_api()
+    # gets the 20 most recent tweets from the given profile
+    timeline = api.user_timeline(screen_name=username, include_rts=False, count=20)
+    for tweet in timeline:
+        # if tweet has coordinates (from a smartphone)
+        if tweet.coordinates is not None:
+            lat = tweet.coordinates['coordinates'][1]
+            lon = tweet.coordinates['coordinates'][0]
+            logging.debug('Found the coordinates of %s and %s', lat, lon)
+            flickr_query = "https://api.flickr.com/services/rest/?method=flickr.places.findByLatLon&api_key=" \
+                + os.getenv('WEATHERBOT_FLICKR_KEY') + "&lat=" + str(lat) + "&lon=" + str(lon) \
+                + "&format=json&nojsoncallback=1"
+            data = query_flickr(flickr_query)
+            # fallback to hardcoded location if there is no valid data
+            if data is '':
+                logging.error('Falling back to hardcoded location')
+                return woeid
+            try:
+                return data['places']['place'][0]['woeid']
+            except ValueError as err:
+                logging.error(err)
+                logging.error('Falling back to hardcoded location')
+                # fallback to hardcoded location if there is no valid data
+                return woeid
+        # if the location is a general city or name, not coordinates
+        elif tweet.place is not None:
+            # YQL seems to find the right location when removing the comma
+            query = 'select woeid from geo.places where text="' + tweet.place.full_name.replace(',', '') \
+                    + '" | truncate(count=1)'
+            result = query_yql(query)
+            if result is not '':
+                return result['query']['results']['place']['woeid']
+            else:
+                # fallback to hardcoded location if there is no valid data
+                logging.error('Falling back to hardcoded location')
+                return woeid
+    # fallback to hardcoded location if there is no valid data
+    logging.error('Could not find tweet with location, falling back to hardcoded location')
+    return woeid
+
+
+def query_yql(query):
     ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
-    yql_query = "select * from weather.forecast where woeid=" + woeid + " and u=\"" + unit + "\""
-    yql_url = ybaseurl + urlencode({'q': yql_query}) + "&format=json"
+    yql_url = ybaseurl + urlencode({'q': query}) + "&format=json"
     try:
         yresult = urlopen(yql_url).read()
-        if sys.version < '3':
-            return json.loads(yresult)
-        else:
-            return json.loads(yresult.decode('utf8'))
+        return convert_to_json(yresult)
     except (URLError, IOError) as err:
         logging.error('Tried to load: %s', yql_url)
         logging.error(err)
+        return ''
+
+
+def query_flickr(encoded_query):
+    try:
+        flickr_result = urlopen(encoded_query).read()
+        return convert_to_json(flickr_result)
+    except (URLError, IOError) as err:
+        logging.error('Tried to load: %s', encoded_query)
+        logging.error(err)
+        return ''
+
+
+def convert_to_json(data):
+    try:
+        if sys.version < '3':
+            return json.loads(data)
+        else:
+            return json.loads(data.decode('utf8'))
+    except ValueError as err:
+        logging.error("Failed to convert to json: %s", err)
+        return ''
+
+
+def get_weather(woeid, unit):
+    query = "select * from weather.forecast where woeid=" + woeid + " and u=\"" + unit + "\""
+    return query_yql(query)
 
 
 def get_wind_direction(degrees):
@@ -216,12 +290,13 @@ def make_forecast(dt, weather_data):
            "http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif Go yell at @bman4789"
 
 
-def do_tweet(content, weather_data, tweet_location):
-    auth = tweepy.OAuthHandler(os.getenv('WEATHERBOT_CONSUMER_KEY'), os.getenv('WEATHERBOT_CONSUMER_SECRET'))
-    auth.set_access_token(os.getenv('WEATHERBOT_ACCESS_KEY'), os.getenv('WEATHERBOT_ACCESS_SECRET'))
-    api = tweepy.API(auth)
+def do_tweet(content, weather_data, tweet_location, variable_location):
+    api = get_tweepy_api()
     content += HASHTAG
     logging.debug('Trying to tweet: %s', content)
+    # Add the current city to tweet if variable location is enabled
+    if variable_location:
+        content = weather_data['city'] + ", " + weather_data['region'] + ": " + content
     try:
         if tweet_location:
             status = api.update_status(status=content, lat=weather_data['latitude'], long=weather_data['longitude'])
@@ -249,21 +324,28 @@ def tweet_logic(weather_data):
     if content_special != "normal" and now > last_special + timedelta(minutes=30):
         # Post special weather event at any time. Do not tweet more than one special event every 30 minutes
         logging.debug("Special event")
-        do_tweet(content_special, weather_data, TWEET_LOCATION)
+        do_tweet(content_special, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
         last_special = now
 
 
 def timed_tweet(tweet_at, now, content, weather_data):
     if tweet_at <= now < tweet_at + timedelta(minutes=1):
         logging.debug("Timed tweet or forecast")
-        do_tweet(content, weather_data, TWEET_LOCATION)
+        do_tweet(content, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
 
 
 def main():
     initialize_logger(LOG_PATHNAME)
-    set_env_vars()
+    set_twitter_env_vars()
+    if VARIABLE_LOCATION:
+        set_flickr_env_vars()
+    updated_time = datetime.now()
+    woeid = WOEID
     while True:
-        weather_data = get_weather_variables(get_weather(WOEID, UNIT))
+        # check for new location every 30 minutes
+        if VARIABLE_LOCATION and updated_time + timedelta(minutes=30) > datetime.now():
+            woeid = get_woeid_from_variable_location(woeid, USER_FOR_LOCATION)
+        weather_data = get_weather_variables(get_weather(woeid, UNIT))
         if weather_data['valid'] is True:
             tweet_logic(weather_data)
         time.sleep(60)
