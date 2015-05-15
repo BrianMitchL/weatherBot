@@ -89,7 +89,7 @@ def get_woeid_from_variable_location(woeid, username):
             data = query_flickr(flickr_query)
             try:
                 return data['places']['place'][0]['woeid']
-            except ValueError as err:
+            except (ValueError, KeyError) as err:
                 logging.error(err)
                 logging.error('Falling back to hardcoded location')
                 # fallback to hardcoded location if there is no valid data
@@ -102,7 +102,7 @@ def get_woeid_from_variable_location(woeid, username):
             result = query_yql(query)
             try:
                 return result['query']['results']['place']['woeid']
-            except ValueError as err:
+            except (ValueError, KeyError) as err:
                 logging.error(err)
                 logging.error('Falling back to hardcoded location')
                 # fallback to hardcoded location if there is no valid data
