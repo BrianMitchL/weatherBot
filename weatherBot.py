@@ -183,12 +183,14 @@ def get_weather_variables(ydata):
         # Sometimes, YQL returns empty strings for wind speed and direction
         if ydata['query']['results']['channel']['wind']['speed'] != "":
             weather_data['wind_speed'] = float(ydata['query']['results']['channel']['wind']['speed'])
-            weather_data['wind_speed_and_unit'] = ydata['query']['results']['channel']['wind']['speed'] + " " + units['speed']
+            weather_data['wind_speed_and_unit'] = ydata['query']['results']['channel']['wind']['speed'] + " " \
+                + units['speed']
         else:
             weather_data['wind_speed'] = 0.0
             weather_data['wind_speed_and_unit'] = "0 " + units['speed']
         if ydata['query']['results']['channel']['wind']['direction'] != "":
-            weather_data['wind_direction'] = get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
+            weather_data['wind_direction'] = \
+                get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
         else:
             weather_data['wind_direction'] = get_wind_direction(0)
         weather_data['wind_chill'] = int(ydata['query']['results']['channel']['wind']['chill'])
@@ -197,7 +199,8 @@ def get_weather_variables(ydata):
         weather_data['code'] = int(ydata['query']['results']['channel']['item']['condition']['code'])
         weather_data['condition'] = ydata['query']['results']['channel']['item']['condition']['text'].lower()
         weather_data['deg_unit'] = deg + units['temperature']
-        weather_data['temp_and_unit'] = ydata['query']['results']['channel']['item']['condition']['temp'] + deg + units['temperature']
+        weather_data['temp_and_unit'] = ydata['query']['results']['channel']['item']['condition']['temp'] + deg \
+            + units['temperature']
         weather_data['city'] = ydata['query']['results']['channel']['location']['city']
         weather_data['region'] = ydata['query']['results']['channel']['location']['region']
         weather_data['latitude'] = ydata['query']['results']['channel']['item']['lat']
@@ -239,11 +242,14 @@ def make_normal_tweet(weather_data):
 
 
 def make_special_tweet(weather_data):
-    if (weather_data['units']['temperature'] == 'F' and weather_data['wind_chill'] <= -30) or (weather_data['units']['temperature'] == 'C' and weather_data['wind_chill'] <= -34):
-        return "Wow, mother nature hates us. The windchill is " + str(weather_data['wind_chill']) + weather_data['deg_unit'] + \
-               " and the wind is blowing at " + weather_data['wind_speed_and_unit'] + " from the " + weather_data['wind_direction'] + ". My face hurts."
+    if (weather_data['units']['temperature'] == 'F' and weather_data['wind_chill'] <= -30) or \
+            (weather_data['units']['temperature'] == 'C' and weather_data['wind_chill'] <= -34):
+        return "Wow, mother nature hates us. The windchill is " + str(weather_data['wind_chill']) \
+               + weather_data['deg_unit'] + " and the wind is blowing at " + weather_data['wind_speed_and_unit'] \
+               + " from the " + weather_data['wind_direction'] + ". My face hurts."
     elif weather_data['code'] == 23 or weather_data['code'] == 24:
-        return "Looks like we've got some wind at " + weather_data['wind_speed_and_unit'] + " coming from the " + weather_data['wind_direction'] + "."
+        return "Looks like we've got some wind at " + weather_data['wind_speed_and_unit'] + " coming from the " \
+               + weather_data['wind_direction'] + "."
     elif weather_data['code'] == 0 or weather_data['code'] == 1 or weather_data['code'] == 2:
         return "HOLY SHIT, THERE'S A " + weather_data['condition'].upper() + "!"
     elif weather_data['code'] == 3:
@@ -256,23 +262,28 @@ def make_special_tweet(weather_data):
         return "Do you even fog bro?"
     elif weather_data['code'] == 5 or weather_data['code'] == 6 or weather_data['code'] == 7:
         return "What a mix! Currently, there's " + weather_data['condition'] + " falling from the sky."
-    elif weather_data['code'] == 13 or weather_data['code'] == 14 or weather_data['code'] == 15 or weather_data['code'] == 16 or weather_data['code'] == 41 or weather_data['code'] == 43:
+    elif weather_data['code'] == 13 or weather_data['code'] == 14 or weather_data['code'] == 15 or \
+            weather_data['code'] == 16 or weather_data['code'] == 41 or weather_data['code'] == 43:
         return weather_data['condition'].capitalize() + ". Bundle up."
     elif weather_data['code'] == 8 or weather_data['code'] == 9:
         return "Drizzlin' yo."
-    elif (weather_data['units']['speed'] == 'mph' and weather_data['wind_speed'] >= 35.0) or (weather_data['units']['speed'] == 'km/h' and weather_data['wind_speed'] >= 56.0):
-        return "Hold onto your hats, the wind is blowing at " + weather_data['wind_speed_and_unit'] + " coming from the " + weather_data['wind_direction'] + "."
+    elif (weather_data['units']['speed'] == 'mph' and weather_data['wind_speed'] >= 35.0) or \
+            (weather_data['units']['speed'] == 'km/h' and weather_data['wind_speed'] >= 56.0):
+        return "Hold onto your hats, the wind is blowing at " + weather_data['wind_speed_and_unit'] \
+            + " coming from the " + weather_data['wind_direction'] + "."
     elif weather_data['humidity'] <= 5:
         return "It's dry as strained pasta. " + str(weather_data['humidity']) + "% humid right now."
-    elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] <= -20) or (weather_data['units']['temperature'] == 'C' and weather_data['temp'] <= -28):
+    elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] <= -20) or \
+            (weather_data['units']['temperature'] == 'C' and weather_data['temp'] <= -28):
         return "It's " + weather_data['temp_and_unit'] + ". Too cold."
-    elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 100) or (weather_data['units']['temperature'] == 'C' and 37 <= weather_data['temp'] <= 50):
+    elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 100) or \
+            (weather_data['units']['temperature'] == 'C' and 37 <= weather_data['temp'] <= 50):
         return "Holy moly it's " + weather_data['temp_and_unit'] + ". I could literally (figuratively) melt."
     elif weather_data['units']['temperature'] == 'F' and weather_data['temp'] == 69:
         return "Teehee, it's 69" + weather_data['deg_unit'] + "."
     elif weather_data['code'] == 3200:
         return "Someone messed up, apparently the current condition is \"not available\" " + \
-               "http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
+            "http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
     else:
         return "normal"  # keep normal as is determines if the weather is normal (boring) or special (exciting!)
 
