@@ -317,7 +317,7 @@ def tweet_logic(weather_data):
     content_special = make_special_tweet(weather_data)
     content_normal = make_normal_tweet(weather_data)
     # Standard timed tweet
-    timed_tweet(now.replace(hour=6, minute=0, second=0, microsecond=0), now, make_forecast(now, weather_data), weather_data)
+    forecast_tweet(now.replace(hour=6, minute=0, second=0, microsecond=0), now, weather_data)
     timed_tweet(now.replace(hour=7, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
     timed_tweet(now.replace(hour=12, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
     timed_tweet(now.replace(hour=15, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
@@ -334,6 +334,12 @@ def timed_tweet(tweet_at, now, content, weather_data):
     if tweet_at <= now < tweet_at + timedelta(minutes=1):
         logging.debug("Timed tweet or forecast")
         do_tweet(content, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
+
+
+def forecast_tweet(tweet_at, now, weather_data):
+    if tweet_at <= now < tweet_at + timedelta(minutes=1):
+        logging.debug("Scheduled forecast")
+        do_tweet(make_forecast(now, weather_data), weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
 
 
 def main():
