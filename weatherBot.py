@@ -279,8 +279,6 @@ def make_special_tweet(weather_data):
     elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 100) or \
             (weather_data['units']['temperature'] == 'C' and 37 <= weather_data['temp'] <= 50):
         return "Holy moly it's " + weather_data['temp_and_unit'] + ". I could literally (figuratively) melt."
-    elif weather_data['units']['temperature'] == 'F' and weather_data['temp'] == 69:
-        return "Teehee, it's 69" + weather_data['deg_unit'] + "."
     elif weather_data['code'] == 3200:
         return "Someone messed up, apparently the current condition is \"not available\" " + \
             "http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
