@@ -307,7 +307,10 @@ def do_tweet(content, weather_data, tweet_location, variable_location):
     logging.debug('Trying to tweet: %s', content)
     # Add the current city to tweet if variable location is enabled
     if variable_location:
-        content = weather_data['city'] + ", " + weather_data['region'] + ": " + content
+        if not weather_data['region']:
+            content = weather_data['city'] + ": " + content
+        else:
+            content = weather_data['city'] + ", " + weather_data['region'] + ": " + content
     try:
         if tweet_location:
             status = api.update_status(status=content, lat=weather_data['latitude'], long=weather_data['longitude'])
