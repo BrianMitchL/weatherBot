@@ -3,7 +3,7 @@ A Twitter bot for weather. Yahoo! Weather is used for weather information. A WOE
 
 _**Note: Any language or wording suggestions are appreciated and should be submitted as an issue. Feel free to add new choices for normal tweets and submit a pull request!**_
 
-An example bot can be found at [@MorrisMNWeather](https://twitter.com/MorrisMNWeather).
+Example bots can be found at [@MorrisMNWeather](https://twitter.com/MorrisMNWeather) and [@WeatherByBrian](https://twitter.com/WeatherByBrian).
 
 weatherBot can tweet the current weather condition and temperature at scheduled times. If a special weather event is happening, it will tweet that (outside of the scheduled times). weatherBot can also tweet the current day's forecasted condition, and high and low temperature.
 
@@ -27,7 +27,7 @@ pip install -r requirements.txt
 ```
 
 ## Use
-weatherBot.py has been tested for Python 2.7 (tested with 2.7.6 and 2.7.9) and Python 3 (tested with 3.4.3). Python 3.3 should work, but 3.2 will NOT. If you are using Python 2, version 2.7.9 is highly recommended in order to use the new SSL libraries that don't throw warnings..
+weatherBot.py has been tested for Python 2.7 (tested with 2.7.9 and 2.7.10) and Python 3 (tested with 3.3.5, 3.4.2, and 3.4.3). Python 3.2 will NOT work. If you are using Python 2, version 2.7.9 or higher is highly recommended in order to use the new SSL libraries that don't throw warnings.
 
 There are two modes in weatherBot. One is running from a console, and the other is by forking the process into a daemon. By default, the debug level is logged to the console and the info level is logged to the log file. The idea with this is that you run the script from the console to test and debug, and daemonize it to run it in "production." To run from as a daemon, pass in the `-d` flag:
 ```shell
@@ -80,7 +80,7 @@ You will need to also set the appropriate timezone of the server. For example,
 ```shell
 heroku config:add TZ="America/Chicago"
 ```
-To see  more timezone formats, go [here](http://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
+To see  more timezone formats, go [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
 Furthermore, the twitter keys need to be added. The format to do so is:
 ```shell
 heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx WEATHERBOT_FLICKR_KEY=xxxxx
