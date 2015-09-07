@@ -64,7 +64,7 @@ class TestWB(unittest.TestCase):
         data = weatherBot.query_yql(query)
         self.assertEqual(data['query']['results']['channel']['title'], 'Yahoo! Weather - Sunnyvale, CA')
         self.assertEqual(data['query']['results']['channel']['description'], 'Yahoo! Weather for Sunnyvale, CA')
-        query = "select * from weather.forecast where something is not right"
+        query = "select * from weather.forecast where this will fail on purpose, yay testing"
         data = weatherBot.query_yql(query)
         self.assertEqual(data, '')
 
