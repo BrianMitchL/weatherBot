@@ -39,6 +39,8 @@ LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns th
 HASHTAG = " #MorrisWeather"  # if not hashtag is desired, set HASHTAG to be an empty string
 VARIABLE_LOCATION = False  # whether or not to change the location based on a user's most recent tweet location
 USER_FOR_LOCATION = 'bman4789'  # username for account to track location with
+LAST_VAR_LOC_NAME = ""
+# TODO Write a test for getting location name via twitter
 
 # Global variables
 last_special = datetime.now()
@@ -109,6 +111,7 @@ def convert_to_json(data):
 
 
 def get_woeid_from_variable_location(woeid, username):
+    global LAST_VAR_LOC_NAME
     api = get_tweepy_api()
     # gets the 20 most recent tweets from the given profile
     timeline = api.user_timeline(screen_name=username, include_rts=False, count=20)
@@ -123,11 +126,14 @@ def get_woeid_from_variable_location(woeid, username):
                 + "&format=json&nojsoncallback=1"
             data = restful_query(flickr_query)
             try:
-                return data['places']['place'][0]['woeid']
+                new_woeid = data['places']['place'][0]['woeid']
+                LAST_VAR_LOC_NAME = tweet.place.full_name
+                return new_woeid
             except (ValueError, KeyError) as err:
                 logging.error(err)
                 logging.error('Falling back to hardcoded location')
                 # fallback to hardcoded location if there is no valid data
+                LAST_VAR_LOC_NAME = ""
                 return woeid
         # if the location is a general city or name, not coordinates
         elif tweet.place is not None:
@@ -136,14 +142,18 @@ def get_woeid_from_variable_location(woeid, username):
                     + '" | truncate(count=1)'
             result = query_yql(query)
             try:
-                return result['query']['results']['place']['woeid']
+                new_woeid = result['query']['results']['place']['woeid']
+                LAST_VAR_LOC_NAME = tweet.place.full_name
+                return new_woeid
             except (ValueError, KeyError) as err:
                 logging.error(err)
                 logging.error('Falling back to hardcoded location')
                 # fallback to hardcoded location if there is no valid data
+                LAST_VAR_LOC_NAME = ""
                 return woeid
     # fallback to hardcoded location if there is no valid data
     logging.error('Could not find tweet with location, falling back to hardcoded location')
+    LAST_VAR_LOC_NAME = ""
     return woeid
 
 
@@ -307,7 +317,9 @@ def do_tweet(content, weather_data, tweet_location, variable_location):
     logging.debug('Trying to tweet: %s', content)
     # Add the current city to tweet if variable location is enabled
     if variable_location:
-        if not weather_data['region']:
+        if LAST_VAR_LOC_NAME is not "":
+            content = LAST_VAR_LOC_NAME + ": " + content
+        elif not weather_data['region']:
             content = weather_data['city'] + ": " + content
         else:
             content = weather_data['city'] + ", " + weather_data['region'] + ": " + content
