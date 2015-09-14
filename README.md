@@ -1,4 +1,4 @@
-# weatherBot [![Python Version](https://img.shields.io/badge/python-2.7%2C%203.3%2C%203.4-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/bman4789/weatherBot.svg?branch=master)](https://travis-ci.org/bman4789/weatherBot) [![Coverage Status](https://coveralls.io/repos/bman4789/weatherBot/badge.svg?branch=master)](https://coveralls.io/r/bman4789/weatherBot?branch=master)
+# weatherBot [![Python Version](https://img.shields.io/badge/python-2.7%2C%203.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/bman4789/weatherBot.svg?branch=master)](https://travis-ci.org/bman4789/weatherBot) [![Coverage Status](https://coveralls.io/repos/bman4789/weatherBot/badge.svg?branch=master)](https://coveralls.io/r/bman4789/weatherBot?branch=master)
 A Twitter bot for weather. Yahoo! Weather is used for weather information. A WOEID is used for the location. Metric or imperial units can be specified.
 
 _**Note: Any language or wording suggestions are appreciated and should be submitted as an issue. Feel free to add new choices for normal tweets and submit a pull request!**_
@@ -15,7 +15,7 @@ weatherBot can tweet the current weather condition and temperature at scheduled 
 * Variable location for all tweets based on the locations in a user's recent tweets
 * Metric or imperial units
 * Geo location in each tweet
-* Python 2.7, 3.3, or 3.4 (see below for more)
+* Python 2.7, 3.3 or higher (see below for more)
 * Logs to the console and a file
 * Can be run as a daemon
 * Weather data from Yahoo! Weather
@@ -27,7 +27,7 @@ pip install -r requirements.txt
 ```
 
 ## Use
-weatherBot.py has been tested for Python 2.7 (tested with 2.7.9 and 2.7.10) and Python 3 (tested with 3.3.5, 3.4.2, and 3.4.3). Python 3.2 will NOT work. If you are using Python 2, version 2.7.9 or higher is highly recommended in order to use the new SSL libraries that don't throw warnings.
+weatherBot.py has been tested for Python 2.7 (tested with 2.7.9 and 2.7.10) and Python 3 (tested with 3.3.5, 3.4.2, 3.4.3, 3.5.0). Python 3.2 will NOT work. If you are using Python 2, version 2.7.9 or higher is highly recommended in order to use the new SSL libraries that don't throw warnings.
 
 There are two modes in weatherBot. One is running from a console, and the other is by forking the process into a daemon. By default, the debug level is logged to the console and the info level is logged to the log file. The idea with this is that you run the script from the console to test and debug, and daemonize it to run it in "production." To run it as a daemon, pass in the `-d` flag:
 ```shell
