@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 # weatherBot keys
 # Copyright 2015 Brian Mitchell under the MIT license
@@ -12,7 +11,7 @@ keys = dict(
     consumer_secret='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     access_key='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     access_secret='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    flickr_key='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    forecastio_key='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 )
 
 
@@ -25,6 +24,6 @@ def set_twitter_env_vars():
         os.environ['WEATHERBOT_ACCESS_SECRET'] = keys['access_secret']
 
 
-def set_flickr_env_vars():
-    if os.getenv('WEATHERBOT_FLICKR_KEY', 0) is 0:
-        os.environ['WEATHERBOT_FLICKR_KEY'] = keys['flickr_key']
+def set_forecastio_env_vars():
+    if os.getenv('WEATHERBOT_FORECASTIO_KEY', 0) is 0:
+        os.environ['WEATHERBOT_FORECASTIO_KEY'] = keys['forecastio_key']
