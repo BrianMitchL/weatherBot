@@ -246,8 +246,6 @@ def main():
         initialize_logger(LOG_PATHNAME)
         keys.set_twitter_env_vars()
         keys.set_forecastio_env_vars()
-        if VARIABLE_LOCATION:
-            keys.set_flickr_env_vars()
         updated_time = datetime.now() - timedelta(minutes=30)
         location = DEFAULT_LOCATION
         while True:
