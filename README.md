@@ -1,5 +1,5 @@
-# weatherBot [![Python Version](https://img.shields.io/badge/python-2.7%2C%203.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/bman4789/weatherBot.svg?branch=forecast.io)](https://travis-ci.org/bman4789/weatherBot) [![Coverage Status](https://coveralls.io/repos/bman4789/weatherBot/badge.svg?branch=master)](https://coveralls.io/r/bman4789/weatherBot?branch=master)
-A Twitter bot for weather. [Powered by Forecast](https://forecast.io)
+# weatherBot [![Python Version](https://img.shields.io/badge/python-3.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/bman4789/weatherBot.svg?branch=forecast.io)](https://travis-ci.org/bman4789/weatherBot) [![Coverage Status](https://coveralls.io/repos/bman4789/weatherBot/badge.svg?branch=forecast.io)](https://coveralls.io/r/bman4789/weatherBot?branch=forecast.io)
+A Twitter bot for weather. Powered by [Forecast](https://forecast.io)
 
 _**Note: Any language or wording suggestions are appreciated and should be submitted as an issue. Feel free to add new choices for normal tweets and submit a pull request!**_
 
@@ -90,4 +90,5 @@ heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx
 ## Tools Used
 * [Tweepy](https://github.com/tweepy/tweepy)
 * [forecast.io API](https://developer.forecast.io)
+* [python-forecast.io](https://github.com/ZeevG/python-forecast.io)
 * [Python Daemon](https://pypi.python.org/pypi/python-daemon/)
