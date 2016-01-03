@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 
 # weatherBot
-# Copyright 2015 Brian Mitchell under the MIT license
+# Copyright 2015-2016 Brian Mitchell under the MIT license
 # See the GitHub repository: https://github.com/bman4789/weatherBot
 
-from datetime import datetime
-from datetime import timedelta
 import sys
 import time
-import random
 import logging
 import os
-from os.path import expanduser
-import tweepy
-import forecastio
-import daemon
+import random
 import traceback
-import utils
+from datetime import datetime
+from datetime import timedelta
+from os.path import expanduser
+
+import daemon
+import forecastio
+import tweepy
+
 import keys
 import strings
+import utils
 
 # Constants - Configure things here
 DM_ERRORS = True  # send crash logs as a direct message to the Twitter account owning the app
@@ -80,21 +82,6 @@ def get_forecast_object(lat, lon):
     return forecastio.load_forecast(os.getenv('WEATHERBOT_FORECASTIO_KEY'), lat, lon, units=UNITS)
 
 
-def centerpoint(geolocations):
-    """
-    :param geolocations: array of arrays in the form of [[longitude, latitude],[longitude,latitude]]
-    :return: average latitude and longitude in the form [latitude, longitude]
-    """
-    lats = []
-    lons = []
-    for lon, lat in geolocations:
-        lats.append(lat)
-        lons.append(lon)
-    avg_lat = float(sum(lats))/len(lats)
-    avg_lon = float(sum(lons))/len(lons)
-    return [avg_lat, avg_lon]
-
-
 def get_location_from_user_timeline(username, fallback):
     """
     :param username: the string of the twitter username to follow
@@ -116,7 +103,7 @@ def get_location_from_user_timeline(username, fallback):
             return loc
         # if the location is a place, not coordinates
         elif tweet.place is not None:
-            point = centerpoint(tweet.place.bounding_box.coordinates[0])
+            point = utils.centerpoint(tweet.place.bounding_box.coordinates[0])
             loc = dict()
             loc['lat'] = point[0]
             loc['lon'] = point[1]
@@ -124,7 +111,7 @@ def get_location_from_user_timeline(username, fallback):
             logging.debug('Found the center of bounding box at %s: %s, %s', loc['name'], loc['lat'], loc['lon'])
             return loc
     # fallback to hardcoded location if there is no valid data
-    logging.error('Could not find tweet with location, falling back to hardcoded location')
+    logging.warning('Could not find tweet with location, falling back to hardcoded location')
     return fallback
 
 
@@ -148,13 +135,13 @@ def get_weather_variables(forecast, location):
             weather_data['nearestStormDistance'] = 99999
         weather_data['windSpeed'] = forecast.currently().windSpeed
         weather_data['windSpeed_and_unit'] = str(round(forecast.currently().windSpeed)) + " " + \
-            weather_data['units']['windSpeed']
+                                             weather_data['units']['windSpeed']
         weather_data['apparentTemperature'] = forecast.currently().apparentTemperature
         weather_data['apparentTemperature_and_unit'] = str(round(forecast.currently().apparentTemperature)) + 'º' \
-            + weather_data['units']['apparentTemperature']
+                                                       + weather_data['units']['apparentTemperature']
         weather_data['temp'] = forecast.currently().temperature
         weather_data['temp_and_unit'] = str(round(forecast.currently().temperature)) + 'º' + \
-            weather_data['units']['temperature']
+                                        weather_data['units']['temperature']
         weather_data['humidity'] = round(forecast.currently().humidity * 100)
         weather_data['precipIntensity'] = forecast.currently().precipIntensity
         weather_data['summary'] = forecast.currently().summary.lower()

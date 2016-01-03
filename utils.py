@@ -1,5 +1,5 @@
 # weatherBot utils
-# Copyright 2015 Brian Mitchell under the MIT license
+# Copyright 2015-2016 Brian Mitchell under the MIT license
 # See the GitHub repository: https://github.com/bman4789/weatherBot
 
 
@@ -95,3 +95,18 @@ def get_wind_direction(degrees):
         return 'W'
     elif degrees < 338:
         return 'NW'
+
+
+def centerpoint(geolocations):
+    """
+    :param geolocations: array of arrays in the form of [[longitude, latitude],[longitude,latitude]]
+    :return: average latitude and longitude in the form [latitude, longitude]
+    """
+    lats = []
+    lons = []
+    for lon, lat in geolocations:
+        lats.append(lat)
+        lons.append(lon)
+    avg_lat = float(sum(lats)) / len(lats)
+    avg_lon = float(sum(lons)) / len(lons)
+    return [avg_lat, avg_lon]
