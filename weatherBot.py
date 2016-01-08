@@ -131,7 +131,6 @@ def get_location_from_user_timeline(username, fallback):
     # gets the 20 most recent tweets from the given profile
     timeline = api.user_timeline(screen_name=username, include_rts=False, count=20)
     for tweet in timeline:
-        logging.debug('found a tweet')
         # if tweet has coordinates (from a smartphone)
         if tweet.coordinates is not None:
             loc = dict()
