@@ -1,5 +1,5 @@
 # weatherBot strings
-# Copyright 2015 Brian Mitchell under the MIT license
+# Copyright 2015-2016 Brian Mitchell under the MIT license
 # See the GitHub repository: https://github.com/bman4789/weatherBot
 
 import random
@@ -17,28 +17,29 @@ def get_normal_condition(weather_data):
     summary = weather_data['summary']
     temp = weather_data['temp_and_unit']
     location = weather_data['location']
+    hour_summary = weather_data['hour_summary']
     text = [
-        'The weather is boring. ' + temp + ' and ' + summary + '.',
-        'Great, it\'s ' + summary + ' and ' + temp + '.',
-        'What a normal day, it\'s ' + summary + ' and ' + temp + '.',
-        'Whoopie do, it\'s ' + temp + ' and ' + summary + '.',
-        temp + ' and ' + summary + '.',
-        temp + ' and ' + summary + '. What did you expect?',
-        'Welcome to ' + location + ', where it\'s ' + summary + ' and ' + temp + '.',
-        'Breaking news: it\'s ' + summary + ' and ' + temp + '.',
-        'We got some ' + summary + ' at ' + temp + ' going on.',
-        'Well, would you look at that, it\'s ' + temp + ' and ' + summary + '.',
-        'Great Scott, it\'s ' + summary + ' and ' + temp + '!',
-        'It\'s ' + temp + ' and ' + summary + ', oh boy!',
-        'Only in ' + location + ' would it be ' + temp + ' and ' + summary + ' right now.',
-        'Golly gee wilikers, it\'s ' + temp + ' and ' + summary + '.',
-        'It is currently ' + summary + ' and ' + temp + '.',
-        'Big surprise, it\'s ' + summary + ' and ' + temp + '.',
-        'Look up, it\'s ' + summary + ' and ' + temp + '.',
-        'Dang, it\'s ' + temp + ' and ' + summary + '.',
-        'Blimey, it\'s ' + temp + ' and ' + summary + '.',
-        'For Pete\'s sake, it\'s' + summary + ' and ' + temp + ' again.',
-        'Holy cow, it\'s ' + temp + ' and ' + summary + '.'
+        'The weather is boring. ' + temp + ' and ' + summary + '. ' + hour_summary,
+        'Great, it\'s ' + summary + ' and ' + temp + '. ' + hour_summary,
+        'What a normal day, it\'s ' + summary + ' and ' + temp + '. ' + hour_summary,
+        'Whoopie do, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary,
+        temp + ' and ' + summary + '. ' + hour_summary,
+        temp + ' and ' + summary + '. ' + hour_summary + ' What did you expect?',
+        'Welcome to ' + location + ', where it\'s ' + summary + ' and ' + temp + '. ' + hour_summary,
+        'Breaking news: it\'s ' + summary + ' and ' + temp + '. ' + hour_summary,
+        'We got some ' + summary + ' at ' + temp + ' going on. ' + hour_summary,
+        'Well, would you look at that, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary,
+        'Great Scott, it\'s ' + summary + ' and ' + temp + '! ' + hour_summary,
+        'It\'s ' + temp + ' and ' + summary + ', oh boy! ' + hour_summary,
+        'Only in ' + location + ' would it be ' + temp + ' and ' + summary + ' right now. ' + hour_summary,
+        'Golly gee wilikers, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary,
+        'It is currently ' + summary + ' and ' + temp + '. ' + hour_summary,
+        'Big surprise, it\'s ' + summary + ' and ' + temp + '. ' + hour_summary,
+        'Look up, it\'s ' + summary + ' and ' + temp + '. ' + hour_summary,
+        'Dang, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary,
+        'Blimey, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary,
+        'For Pete\'s sake, it\'s' + summary + ' and ' + temp + ' again. ' + hour_summary,
+        'Holy cow, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary
         ]
     return random.choice(text)
 
@@ -54,13 +55,13 @@ def get_special_condition(weather_data):
         return 'Wow, mother nature hates us. The windchill is ' + weather_data['apparentTemperature_and_unit'] \
                + ' and the wind is blowing at ' + weather_data['windSpeed_and_unit'] + ' from the ' \
                + weather_data['windBearing'] + '. My face hurts.'
-    elif (weather_data['units']['visibility'] == 'mi' and weather_data['nearestStormDistance'] <= 2) or \
-            (weather_data['units']['visibility'] == 'km' and weather_data['nearestStormDistance'] <= 3):
-        return 'Watch out, there\'s a storm ' + str(weather_data['nearestStormDistance']) + ' ' + \
-                weather_data['units']['visibility'] + ' away. The wind is blowing at ' + \
-               weather_data['windSpeed_and_unit'] + ' from the ' \
-               + weather_data['windBearing'] + ' and there is precipitation at a rate of ' + \
-               str(weather_data['precipIntensity']) + ' ' + weather_data['units']['precipIntensity'] + '.'
+    # elif (weather_data['units']['visibility'] == 'mi' and weather_data['nearestStormDistance'] <= 2) or \
+    #         (weather_data['units']['visibility'] == 'km' and weather_data['nearestStormDistance'] <= 3):
+    #     return 'Watch out, there\'s a storm ' + str(weather_data['nearestStormDistance']) + ' ' + \
+    #             weather_data['units']['visibility'] + ' away. The wind is blowing at ' + \
+    #            weather_data['windSpeed_and_unit'] + ' from the ' \
+    #            + weather_data['windBearing'] + ' and there is precipitation at a rate of ' + \
+    #            str(weather_data['precipIntensity']) + ' ' + weather_data['units']['precipIntensity'] + '.'
     elif 'medium-wind' in code:
         return 'Looks like we\'ve got some medium wind at ' + weather_data['windSpeed_and_unit'] + \
                ' coming from the ' + weather_data['windBearing'] + '.'
