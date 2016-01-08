@@ -49,6 +49,7 @@ def get_special_condition(weather_data):
     :param weather_data: dict containing weather information
     :return: string containing the text of a tweet, or if no special event, return 'normal'
     """
+    # TODO add temperature to most special events
     code = weather_data['icon']
     if (weather_data['units']['temperature'] == 'F' and weather_data['apparentTemperature'] <= -30) or \
             (weather_data['units']['temperature'] == 'C' and weather_data['apparentTemperature'] <= -34):
