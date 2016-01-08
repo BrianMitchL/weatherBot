@@ -13,12 +13,13 @@ weatherBot can tweet the current weather condition and temperature at scheduled 
 * Special weather event tweets that go out as soon as a "special" weather condition happens
 * Limiting how often the special event tweets are tweeted
 * Variable location for all tweets based on the locations in a user's recent tweets
+* Timezone support for localizing times to the timezone of the given or found location
 * US, CA, UK, or SI units
 * Geo location in each tweet
-* Python 3.3 or higher
 * Logs to the console and a file
 * Can be run as a daemon
 * Weather data from Forecast.io
+* Python 3.3 or higher
 
 ## Install Dependencies
 Run the following from the repository root directory to install the needed dependencies.
@@ -77,18 +78,15 @@ heroku login
 heroku create
 git push heroku master
 ```
-You will need to also set the appropriate timezone of the server. For example,
+The twitter, forecast.io, and Google Maps Timezone keys need to be added. The format to do so is:
 ```shell
-heroku config:add TZ="America/Chicago"
+heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx WEATHERBOT_FORECASTIO_KEY=xxxxx WEATHERBOT_GOOGLEMAPS_KEY=xxxxx
 ```
-To see  more timezone formats, go [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
-Furthermore, the twitter keys need to be added. The format to do so is:
-```shell
-heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx WEATHERBOT_FORECASTIO_KEY=xxxxx
-```
+You can also do this on the Heroku project's settings page.
 
 ## Tools Used
 * [Tweepy](https://github.com/tweepy/tweepy)
 * [forecast.io API](https://developer.forecast.io)
 * [python-forecast.io](https://github.com/ZeevG/python-forecast.io)
 * [Python Daemon](https://pypi.python.org/pypi/python-daemon/)
+* [Google Maps](https://github.com/googlemaps/google-maps-services-python)
