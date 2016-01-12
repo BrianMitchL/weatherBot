@@ -39,7 +39,8 @@ def get_normal_condition(weather_data):
         'Dang, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary,
         'Blimey, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary,
         'For Pete\'s sake, it\'s' + summary + ' and ' + temp + ' again. ' + hour_summary,
-        'Holy cow, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary
+        'Holy cow, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary,
+        'What a doozy, it\'s ' + temp + ' and ' + summary + '. ' + hour_summary
         ]
     return random.choice(text)
 
