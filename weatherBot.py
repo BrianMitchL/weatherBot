@@ -35,9 +35,25 @@ HASHTAG = ""  # if no hashtag is desired, set HASHTAG to be an empty string
 VARIABLE_LOCATION = True  # whether or not to change the location based on a user's most recent tweet location
 USER_FOR_LOCATION = 'bman4789'  # username for account to track location with
 LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns the path to the current user's home dir
+REFRESH_RATE = 3  # how often to check for new weather (note, watch out for API rate limiting)
+SPECIAL_EVENT_TIMES = {  # time in minutes to throttle each event type
+    'default': 120,
+    'wind-chill': 120,
+    'medium-wind': 180,
+    'heavy-wind': 120,
+    'heavy-rain': 60,
+    'fog': 180,
+    'mixed-precipitation': 120,
+    'snow': 120,
+    'sleet': 120,
+    'very-light-rain': 120,
+    'drizzle': 120,
+    'cold': 120,
+    'hot': 120,
+    'dry': 120
+}
 
 # Global variables
-refresh_rate = 3  # how often to check for new weather (note, watch out for API rate limiting)
 throttle_times = {'default': pytz.utc.localize(datetime.utcnow()).astimezone(pytz.utc)}
 # if variable location is enabled, but no user is given, disable variable location
 if VARIABLE_LOCATION and USER_FOR_LOCATION is '':
@@ -236,7 +252,7 @@ def do_tweet(text, weather_data, tweet_location, variable_location):
         return None
 
 
-def tweet_logic(weather_data, timezone_id):
+def tweet_logic(weather_data, timezone_id):  # TODO document arguments and returns
     global throttle_times
     special_description, special_text = strings.get_special_condition(weather_data)
     normal_text = strings.get_normal_condition(weather_data)
@@ -259,22 +275,6 @@ def tweet_logic(weather_data, timezone_id):
         timed_tweet(dt, now_utc, normal_text, weather_data)
     if special_description != 'normal':
         logging.debug('Special event')
-        times = {  # time in minutes
-            'default': 120,
-            'wind-chill': 120,
-            'medium-wind': 180,
-            'heavy-wind': 120,
-            'heavy-rain': 60,
-            'fog': 180,
-            'mixed-precipitation': 120,
-            'snow': 120,
-            'sleet': 120,
-            'very-light-rain': 120,
-            'drizzle': 120,
-            'cold': 120,
-            'hot': 120,
-            'dry': 120
-        }
         try:
             next_allowed = throttle_times[special_description]
         except KeyError:
@@ -282,22 +282,22 @@ def tweet_logic(weather_data, timezone_id):
 
         if now_utc >= next_allowed:
             try:
-                minutes = times[special_description]
+                minutes = SPECIAL_EVENT_TIMES[special_description]
             except KeyError:
-                minutes = times['default']
+                minutes = SPECIAL_EVENT_TIMES['default']
             do_tweet(special_text, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
             throttle_times[special_description] = now_utc + timedelta(minutes=minutes)
         logging.debug(throttle_times)
 
 
 def timed_tweet(tweet_at, now, content, weather_data):
-    if tweet_at <= now < tweet_at + timedelta(minutes=refresh_rate):
+    if tweet_at <= now < tweet_at + timedelta(minutes=REFRESH_RATE):
         logging.debug('Timed tweet or forecast')
         do_tweet(content, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
 
 
 def forecast_tweet(tweet_at, now, weather_data):
-    if tweet_at <= now < tweet_at + timedelta(minutes=refresh_rate):
+    if tweet_at <= now < tweet_at + timedelta(minutes=REFRESH_RATE):
         logging.debug('Scheduled forecast')
         do_tweet(make_forecast(weather_data), weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
 
@@ -323,7 +323,7 @@ def main():
             weather_data = get_weather_variables(forecast, location)
             if weather_data['valid'] is True:
                 tweet_logic(weather_data, timezone_id)
-            time.sleep(refresh_rate * 60)
+            time.sleep(REFRESH_RATE * 60)
     except Exception as err:
         logging.error(err)
         logging.error('We got an exception!', exc_info=True)
