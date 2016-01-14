@@ -37,9 +37,8 @@ USER_FOR_LOCATION = 'bman4789'  # username for account to track location with
 LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns the path to the current user's home dir
 
 # Global variables
-special_timeout = 30  # how many minutes must pass before a special event can be tweeted again
-last_special = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.utc) - timedelta(minutes=special_timeout)
 refresh_rate = 3  # how often to check for new weather (note, watch out for API rate limiting)
+throttle_times = {'default': pytz.utc.localize(datetime.utcnow()).astimezone(pytz.utc)}
 # if variable location is enabled, but no user is given, disable variable location
 if VARIABLE_LOCATION and USER_FOR_LOCATION is '':
     VARIABLE_LOCATION = False
@@ -238,9 +237,9 @@ def do_tweet(text, weather_data, tweet_location, variable_location):
 
 
 def tweet_logic(weather_data, timezone_id):
-    global last_special
-    special_event = strings.get_special_condition(weather_data)
-    normal_event = strings.get_normal_condition(weather_data)
+    global throttle_times
+    special_description, special_text = strings.get_special_condition(weather_data)
+    normal_text = strings.get_normal_condition(weather_data)
 
     now = datetime.utcnow()
     now_utc = get_utc_datetime('UTC', now)
@@ -254,25 +253,52 @@ def tweet_logic(weather_data, timezone_id):
     times.append(now_local.replace(hour=22, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
 
     # Standard timed tweet and forecast
-    forecast_tweet(now_local.replace(hour=6, minute=0, second=0, microsecond=0).astimezone(pytz.utc), now_utc, weather_data)
+    forecast_dt = now_local.replace(hour=6, minute=0, second=0, microsecond=0).astimezone(pytz.utc)
+    forecast_tweet(forecast_dt, now_utc, weather_data)
     for dt in times:
-        timed_tweet(dt, now_utc, normal_event, weather_data)
-    if special_event != "normal" and now_utc > last_special + timedelta(minutes=special_timeout):
-        # Post special weather event at any time. Do not tweet more than one special event every special_timeout minutes
-        logging.debug("Special event")
-        do_tweet(special_event, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
-        last_special = now_utc
+        timed_tweet(dt, now_utc, normal_text, weather_data)
+    if special_description != 'normal':
+        logging.debug('Special event')
+        times = {  # time in minutes
+            'default': 120,
+            'wind-chill': 120,
+            'medium-wind': 180,
+            'heavy-wind': 120,
+            'heavy-rain': 60,
+            'fog': 180,
+            'mixed-precipitation': 120,
+            'snow': 120,
+            'sleet': 120,
+            'very-light-rain': 120,
+            'drizzle': 120,
+            'cold': 120,
+            'hot': 120,
+            'dry': 120
+        }
+        try:
+            next_allowed = throttle_times[special_description]
+        except KeyError:
+            next_allowed = throttle_times['default']
+
+        if now_utc >= next_allowed:
+            try:
+                minutes = times[special_description]
+            except KeyError:
+                minutes = times['default']
+            do_tweet(special_text, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
+            throttle_times[special_description] = now_utc + timedelta(minutes=minutes)
+        logging.debug(throttle_times)
 
 
 def timed_tweet(tweet_at, now, content, weather_data):
     if tweet_at <= now < tweet_at + timedelta(minutes=refresh_rate):
-        logging.debug("Timed tweet or forecast")
+        logging.debug('Timed tweet or forecast')
         do_tweet(content, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
 
 
 def forecast_tweet(tweet_at, now, weather_data):
     if tweet_at <= now < tweet_at + timedelta(minutes=refresh_rate):
-        logging.debug("Scheduled forecast")
+        logging.debug('Scheduled forecast')
         do_tweet(make_forecast(weather_data), weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
 
 

@@ -48,15 +48,17 @@ def get_normal_condition(weather_data):
 def get_special_condition(weather_data):
     """
     :param weather_data: dict containing weather information
-    :return: string containing the text of a tweet, or if no special event, return 'normal'
+    :return: tuple of strings containing a short description of the event
+            and the text of a tweet, or if no special event, return 'normal'
     """
     # TODO add temperature to most special events
     code = weather_data['icon']
     if (weather_data['units']['temperature'] == 'F' and weather_data['apparentTemperature'] <= -30) or \
             (weather_data['units']['temperature'] == 'C' and weather_data['apparentTemperature'] <= -34):
-        return 'Wow, mother nature hates us. The windchill is ' + weather_data['apparentTemperature_and_unit'] \
+        text = 'Brr! The windchill is ' + weather_data['apparentTemperature_and_unit'] \
                + ' and the wind is blowing at ' + weather_data['windSpeed_and_unit'] + ' from the ' \
-               + weather_data['windBearing'] + '. My face hurts.'
+               + weather_data['windBearing'] + '. Stay safe out there!'
+        return 'wind-chill', text
     # elif (weather_data['units']['visibility'] == 'mi' and weather_data['nearestStormDistance'] <= 2) or \
     #         (weather_data['units']['visibility'] == 'km' and weather_data['nearestStormDistance'] <= 3):
     #     return 'Watch out, there\'s a storm ' + str(weather_data['nearestStormDistance']) + ' ' + \
@@ -65,31 +67,44 @@ def get_special_condition(weather_data):
     #            + weather_data['windBearing'] + ' and there is precipitation at a rate of ' + \
     #            str(weather_data['precipIntensity']) + ' ' + weather_data['units']['precipIntensity'] + '.'
     elif 'medium-wind' in code:
-        return 'Looks like we\'ve got some medium wind at ' + weather_data['windSpeed_and_unit'] + \
+        text = 'Looks like we\'ve got some medium wind at ' + weather_data['windSpeed_and_unit'] + \
                ' coming from the ' + weather_data['windBearing'] + '.'
+        return 'medium-wind', text
     elif 'heavy-wind' in code or \
             (weather_data['units']['windSpeed'] == 'mph' and weather_data['windSpeed'] >= 35.0) or \
             (weather_data['units']['windSpeed'] == 'km/h' and weather_data['windSpeed'] >= 56.0) or \
             (weather_data['units']['windSpeed'] == 'm/s' and weather_data['windSpeed'] >= 15.0):
-        return 'Hold onto your hats! The wind is blowing at ' + weather_data['windSpeed_and_unit'] + \
+        text = 'Hold onto your hats! The wind is blowing at ' + weather_data['windSpeed_and_unit'] + \
                ' coming from the ' + weather_data['windBearing'] + '.'
+        return 'heavy-wind', text
     elif 'heavy-rain' in code:
-        return 'Run for cover and stay dry! It\'s ' + weather_data['temp_and_unit'] + ' raining heavily right now.'
+        text = 'Run for cover and stay dry! It\'s ' + weather_data['temp_and_unit'] + ' and raining heavily right now.'
+        return 'heavy-rain', text
     elif 'fog' in code:
-        return 'Do you even fog bro?'
+        text = 'Do you even fog bro?'
+        return 'fog', text
     elif 'mixed-precipitation' in code:
-        return 'What a mix! Currently, there\'s ' + weather_data['summary'] + ' falling from the sky.'
-    elif ('snow' in code or 'sleet' in code) and 'possible' not in code:
-        return weather_data['summary'].capitalize() + ' and ' + weather_data['temp_and_unit'] + '. Bundle up.'
+        text = 'What a mix! Currently, there\'s ' + weather_data['summary'] + ' falling from the sky.'
+        return 'mixed-precipitation', text
+    elif 'snow' in code and 'possible' not in code:
+        text = weather_data['summary'].capitalize() + ' and ' + weather_data['temp_and_unit'] + '. Bundle up.'
+        return 'snow', text
+    elif 'sleet' in code and 'possible' not in code:
+        text = weather_data['summary'].capitalize() + ' and ' + weather_data['temp_and_unit'] + '. Stay safe.'
+        return 'sleet', text
     elif 'very-light-rain':
-        return 'Drizzlin\' yo.'
+        text = 'Drizzlin\' yo.'
+        return 'drizzle', text
     elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] <= -20) or \
             (weather_data['units']['temperature'] == 'C' and weather_data['temp'] <= -28):
-        return 'It\'s ' + weather_data['temp_and_unit'] + '. Too cold.'
+        text = 'It\'s ' + weather_data['temp_and_unit'] + '. Too cold.'
+        return 'cold', text
     elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 100) or \
             (weather_data['units']['temperature'] == 'C' and 37 <= weather_data['temp'] <= 50):
-        return 'Holy moly it\'s ' + weather_data['temp_and_unit'] + '. I could literally (figuratively) melt.'
+        text = 'Holy moly it\'s ' + weather_data['temp_and_unit'] + '. I could literally (figuratively) melt.'
+        return 'hot', text
     elif weather_data['humidity'] <= 10:
-        return 'It\'s dry as strained pasta. ' + str(weather_data['humidity']) + '% humid right now.'
+        text = 'It\'s dry as strained pasta. ' + str(weather_data['humidity']) + '% humid right now.'
+        return 'dry', text
     else:
-        return 'normal'  # keep normal as is determines if the weather is normal (boring) or special (exciting!)
+        return 'normal', ''  # normal determines if the weather is normal (boring) or special (exciting!)
