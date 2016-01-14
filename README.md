@@ -11,7 +11,7 @@ weatherBot can tweet the current weather condition and temperature at scheduled 
 * Daily current conditions at scheduled times
 * Daily forecast at a scheduled time
 * Special weather event tweets that go out as soon as a "special" weather condition happens
-* Limiting how often the special event tweets are tweeted
+* Limiting how often the special event tweets are tweeted (at a granular level)
 * Variable location for all tweets based on the locations in a user's recent tweets
 * Timezone support for localizing times to the timezone of the given or found location
 * US, CA, UK, or SI units
@@ -49,6 +49,8 @@ There is a constants section near the top of the weatherBot.py file where you ca
 * `VARIABLE_LOCATION` *defaults to false* **See Variable Location for more**
 * `LOG_PATHNAME` *defaults to '~/weatherBot.log'* **Note: The complete path name needs to be specified**
 * `USER_FOR_LOCATION` *defaults to bman4789. Twitter username for account to track location*
+* `REFRESH_RATE` *defaults to 3. How often (in minutes) to check for new weather* **Note, watch out for API rate limiting and costs per call**
+* `SPECIAL_EVENT_TIMES` *dictionary of times in minutes to throttle special events*
 
 
 The Twitter app consumer key and secret as well as the access token key and secret are located either in environmental variables or in the keys.py file. The script will pull in the keys from the environmental variables over the keys.py file. See https://apps.twitter.com to get your keys and secrets.
