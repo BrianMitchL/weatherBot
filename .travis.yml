@@ -7,7 +7,7 @@ install:
 - pip install -r requirements.txt
 - pip install coveralls
 script:
-- coverage run --source=weatherBot test.py
+- coverage run --source=weatherBot,strings,utils test.py
 after_success:
 - coveralls
 env:
