@@ -62,7 +62,7 @@ if VARIABLE_LOCATION and USER_FOR_LOCATION is '':
 
 def initialize_logger(log_pathname):
     """
-    :param log_pathname: straing containing the full path of where to write the log
+    :param log_pathname: string containing the full path of where to write the log
     """
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)  # global level of debug, so debug or anything less can be used
