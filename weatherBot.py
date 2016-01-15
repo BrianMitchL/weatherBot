@@ -29,12 +29,12 @@ DM_ERRORS = True  # send crash logs as a direct message to the Twitter account o
 DEFAULT_LOCATION = {'lat': 45.585, 'lng': -95.91, 'name': 'Morris, MN'}  # Used for location, or fallback location
 UNITS = 'us'  # Choose from 'us', 'ca', 'uk2', or 'si'
 TWEET_LOCATION = True  # include location in tweet (Twitter location)
-# HASHTAG = " #MorrisWeather"  # if no hashtag is desired, set HASHTAG to be an empty string
+# HASHTAG = ' #MorrisWeather'  # if no hashtag is desired, set HASHTAG to be an empty string
 # VARIABLE_LOCATION = False  # whether or not to change the location based on a user's most recent tweet location
-HASHTAG = ""  # if no hashtag is desired, set HASHTAG to be an empty string
+HASHTAG = ''  # if no hashtag is desired, set HASHTAG to be an empty string
 VARIABLE_LOCATION = True  # whether or not to change the location based on a user's most recent tweet location
 USER_FOR_LOCATION = 'bman4789'  # username for account to track location with
-LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns the path to the current user's home dir
+LOG_PATHNAME = expanduser('~') + '/weatherBot.log'  # expanduser('~') returns the path to the current user's home dir
 REFRESH_RATE = 3  # how often to check for new weather (note, watch out for API rate limiting)
 SPECIAL_EVENT_TIMES = {  # time in minutes to throttle each event type
     'default': 120,
@@ -73,13 +73,13 @@ def initialize_logger(log_pathname):
     console.setFormatter(formatter)
     logger.addHandler(console)
     # Log file handler
-    log = logging.FileHandler(log_pathname, "a", encoding=None, delay="true")
-    # delay="true" means file will not be created until logged to
+    log = logging.FileHandler(log_pathname, 'a', encoding=None, delay='true')
+    # delay='true' means file will not be created until logged to
     log.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
     log.setFormatter(formatter)
     logger.addHandler(log)
-    logger.info("Starting weatherBot with Python {0}".format(sys.version))
+    logger.info('Starting weatherBot with Python {0}'.format(sys.version))
 
 
 def get_tweepy_api():
@@ -188,7 +188,7 @@ def get_weather_variables(forecast, location):
         else:
             weather_data['nearestStormDistance'] = 99999
         weather_data['windSpeed'] = forecast.currently().windSpeed
-        weather_data['windSpeed_and_unit'] = str(round(forecast.currently().windSpeed)) + " " + \
+        weather_data['windSpeed_and_unit'] = str(round(forecast.currently().windSpeed)) + ' ' + \
                                              weather_data['units']['windSpeed']
         weather_data['apparentTemperature'] = forecast.currently().apparentTemperature
         weather_data['apparentTemperature_and_unit'] = str(round(forecast.currently().apparentTemperature)) + 'º' \
@@ -222,9 +222,9 @@ def make_forecast(weather_data):
     """
     forecast = weather_data['forecast']
     units = weather_data['units']
-    return "The forecast for today is " + forecast.summary.lower() + "  " + str(round(forecast.temperatureMax)) + \
-           units['temperatureMax'] + "/" + str(round(forecast.temperatureMin)) + units['temperatureMin'] + \
-           ". " + random.choice(strings.endings)
+    return 'The forecast for today is ' + forecast.summary.lower() + '  ' + str(round(forecast.temperatureMax)) + \
+           units['temperatureMax'] + '/' + str(round(forecast.temperatureMin)) + units['temperatureMin'] + \
+           '. ' + random.choice(strings.endings)
 
 
 def do_tweet(text, weather_data, tweet_location, variable_location):
@@ -334,7 +334,7 @@ def main():
                                     text=str(random.randint(0, 9999)) + traceback.format_exc())
 
 if __name__ == '__main__':
-    if "-d" in sys.argv:
+    if '-d' in sys.argv:
         with daemon.DaemonContext():
             main()
     else:
