@@ -73,8 +73,7 @@ def initialize_logger(log_pathname):
     console.setFormatter(formatter)
     logger.addHandler(console)
     # Log file handler
-    log = logging.FileHandler(log_pathname, 'a', encoding=None, delay='true')
-    # delay='true' means file will not be created until logged to
+    log = logging.FileHandler(log_pathname, 'a')
     log.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
     log.setFormatter(formatter)
