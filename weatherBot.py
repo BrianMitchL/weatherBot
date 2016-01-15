@@ -79,7 +79,7 @@ def initialize_logger(log_pathname):
     formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
     log.setFormatter(formatter)
     logger.addHandler(log)
-    logger.info("Starting weatherBot with Python %s", sys.version)
+    logger.info("Starting weatherBot with Python {0}".format(sys.version))
 
 
 def get_tweepy_api():
@@ -152,7 +152,7 @@ def get_location_from_user_timeline(username, fallback):
             loc['lat'] = tweet.coordinates['coordinates'][1]
             loc['lng'] = tweet.coordinates['coordinates'][0]
             loc['name'] = tweet.place.full_name
-            logging.debug('Found %s: %s, %s', loc['name'], loc['lat'], loc['lng'])
+            logging.debug('Found {0}: {1}, {2}'.format(loc['name'], loc['lat'], loc['lng']))
             return loc
         # if the location is a place, not coordinates
         elif tweet.place is not None:
@@ -161,7 +161,8 @@ def get_location_from_user_timeline(username, fallback):
             loc['lat'] = point[0]
             loc['lng'] = point[1]
             loc['name'] = tweet.place.full_name
-            logging.debug('Found the center of bounding box at %s: %s, %s', loc['name'], loc['lat'], loc['lng'])
+            logging.debug('Found the center of bounding box at {0}: {1}, {2}'
+                          .format(loc['name'], loc['lat'], loc['lng']))
             return loc
     # fallback to hardcoded location if there is no valid data
     logging.warning('Could not find tweet with location, falling back to hardcoded location')
@@ -206,7 +207,7 @@ def get_weather_variables(forecast, location):
         weather_data['hour_icon'] = forecast.minutely().icon
         weather_data['hour_summary'] = forecast.minutely().summary
         weather_data['valid'] = True
-        logging.debug('Weather data: %s', weather_data)
+        logging.debug('Weather data: {0}'.format(weather_data))
         return weather_data
     except (KeyError, TypeError) as err:
         logging.error('Found a KeyError or TypeError in get_weather_variables')
@@ -236,7 +237,7 @@ def do_tweet(text, weather_data, tweet_location, variable_location):
     """
     api = get_tweepy_api()
     text += HASHTAG
-    logging.debug('Trying to tweet: %s', text)
+    logging.debug('Trying to tweet: {0}'.format(text))
     if variable_location:
         text = weather_data['location'] + ': ' + text
     try:
@@ -244,11 +245,11 @@ def do_tweet(text, weather_data, tweet_location, variable_location):
             status = api.update_status(status=text, lat=weather_data['latitude'], long=weather_data['longitude'])
         else:
             status = api.update_status(status=text)
-        logging.info('Tweet success: %s', text)
+        logging.info('Tweet success: {0}'.format(text))
         return status
     except tweepy.TweepError as e:
-        logging.error('Tweet failed: %s', e.reason)
-        logging.warning('Tweet skipped due to error: %s', text)
+        logging.error('Tweet failed: {0}'.format(e.reason))
+        logging.warning('Tweet skipped due to error: {0}'.format(text))
         return None
 
 
