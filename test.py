@@ -209,7 +209,7 @@ class TestWB(unittest.TestCase):
     def test_get_location_from_user_timeline(self):
         """Testing getting a location from twitter account's recent tweets"""
         fallback = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
-        morris = {'lat': 45.59, 'lng': -95.9, 'name': 'Morris, MN'}
+        morris = {'lat': 45.585, 'lng': -95.91, 'name': 'Morris, MN'}
         loc = weatherBot.get_location_from_user_timeline('MorrisMNWeather', fallback)
         self.assertTrue(type(loc) is dict)
         self.assertEqual(loc, morris)
