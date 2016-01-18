@@ -92,8 +92,8 @@ def get_special_condition(weather_data):
     elif 'sleet' in code and 'possible' not in code:
         text = weather_data['summary'].capitalize() + ' and ' + weather_data['temp_and_unit'] + '. Stay safe.'
         return 'sleet', text
-    elif 'very-light-rain' and (weather_data['units']['temperature'] == 'F' and weather_data['temp'] <= 32) or \
-            (weather_data['units']['temperature'] == 'C' and weather_data['temp'] <= 0):
+    elif 'very-light-rain' and (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 32) or \
+            (weather_data['units']['temperature'] == 'C' and weather_data['temp'] >= 0):
         text = 'Drizzlin\' yo.'
         return 'drizzle', text
     elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] <= -20) or \
