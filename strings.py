@@ -6,7 +6,8 @@ import random
 
 # strings that will be randomly chosen to be appended to a forecast tweet
 endings = ['Exciting!', 'Nice!', 'Sweet!', 'Wow!', 'I can\'t wait!', 'Nifty!',
-           'Excellent!', 'What a day!', 'This should be interesting!', 'Aww yeah!']
+           'Excellent!', 'What a day!', 'This should be interesting!', 'Aww yeah!',
+           'Oh happy day!']
 
 
 def get_normal_condition(weather_data):
