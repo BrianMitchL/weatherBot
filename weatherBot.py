@@ -60,6 +60,10 @@ if VARIABLE_LOCATION and USER_FOR_LOCATION is '':
     VARIABLE_LOCATION = False
 
 
+class BadForecastDataError(Exception):
+    pass
+
+
 def initialize_logger(log_pathname):
     """
     :param log_pathname: string containing the full path of where to write the log
@@ -176,6 +180,14 @@ def get_weather_variables(forecast, location):
     """
     try:
         weather_data = dict()
+        if 'darksky-unavailable' in forecast.json['flags']:
+            raise BadForecastDataError('Darksky unavailable')
+        if not forecast.currently().temperature:
+            raise BadForecastDataError('Temp is none')
+        if not forecast.currently().summary:
+            raise BadForecastDataError('Hour summary is none')
+        if not forecast.minutely().summary:
+            raise BadForecastDataError('Minutely (hour) summary is none')
         weather_data['units'] = utils.get_units(UNITS)
         # forecast.io doesn't always include 'windBearing' or 'nearestStormDistance'
         if hasattr(forecast.currently(), 'windBearing'):
@@ -208,8 +220,8 @@ def get_weather_variables(forecast, location):
         weather_data['valid'] = True
         logging.debug('Weather data: {0}'.format(weather_data))
         return weather_data
-    except (KeyError, TypeError) as err:
-        logging.error('Found a KeyError or TypeError in get_weather_variables')
+    except (KeyError, TypeError, BadForecastDataError) as err:
+        logging.error('Found an error in get_weather_variables')
         logging.error(err)
         return {'valid': False}
 
