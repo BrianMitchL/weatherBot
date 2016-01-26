@@ -148,11 +148,9 @@ def get_weather_variables(forecast, location):
         if 'darksky-unavailable' in forecast.json['flags']:
             raise BadForecastDataError('Darksky unavailable')
         if not forecast.currently().temperature:
-            raise BadForecastDataError('Temp is none')
+            raise BadForecastDataError('Temp is None')
         if not forecast.currently().summary:
-            raise BadForecastDataError('Hour summary is none')
-        if not forecast.minutely().summary:
-            raise BadForecastDataError('Minutely (hour) summary is none')
+            raise BadForecastDataError('Summary is None')
         weather_data['units'] = utils.get_units(UNITS)
         # forecast.io doesn't always include 'windBearing' or 'nearestStormDistance'
         if hasattr(forecast.currently(), 'windBearing'):
