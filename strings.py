@@ -109,3 +109,20 @@ def get_special_condition(weather_data):
         return 'dry', text
     else:
         return 'normal', ''  # normal determines if the weather is normal (boring) or special (exciting!)
+
+
+def get_alert_text(title, expires, uri):
+    """
+    :param title: dict containing weather information
+    :param expires: a datetime.datetime object containing the expiration time
+    :param uri: a uri encoded link to view more information about the alert
+    :return: string: the text of a tweet
+    """
+    # https://docs.python.org/3.3/library/datetime.html#strftime-and-strptime-behavior
+    expires_formatted = expires.strftime('%a, %b %d at %X %Z')
+    text = [
+        'Oh goody, a weather alert! ' + title + ' until ' + expires_formatted + '. ' + uri,
+        'Weather alert: ' + title + ' until ' + expires_formatted + '. ' + uri,
+        'It\'s official now! ' + title + ' until ' + expires_formatted + '. ' + uri
+        ]
+    return random.choice(text)

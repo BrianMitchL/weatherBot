@@ -4,6 +4,7 @@
 # Copyright 2015-2016 Brian Mitchell under the MIT license
 # See the GitHub repository: https://github.com/bman4789/weatherBot
 
+import hashlib
 import logging
 import os
 import random
@@ -16,9 +17,9 @@ from os.path import expanduser
 
 import daemon
 import forecastio
-import tweepy
 import googlemaps
 import pytz
+import tweepy
 
 import keys
 import strings
@@ -117,27 +118,6 @@ def get_timezone(location, timestamp=datetime.utcnow()):
         'UTC'  # fallback to UTC
 
 
-def get_local_datetime(timezone_id, dt):
-    """
-    :param timezone_id: string containing the timezone, ex: 'Europe/Copenhagen'
-    :param dt: datetime.datetime
-    :return: datetime.datetime
-    """
-    utc_dt = pytz.utc.localize(dt)
-    return utc_dt.astimezone(pytz.timezone(timezone_id))
-
-
-def get_utc_datetime(timezone_id, dt):
-    """
-    :param timezone_id: string containing the timezone, ex: 'Europe/Copenhagen'
-    :param dt: datetime.datetime matching the timezone of timezone_id
-    :return: datetime.datetime in utc
-    """
-    tz = pytz.timezone(timezone_id)
-    local_dt = tz.localize(dt)
-    return local_dt.astimezone(pytz.utc)
-
-
 def get_location_from_user_timeline(username, fallback):
     """
     :param username: the string of the twitter username to follow
@@ -217,6 +197,7 @@ def get_weather_variables(forecast, location):
         weather_data['forecast'] = forecast.daily().data[0]
         weather_data['hour_icon'] = forecast.minutely().icon
         weather_data['hour_summary'] = forecast.minutely().summary
+        weather_data['alerts'] = forecast.alerts()
         weather_data['valid'] = True
         logging.debug('Weather data: {0}'.format(weather_data))
         return weather_data
@@ -264,14 +245,51 @@ def do_tweet(text, weather_data, tweet_location, variable_location):
         return None
 
 
+def alert_logic(weather_data, timezone_id, now_utc):
+    """
+    :param weather_data: dict containing weather information
+    :param timezone_id: string containing a datetime timezone id
+    :param now_utc: datetime.datetime in utc timezone
+    :return: list of text to use for alert tweets, can be an empty list
+    """
+    global throttle_times
+    alerts = weather_data['alerts']
+    tweets = list()
+    if alerts:
+        for i in alerts:
+            full_alert = alerts[i].title \
+                         + alerts[i].expires \
+                         + alerts[i].description \
+                         + alerts[i].uri
+            sha256 = hashlib.sha256(full_alert.encode()).hexdigest()  # a (hopefully) unique id on each alert
+
+            # if the alert has not been tweeted, and the expiration is older than the current time
+            expires = pytz.utc.localize(datetime.fromtimestamp(alerts[i].expires))
+            if sha256 not in throttle_times and expires <= now_utc:
+                local_expires_time = utils.get_local_datetime(timezone_id, expires)
+                throttle_times[sha256] = expires
+                tweets.append(strings.get_alert_text(alerts[i].title, local_expires_time, alerts[i].uri))
+    return tweets
+
+
 def tweet_logic(weather_data, timezone_id):  # TODO document arguments and returns
     global throttle_times
     special_description, special_text = strings.get_special_condition(weather_data)
     normal_text = strings.get_normal_condition(weather_data)
 
     now = datetime.utcnow()
-    now_utc = get_utc_datetime('UTC', now)
-    now_local = get_local_datetime(timezone_id, now)
+    now_utc = utils.get_utc_datetime('UTC', now)
+    now_local = utils.get_local_datetime(timezone_id, now)
+
+    # weather alerts
+    for alert in alert_logic(weather_data, timezone_id, now_utc):
+        do_tweet(alert, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
+
+    # forecast
+    forecast_dt = now_local.replace(hour=6, minute=0, second=0, microsecond=0).astimezone(pytz.utc)
+    forecast_tweet(forecast_dt, now_utc, weather_data)
+
+    # standard timed tweet
     times = list()
     # all times are local to the timezone that is found from the coordinates used for location
     times.append(now_local.replace(hour=7, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
@@ -279,12 +297,10 @@ def tweet_logic(weather_data, timezone_id):  # TODO document arguments and retur
     times.append(now_local.replace(hour=15, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
     times.append(now_local.replace(hour=18, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
     times.append(now_local.replace(hour=22, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
-
-    # Standard timed tweet and forecast
-    forecast_dt = now_local.replace(hour=6, minute=0, second=0, microsecond=0).astimezone(pytz.utc)
-    forecast_tweet(forecast_dt, now_utc, weather_data)
     for dt in times:
         timed_tweet(dt, now_utc, normal_text, weather_data)
+
+    # special condition
     if special_description != 'normal':
         logging.debug('Special event')
         try:
@@ -323,10 +339,10 @@ def main():
 
         location = DEFAULT_LOCATION
         timezone_id = get_timezone(location)
-        updated_time = get_utc_datetime('UTC', datetime.utcnow()) - timedelta(minutes=30)
+        updated_time = utils.get_utc_datetime('UTC', datetime.utcnow()) - timedelta(minutes=30)
         while True:
             # check for new location every 30 minutes
-            now_utc = get_utc_datetime('UTC', datetime.utcnow())
+            now_utc = utils.get_utc_datetime('UTC', datetime.utcnow())
             if VARIABLE_LOCATION and updated_time + timedelta(minutes=30) < now_utc:
                 location = get_location_from_user_timeline(USER_FOR_LOCATION, location)
                 timezone_id = get_timezone(location)

@@ -2,6 +2,8 @@
 # Copyright 2015-2016 Brian Mitchell under the MIT license
 # See the GitHub repository: https://github.com/bman4789/weatherBot
 
+import pytz
+
 
 def get_units(unit):
     if unit is 'us':
@@ -110,3 +112,24 @@ def centerpoint(geolocations):
     avg_lat = float(sum(lats)) / len(lats)
     avg_lng = float(sum(lngs)) / len(lngs)
     return [avg_lat, avg_lng]
+
+
+def get_local_datetime(timezone_id, dt):
+    """
+    :param timezone_id: string containing the timezone, ex: 'Europe/Copenhagen'
+    :param dt: datetime.datetime
+    :return: datetime.datetime
+    """
+    utc_dt = pytz.utc.localize(dt)
+    return utc_dt.astimezone(pytz.timezone(timezone_id))
+
+
+def get_utc_datetime(timezone_id, dt):
+    """
+    :param timezone_id: string containing the timezone, ex: 'Europe/Copenhagen'
+    :param dt: datetime.datetime matching the timezone of timezone_id
+    :return: datetime.datetime in utc timezone
+    """
+    tz = pytz.timezone(timezone_id)
+    local_dt = tz.localize(dt)
+    return local_dt.astimezone(pytz.utc)

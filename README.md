@@ -10,6 +10,7 @@ weatherBot can tweet the current weather condition and temperature at scheduled 
 ## Features
 * Daily current conditions at scheduled times
 * Daily forecast at a scheduled time
+* Severe weather alerts issued by a governmental authority
 * Special weather event tweets that go out as soon as a "special" weather condition happens
 * Limiting how often the special event tweets are tweeted (at a granular level)
 * Variable location for all tweets based on the locations in a user's recent tweets
