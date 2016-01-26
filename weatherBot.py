@@ -193,7 +193,7 @@ def get_weather_variables(forecast, location):
 
 def make_forecast(weather_data):
     """
-    :param weather_data: weather_data dict
+    :param weather_data: dict containing weather information
     :return: string containing the text for a forecast tweet
     """
     forecast = weather_data['forecast']
@@ -206,7 +206,7 @@ def make_forecast(weather_data):
 def do_tweet(text, weather_data, tweet_location, variable_location):
     """
     :param text: text for the tweet
-    :param weather_data: weather_data dict
+    :param weather_data: dict containing weather information
     :param tweet_location: boolean that determines whether or not to include Twitter location
     :param variable_location: boolean that determines whether or not to prefix the tweet with the location
     :return: a tweepy status object
@@ -256,7 +256,10 @@ def alert_logic(weather_data, timezone_id, now_utc):
     return tweets
 
 
-def tweet_logic(weather_data):  # TODO document arguments and returns
+def tweet_logic(weather_data):
+    """
+    :param weather_data: dict containing weather information
+    """
     global throttle_times
     special_description, special_text = strings.get_special_condition(weather_data)
     normal_text = strings.get_normal_condition(weather_data)
@@ -304,12 +307,24 @@ def tweet_logic(weather_data):  # TODO document arguments and returns
 
 
 def timed_tweet(tweet_at, now, content, weather_data):
+    """
+    :param tweet_at: datetime.datetime for when a tweet is supposed to be tweeted
+    :param now: datetime.datetime that is the current time
+    :param content: text for tweet
+    :param weather_data: dict containing weather information, used for location lat/lng and name
+    """
     if tweet_at <= now < tweet_at + timedelta(minutes=REFRESH_RATE):
         logging.debug('Timed tweet or forecast')
         do_tweet(content, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
 
 
 def forecast_tweet(tweet_at, now, weather_data):
+    """
+    :param tweet_at: datetime.datetime for when a tweet is supposed to be tweeted
+    :param now: datetime.datetime that is the current time
+    :param weather_data: dict containing weather information, used for location lat/lng and name
+    :return:
+    """
     if tweet_at <= now < tweet_at + timedelta(minutes=REFRESH_RATE):
         logging.debug('Scheduled forecast')
         do_tweet(make_forecast(weather_data), weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
