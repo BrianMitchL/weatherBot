@@ -103,10 +103,10 @@ def centerpoint(geolocations):
     :return: average latitude and longitude in the form [latitude, longitude]
     """
     lats = []
-    lons = []
+    lngs = []
     for lon, lat in geolocations:
         lats.append(lat)
-        lons.append(lon)
+        lngs.append(lon)
     avg_lat = float(sum(lats)) / len(lats)
-    avg_lon = float(sum(lons)) / len(lons)
-    return [avg_lat, avg_lon]
+    avg_lng = float(sum(lngs)) / len(lngs)
+    return [avg_lat, avg_lng]
