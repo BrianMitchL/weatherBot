@@ -12,8 +12,7 @@ keys = dict(
     consumer_secret='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     access_key='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     access_secret='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    forecastio_key='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    googlemaps_timezone_key='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    forecastio_key='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 )
 
 
@@ -29,8 +28,3 @@ def set_twitter_env_vars():
 def set_forecastio_env_vars():
     if os.getenv('WEATHERBOT_FORECASTIO_KEY', 0) is 0:
         os.environ['WEATHERBOT_FORECASTIO_KEY'] = keys['forecastio_key']
-
-
-def set_googlemaps_env_vars():
-    if os.getenv('WEATHERBOT_GOOGLEMAPS_KEY', 0) is 0:
-        os.environ['WEATHERBOT_GOOGLEMAPS_KEY'] = keys['googlemaps_timezone_key']

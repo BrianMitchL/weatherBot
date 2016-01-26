@@ -17,7 +17,6 @@ from os.path import expanduser
 
 import daemon
 import forecastio
-import googlemaps
 import pytz
 import tweepy
 
@@ -104,20 +103,6 @@ def get_forecast_object(lat, lng):
     return forecastio.load_forecast(os.getenv('WEATHERBOT_FORECASTIO_KEY'), lat, lng, units=UNITS)
 
 
-def get_timezone(location, timestamp=datetime.utcnow()):
-    """
-    :param location: dict containing the keys 'lat' and 'lng' representing a latitude and longitude
-    :param timestamp: datetime object used to determine if daylight savings should be applied
-    :return: googlemaps.client.Client object
-    """
-    gmaps = googlemaps.Client(key=os.getenv('WEATHERBOT_GOOGLEMAPS_KEY'))
-    res = gmaps.timezone(location=location, timestamp=timestamp, language='en')
-    if 'timeZoneId' in res:
-        return res['timeZoneId']
-    else:
-        'UTC'  # fallback to UTC
-
-
 def get_location_from_user_timeline(username, fallback):
     """
     :param username: the string of the twitter username to follow
@@ -194,6 +179,7 @@ def get_weather_variables(forecast, location):
         weather_data['location'] = location['name']
         weather_data['latitude'] = location['lat']
         weather_data['longitude'] = location['lng']
+        weather_data['timezone'] = forecast.json['timezone']
         weather_data['forecast'] = forecast.daily().data[0]
         weather_data['hour_icon'] = forecast.minutely().icon
         weather_data['hour_summary'] = forecast.minutely().summary
@@ -272,11 +258,12 @@ def alert_logic(weather_data, timezone_id, now_utc):
     return tweets
 
 
-def tweet_logic(weather_data, timezone_id):  # TODO document arguments and returns
+def tweet_logic(weather_data):  # TODO document arguments and returns
     global throttle_times
     special_description, special_text = strings.get_special_condition(weather_data)
     normal_text = strings.get_normal_condition(weather_data)
 
+    timezone_id = weather_data['timezone']
     now = datetime.utcnow()
     now_utc = utils.get_utc_datetime('UTC', now)
     now_local = utils.get_local_datetime(timezone_id, now)
@@ -335,22 +322,19 @@ def main():
         initialize_logger(LOG_PATHNAME)
         keys.set_twitter_env_vars()
         keys.set_forecastio_env_vars()
-        keys.set_googlemaps_env_vars()
 
         location = DEFAULT_LOCATION
-        timezone_id = get_timezone(location)
         updated_time = utils.get_utc_datetime('UTC', datetime.utcnow()) - timedelta(minutes=30)
         while True:
             # check for new location every 30 minutes
             now_utc = utils.get_utc_datetime('UTC', datetime.utcnow())
             if VARIABLE_LOCATION and updated_time + timedelta(minutes=30) < now_utc:
                 location = get_location_from_user_timeline(USER_FOR_LOCATION, location)
-                timezone_id = get_timezone(location)
                 updated_time = now_utc
             forecast = get_forecast_object(location['lat'], location['lng'])
             weather_data = get_weather_variables(forecast, location)
             if weather_data['valid'] is True:
-                tweet_logic(weather_data, timezone_id)
+                tweet_logic(weather_data)
             time.sleep(REFRESH_RATE * 60)
     except Exception as err:
         logging.error(err)

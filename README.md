@@ -81,15 +81,14 @@ heroku login
 heroku create
 git push heroku master
 ```
-The twitter, forecast.io, and Google Maps Timezone keys need to be added. The format to do so is:
+The twitter and forecast.io keys need to be added. The format to do so is:
 ```shell
-heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx WEATHERBOT_FORECASTIO_KEY=xxxxx WEATHERBOT_GOOGLEMAPS_KEY=xxxxx
+heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx WEATHERBOT_FORECASTIO_KEY=xxxxx
 ```
-You can also do this on the Heroku project's settings page.
+You can also add keys/environmental variables on the Heroku project's settings page.
 
 ## Tools Used
 * [Tweepy](https://github.com/tweepy/tweepy)
 * [forecast.io API](https://developer.forecast.io)
 * [python-forecast.io](https://github.com/ZeevG/python-forecast.io)
 * [Python Daemon](https://pypi.python.org/pypi/python-daemon/)
-* [Google Maps](https://github.com/googlemaps/google-maps-services-python)
