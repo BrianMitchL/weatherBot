@@ -26,7 +26,7 @@ def get_normal_condition(weather_data):
         'Whoopie do, it\'s ' + temp + ' and ' + summary + '.',
         temp + ' and ' + summary + '.',
         temp + ' and ' + summary + '. What did you expect?',
-        'Welcome to ' + location + ', where it\'s ' + summary + ' and ' + temp + '. ',
+        'Welcome to ' + location + ', where it\'s ' + summary + ' and ' + temp + '.',
         'Breaking news: it\'s ' + summary + ' and ' + temp + '.',
         'We got some ' + summary + ' at ' + temp + ' going on.',
         'Well, would you look at that, it\'s ' + temp + ' and ' + summary + '.',
