@@ -493,5 +493,4 @@ class TestWB(unittest.TestCase):
 if __name__ == '__main__':
     keys.set_twitter_env_vars()
     keys.set_forecastio_env_vars()
-    keys.set_googlemaps_env_vars()
     unittest.main()
