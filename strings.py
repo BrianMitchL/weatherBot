@@ -39,7 +39,7 @@ def get_normal_condition(weather_data):
         'Look up, it\'s ' + summary + ' and ' + temp + '.',
         'Dang, it\'s ' + temp + ' and ' + summary + '.',
         'Blimey, it\'s ' + temp + ' and ' + summary + '.',
-        'For Pete\'s sake, it\'s' + summary + ' and ' + temp + ' again.',
+        'For Pete\'s sake, it\'s ' + summary + ' and ' + temp + ' again.',
         'Holy cow, it\'s ' + temp + ' and ' + summary + '.',
         'What a doozy, it\'s ' + temp + ' and ' + summary + '.'
         ]
