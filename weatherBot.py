@@ -54,7 +54,7 @@ SPECIAL_EVENT_TIMES = {  # time in minutes to throttle each event type
 }
 
 # Global variables
-throttle_times = {'default': pytz.utc.localize(datetime.utcnow()).astimezone(pytz.utc)}
+throttle_times = {'default': pytz.utc.localize(datetime.utcnow()).astimezone(pytz.utc)}  # TODO store as a file (pickle)
 # if variable location is enabled, but no user is given, disable variable location
 if VARIABLE_LOCATION and USER_FOR_LOCATION is '':
     VARIABLE_LOCATION = False
@@ -331,6 +331,7 @@ def forecast_tweet(tweet_at, now, weather_data):
 
 
 def main():
+    global throttle_times
     try:
         initialize_logger(LOG_PATHNAME)
         keys.set_twitter_env_vars()
@@ -348,6 +349,11 @@ def main():
             weather_data = get_weather_variables(forecast, location)
             if weather_data['valid'] is True:
                 tweet_logic(weather_data)
+            # cleanse throttle_times of expired keys
+            to_delete = [key for key, expires in throttle_times.items() if expires <= now_utc]
+            for key in to_delete:
+                if key != 'default':
+                    del throttle_times[key]
             time.sleep(REFRESH_RATE * 60)
     except Exception as err:
         logging.error(err)
