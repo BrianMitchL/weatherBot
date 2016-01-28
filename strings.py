@@ -106,7 +106,7 @@ def get_special_condition(weather_data):
             (weather_data['units']['temperature'] == 'C' and weather_data['temp'] <= -28):
         text = 'It\'s ' + weather_data['temp_and_unit'] + '. Too cold.'
         return 'cold', text
-    elif (weather_daya['units']['temperature'] == 'F' and weather_data['temp'] >= 110) or \
+    elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 110) or \
             (weather_data['units'['temperature'] == 'C' and 43 <=  weather_data['temp']:
         text = 'Wowowowowowowowow, it\'s ' + weather_data['temp_and_unit'] + '. I need some A/C ASAP.'
         return 'super-hot', text
