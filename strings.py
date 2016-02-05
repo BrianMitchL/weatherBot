@@ -7,7 +7,8 @@ import random
 # strings that will be randomly chosen to be appended to a forecast tweet
 endings = ['Exciting!', 'Nice!', 'Sweet!', 'Wow!', 'I can\'t wait!', 'Nifty!',
            'Excellent!', 'What a day!', 'This should be interesting!', 'Aww yeah!',
-           'Oh happy day!']
+           'Oh happy day!', 'Far out!', 'Groovy!', 'Fantastic!', 'I want to believe.',
+           'Or maybe not, who knows.', 'Praise the sun!', 'Jolly good!']
 
 
 def get_normal_condition(weather_data):
@@ -41,7 +42,9 @@ def get_normal_condition(weather_data):
         'Blimey, it\'s ' + temp + ' and ' + summary + '.',
         'For Pete\'s sake, it\'s ' + summary + ' and ' + temp + ' again.',
         'Holy cow, it\'s ' + temp + ' and ' + summary + '.',
-        'What a doozy, it\'s ' + temp + ' and ' + summary + '.'
+        'What a doozy, it\'s ' + temp + ' and ' + summary + '.',
+        'Eh, it\'s ' + temp + ' and ' + summary + '.',
+        'Woah, it\'s ' + summary + ' and ' + temp + '.'
         ]
     if hour_summary:
         return random.choice(text) + ' ' + hour_summary
@@ -103,6 +106,10 @@ def get_special_condition(weather_data):
             (weather_data['units']['temperature'] == 'C' and weather_data['temp'] <= -28):
         text = 'It\'s ' + weather_data['temp_and_unit'] + '. Too cold.'
         return 'cold', text
+    elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 110) or \
+            (weather_data['units']['temperature'] == 'C' and 43 <=  weather_data['temp']):
+        text = 'Wowowowowowowowow, it\'s ' + weather_data['temp_and_unit'] + '. I need some A/C ASAP.'
+        return 'super-hot', text
     elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 100) or \
             (weather_data['units']['temperature'] == 'C' and 37 <= weather_data['temp'] <= 50):
         text = 'Holy moly it\'s ' + weather_data['temp_and_unit'] + '. I could literally (figuratively) melt.'
