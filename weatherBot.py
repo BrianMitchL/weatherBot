@@ -163,13 +163,13 @@ def get_weather_variables(forecast, location):
             weather_data['nearestStormDistance'] = 99999
         weather_data['windSpeed'] = forecast.currently().windSpeed
         weather_data['windSpeed_and_unit'] = str(round(forecast.currently().windSpeed)) + ' ' + \
-                                             weather_data['units']['windSpeed']
+            weather_data['units']['windSpeed']
         weather_data['apparentTemperature'] = forecast.currently().apparentTemperature
         weather_data['apparentTemperature_and_unit'] = str(round(forecast.currently().apparentTemperature)) + 'º' \
-                                                       + weather_data['units']['apparentTemperature']
+            + weather_data['units']['apparentTemperature']
         weather_data['temp'] = forecast.currently().temperature
         weather_data['temp_and_unit'] = str(round(forecast.currently().temperature)) + 'º' + \
-                                        weather_data['units']['temperature']
+            weather_data['units']['temperature']
         weather_data['humidity'] = round(forecast.currently().humidity * 100)
         weather_data['precipIntensity'] = forecast.currently().precipIntensity
         weather_data['summary'] = forecast.currently().summary.lower()
@@ -246,7 +246,6 @@ def alert_logic(weather_data, timezone_id, now_utc):
                          + alert.description \
                          + alert.uri
             sha256 = hashlib.sha256(full_alert.encode()).hexdigest()  # a (hopefully) unique id on each alert
-
             # if the alert has not been tweeted, and the expiration is older than the current time
             expires = datetime.fromtimestamp(alert.expires)
             if sha256 not in throttle_times and pytz.utc.localize(expires) <= now_utc:
