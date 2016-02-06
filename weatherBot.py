@@ -242,13 +242,13 @@ def alert_logic(weather_data, timezone_id, now_utc):
     if alerts:
         for alert in alerts:
             full_alert = alert.title \
-                         + alert.expires \
+                         + str(alert.expires) \
                          + alert.description \
-                         + str(alert.uri)
+                         + alert.uri
             sha256 = hashlib.sha256(full_alert.encode()).hexdigest()  # a (hopefully) unique id on each alert
 
             # if the alert has not been tweeted, and the expiration is older than the current time
-            expires = pytz.utc.localize(datetime.fromtimestamp(alert.expires))
+            expires = datetime.fromtimestamp(alert.expires)
             if sha256 not in throttle_times and expires <= now_utc:
                 local_expires_time = utils.get_local_datetime(timezone_id, expires)
                 throttle_times[sha256] = expires
