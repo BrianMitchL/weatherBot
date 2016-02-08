@@ -241,10 +241,7 @@ def alert_logic(weather_data, timezone_id, now_utc):
     tweets = list()
     if alerts:
         for alert in alerts:
-            full_alert = alert.title \
-                         + str(alert.expires) \
-                         + alert.description \
-                         + alert.uri
+            full_alert = alert.title + str(alert.expires)
             sha256 = hashlib.sha256(full_alert.encode()).hexdigest()  # a (hopefully) unique id on each alert
             # if the alert has not been tweeted, and the expiration is older than the current time
             expires = datetime.utcfromtimestamp(alert.expires)
