@@ -1,58 +1,73 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 # weatherBot
-# Copyright 2015 Brian Mitchell under the MIT license
+# Copyright 2015-2016 Brian Mitchell under the MIT license
 # See the GitHub repository: https://github.com/bman4789/weatherBot
 
-from datetime import datetime
-from datetime import timedelta
+import hashlib
+import logging
+import os
+import random
 import sys
 import time
-import random
-import logging
-import json
-import os
+import traceback
+from datetime import datetime
+from datetime import timedelta
 from os.path import expanduser
-import tweepy
-import daemon
-from keys import set_twitter_env_vars
-from keys import set_flickr_env_vars
-# Python 3 imports
-try:
-    from urllib.request import urlopen
-    from urllib.parse import urlencode
-    from urllib.error import URLError
-    from urllib.error import HTTPError
-except ImportError:
-    # Python 2 imports
-    from urllib import urlencode
-    from urllib2 import urlopen
-    from urllib2 import URLError
-    from urllib2 import HTTPError
 
-# Constants
-WOEID = '2454256'  # Yahoo! Weather location ID
-UNIT = 'f'  # units. 'c' for metric, 'f' for imperial. This changes all units, not just temperature
-TWEET_LOCATION = True  # include location in tweet
-LOG_PATHNAME = expanduser("~") + '/weatherBot.log'  # expanduser("~") returns the path to the current user's home dir
-HASHTAG = " #MorrisWeather"  # if not hashtag is desired, set HASHTAG to be an empty string
-VARIABLE_LOCATION = False  # whether or not to change the location based on a user's most recent tweet location
+import daemon
+import forecastio
+import pytz
+import tweepy
+
+import keys
+import strings
+import utils
+
+# Constants - Configure things here
+DM_ERRORS = True  # send crash logs as a direct message to the Twitter account owning the app
+DEFAULT_LOCATION = {'lat': 45.585, 'lng': -95.91, 'name': 'Morris, MN'}  # Used for location, or fallback location
+UNITS = 'us'  # Choose from 'us', 'ca', 'uk2', or 'si'
+TWEET_LOCATION = True  # include location in tweet (Twitter location)
+# HASHTAG = ' #MorrisWeather'  # if no hashtag is desired, set HASHTAG to be an empty string
+# VARIABLE_LOCATION = False  # whether or not to change the location based on a user's most recent tweet location
+HASHTAG = ''  # if no hashtag is desired, set HASHTAG to be an empty string
+VARIABLE_LOCATION = True  # whether or not to change the location based on a user's most recent tweet location
 USER_FOR_LOCATION = 'bman4789'  # username for account to track location with
-LAST_VAR_LOC_NAME = ""
-# TODO Write a test for getting location name via twitter
+LOG_PATHNAME = expanduser('~') + '/weatherBot.log'  # expanduser('~') returns the path to the current user's home dir
+REFRESH_RATE = 3  # how often to check for new weather (note, watch out for API rate limiting)
+SPECIAL_EVENT_TIMES = {  # time in minutes to throttle each event type
+    'default': 120,
+    'wind-chill': 120,
+    'medium-wind': 180,
+    'heavy-wind': 120,
+    'heavy-rain': 60,
+    'fog': 180,
+    'mixed-precipitation': 120,
+    'snow': 120,
+    'sleet': 120,
+    'very-light-rain': 120,
+    'drizzle': 120,
+    'cold': 120,
+    'hot': 120,
+    'dry': 120
+}
 
 # Global variables
-last_special = datetime.now()
-deg = "º"
-if sys.version < '3':
-    deg = deg.decode('utf-8')
-# if UNIT has an issue, set it to metric
-if UNIT != 'c' and UNIT != 'f':
-    UNIT = 'c'
+throttle_times = {'default': pytz.utc.localize(datetime.utcnow()).astimezone(pytz.utc)}  # TODO store as a file (pickle)
+# if variable location is enabled, but no user is given, disable variable location
+if VARIABLE_LOCATION and USER_FOR_LOCATION is '':
+    VARIABLE_LOCATION = False
+
+
+class BadForecastDataError(Exception):
+    pass
 
 
 def initialize_logger(log_pathname):
+    """
+    :param log_pathname: string containing the full path of where to write the log
+    """
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)  # global level of debug, so debug or anything less can be used
     # Console handler
@@ -62,333 +77,290 @@ def initialize_logger(log_pathname):
     console.setFormatter(formatter)
     logger.addHandler(console)
     # Log file handler
-    log = logging.FileHandler(log_pathname, "a", encoding=None, delay="true")
-    # delay="true" means file will not be created until logged to
+    log = logging.FileHandler(log_pathname, 'a')
     log.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
     log.setFormatter(formatter)
     logger.addHandler(log)
-    logger.info("Starting weatherBot with Python %s", sys.version)
+    logger.info('Starting weatherBot with Python {0}'.format(sys.version))
 
 
 def get_tweepy_api():
+    """
+    :return: tweepy api object
+    """
     auth = tweepy.OAuthHandler(os.getenv('WEATHERBOT_CONSUMER_KEY'), os.getenv('WEATHERBOT_CONSUMER_SECRET'))
     auth.set_access_token(os.getenv('WEATHERBOT_ACCESS_KEY'), os.getenv('WEATHERBOT_ACCESS_SECRET'))
     return tweepy.API(auth)
 
 
-def query_yql(query):
-    ybaseurl = "https://query.yahooapis.com/v1/public/yql?"
-    yql_url = ybaseurl + urlencode({'q': query}) + "&format=json"
-    try:
-        yresult = urlopen(yql_url).read()
-        return convert_to_json(yresult)
-    except (URLError, IOError, HTTPError) as err:
-        logging.error('Tried to load: %s', yql_url)
-        logging.error(err)
-        return ''
+def get_forecast_object(lat, lng):
+    """
+    :param lat: float containing latitude
+    :param lng: float containing longitude
+    :return:
+    """
+    return forecastio.load_forecast(os.getenv('WEATHERBOT_FORECASTIO_KEY'), lat, lng, units=UNITS)
 
 
-def restful_query(encoded_query):
-    try:
-        result = urlopen(encoded_query).read()
-        return convert_to_json(result)
-    except (URLError, IOError, HTTPError) as err:
-        logging.error('Tried to load: %s', encoded_query)
-        logging.error(err)
-        return ''
-
-
-def convert_to_json(data):
-    try:
-        if sys.version < '3':
-            return json.loads(data)
-        else:
-            return json.loads(data.decode('utf8'))
-    except ValueError as err:
-        logging.error("Failed to convert to json: %s", err)
-        return ''
-
-
-def get_woeid_from_variable_location(woeid, username):
-    global LAST_VAR_LOC_NAME
+def get_location_from_user_timeline(username, fallback):
+    """
+    :param username: the string of the twitter username to follow
+    :param fallback: a dict in the form of {'lat': 45.585, 'lng': -95.91, 'name': 'Morris, MN'}
+                     containing a fallback in case no location can be found
+    :return: a location dict in the form of {'lat': 45.585, 'lng': -95.91, 'name': 'Morris, MN'}
+    """
     api = get_tweepy_api()
     # gets the 20 most recent tweets from the given profile
     timeline = api.user_timeline(screen_name=username, include_rts=False, count=20)
     for tweet in timeline:
         # if tweet has coordinates (from a smartphone)
         if tweet.coordinates is not None:
-            lat = tweet.coordinates['coordinates'][1]
-            lon = tweet.coordinates['coordinates'][0]
-            logging.debug('Found the coordinates of %s and %s', lat, lon)
-            flickr_query = "https://api.flickr.com/services/rest/?method=flickr.places.findByLatLon&api_key=" \
-                + os.getenv('WEATHERBOT_FLICKR_KEY') + "&lat=" + str(lat) + "&lon=" + str(lon) \
-                + "&format=json&nojsoncallback=1"
-            data = restful_query(flickr_query)
-            try:
-                new_woeid = data['places']['place'][0]['woeid']
-                LAST_VAR_LOC_NAME = tweet.place.full_name
-                return new_woeid
-            except (ValueError, KeyError) as err:
-                logging.error(err)
-                logging.error('Falling back to hardcoded location')
-                # fallback to hardcoded location if there is no valid data
-                LAST_VAR_LOC_NAME = ""
-                return woeid
-        # if the location is a general city or name, not coordinates
+            loc = dict()
+            loc['lat'] = tweet.coordinates['coordinates'][1]
+            loc['lng'] = tweet.coordinates['coordinates'][0]
+            loc['name'] = tweet.place.full_name
+            logging.debug('Found {0}: {1}, {2}'.format(loc['name'], loc['lat'], loc['lng']))
+            return loc
+        # if the location is a place, not coordinates
         elif tweet.place is not None:
-            # YQL seems to find the right location when removing the comma
-            query = 'select woeid from geo.places where text="' + tweet.place.full_name.replace(',', '') \
-                    + '" | truncate(count=1)'
-            result = query_yql(query)
-            try:
-                new_woeid = result['query']['results']['place']['woeid']
-                LAST_VAR_LOC_NAME = tweet.place.full_name
-                return new_woeid
-            except (ValueError, KeyError) as err:
-                logging.error(err)
-                logging.error('Falling back to hardcoded location')
-                # fallback to hardcoded location if there is no valid data
-                LAST_VAR_LOC_NAME = ""
-                return woeid
+            point = utils.centerpoint(tweet.place.bounding_box.coordinates[0])
+            loc = dict()
+            loc['lat'] = point[0]
+            loc['lng'] = point[1]
+            loc['name'] = tweet.place.full_name
+            logging.debug('Found the center of bounding box at {0}: {1}, {2}'
+                          .format(loc['name'], loc['lat'], loc['lng']))
+            return loc
     # fallback to hardcoded location if there is no valid data
-    logging.error('Could not find tweet with location, falling back to hardcoded location')
-    LAST_VAR_LOC_NAME = ""
-    return woeid
+    logging.warning('Could not find tweet with location, falling back to hardcoded location')
+    return fallback
 
 
-def get_weather(woeid, unit):
-    query = "select * from weather.forecast where woeid=" + woeid + " and u=\"" + unit + "\""
-    return query_yql(query)
-
-
-def get_wind_direction(degrees):
+def get_weather_variables(forecast, location):
+    """
+    :param forecast: forecastio object
+    :param location: location dict with 'lat', 'lng', and 'name' keys
+    :return: weather_data dict containing weather information
+    """
     try:
-        degrees = int(degrees)
-    except ValueError:
-        return ''
-    if degrees < 23 or degrees >= 338:
-        return 'N'
-    elif degrees < 68:
-        return 'NE'
-    elif degrees < 113:
-        return 'E'
-    elif degrees < 158:
-        return 'SE'
-    elif degrees < 203:
-        return 'S'
-    elif degrees < 248:
-        return 'SW'
-    elif degrees < 293:
-        return 'W'
-    elif degrees < 338:
-        return 'NW'
-
-
-def get_weather_variables(ydata):
-    try:
-        weather_data = {}
-        units = ydata['query']['results']['channel']['units']
-        weather_data['units'] = ydata['query']['results']['channel']['units']
-        # Sometimes, YQL returns empty strings for wind speed and direction
-        if ydata['query']['results']['channel']['wind']['speed'] != "":
-            weather_data['wind_speed'] = float(ydata['query']['results']['channel']['wind']['speed'])
-            weather_data['wind_speed_and_unit'] = ydata['query']['results']['channel']['wind']['speed'] + " " \
-                + units['speed']
+        weather_data = dict()
+        if 'darksky-unavailable' in forecast.json['flags']:
+            raise BadForecastDataError('Darksky unavailable')
+        if not forecast.currently().temperature:
+            raise BadForecastDataError('Temp is None')
+        if not forecast.currently().summary:
+            raise BadForecastDataError('Summary is None')
+        weather_data['units'] = utils.get_units(UNITS)
+        # forecast.io doesn't always include 'windBearing' or 'nearestStormDistance'
+        if hasattr(forecast.currently(), 'windBearing'):
+            weather_data['windBearing'] = utils.get_wind_direction(forecast.currently().windBearing)
         else:
-            weather_data['wind_speed'] = 0.0
-            weather_data['wind_speed_and_unit'] = "0 " + units['speed']
-        if ydata['query']['results']['channel']['wind']['direction'] != "":
-            weather_data['wind_direction'] = \
-                get_wind_direction(int(ydata['query']['results']['channel']['wind']['direction']))
+            weather_data['windBearing'] = 'unknown direction'
+        if hasattr(forecast.currently(), 'nearestStormDistance'):
+            weather_data['nearestStormDistance'] = forecast.currently().nearestStormDistance
         else:
-            weather_data['wind_direction'] = get_wind_direction(0)
-        weather_data['wind_chill'] = int(ydata['query']['results']['channel']['wind']['chill'])
-        weather_data['humidity'] = int(ydata['query']['results']['channel']['atmosphere']['humidity'])
-        weather_data['temp'] = int(ydata['query']['results']['channel']['item']['condition']['temp'])
-        weather_data['code'] = int(ydata['query']['results']['channel']['item']['condition']['code'])
-        weather_data['condition'] = ydata['query']['results']['channel']['item']['condition']['text'].lower()
-        weather_data['deg_unit'] = deg + units['temperature']
-        weather_data['temp_and_unit'] = ydata['query']['results']['channel']['item']['condition']['temp'] + deg \
-            + units['temperature']
-        weather_data['city'] = ydata['query']['results']['channel']['location']['city']
-        weather_data['region'] = ydata['query']['results']['channel']['location']['region']
-        weather_data['latitude'] = ydata['query']['results']['channel']['item']['lat']
-        weather_data['longitude'] = ydata['query']['results']['channel']['item']['long']
-        weather_data['forecast'] = ydata['query']['results']['channel']['item']['forecast']
+            weather_data['nearestStormDistance'] = 99999
+        weather_data['windSpeed'] = forecast.currently().windSpeed
+        weather_data['windSpeed_and_unit'] = str(round(forecast.currently().windSpeed)) + ' ' + \
+            weather_data['units']['windSpeed']
+        weather_data['apparentTemperature'] = forecast.currently().apparentTemperature
+        weather_data['apparentTemperature_and_unit'] = str(round(forecast.currently().apparentTemperature)) + 'º' \
+            + weather_data['units']['apparentTemperature']
+        weather_data['temp'] = forecast.currently().temperature
+        weather_data['temp_and_unit'] = str(round(forecast.currently().temperature)) + 'º' + \
+            weather_data['units']['temperature']
+        weather_data['humidity'] = round(forecast.currently().humidity * 100)
+        weather_data['precipIntensity'] = forecast.currently().precipIntensity
+        weather_data['summary'] = forecast.currently().summary.lower()
+        weather_data['icon'] = forecast.currently().icon
+        weather_data['location'] = location['name']
+        weather_data['latitude'] = location['lat']
+        weather_data['longitude'] = location['lng']
+        weather_data['timezone'] = forecast.json['timezone']
+        weather_data['forecast'] = forecast.daily().data[0]
+        weather_data['hour_icon'] = forecast.minutely().icon
+        weather_data['hour_summary'] = forecast.minutely().summary
+        weather_data['alerts'] = forecast.alerts()
         weather_data['valid'] = True
-        logging.debug("Weather data: %s", weather_data)
+        logging.debug('Weather data: {0}'.format(weather_data))
         return weather_data
-    except (KeyError, TypeError) as err:
-        logging.error("ydata: %s", ydata)
+    except (KeyError, TypeError, BadForecastDataError) as err:
+        logging.error('Found an error in get_weather_variables')
         logging.error(err)
         return {'valid': False}
 
 
-def make_normal_tweet(weather_data):
-    text = [
-        "The weather is boring. " + weather_data['temp_and_unit'] + " and " + weather_data['condition'] + ".",
-        "Great, it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + ".",
-        "What a normal day, it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + ".",
-        "Whoopie do, it's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'] + ".",
-        weather_data['temp_and_unit'] + " and " + weather_data['condition'] + ".",
-        weather_data['temp_and_unit'] + " and " + weather_data['condition'] + ". What did you expect?",
-        "Welcome to " + weather_data['city'] + ", " + weather_data['region'] + ", where it's " + weather_data[
-            'condition'] + " and " + weather_data['temp_and_unit'] + ".",
-        "Breaking news: it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + ".",
-        "We got some " + weather_data['condition'] + " at " + weather_data['temp_and_unit'] + " going on.",
-        "Well, would you look at that, it's " + weather_data['temp_and_unit'] + " and " + weather_data[
-            'condition'] + ".",
-        "Great Scott, it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + "!",
-        "It's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'] + ", oh boy!",
-        "Only in " + weather_data['city'] + ", " + weather_data['region'] + " would it be " + weather_data[
-            'temp_and_unit'] + " and " + weather_data['condition'] + " right now.",
-        "Golly gee wilikers, it's " + weather_data['temp_and_unit'] + " and " + weather_data['condition'].lower() + ".",
-        "It is currently " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + ".",
-        "Big surprise, it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + ".",
-        "Look up, it's " + weather_data['condition'] + " and " + weather_data['temp_and_unit'] + "."
-    ]
-    return random.choice(text)
+def make_forecast(weather_data):
+    """
+    :param weather_data: dict containing weather information
+    :return: string containing the text for a forecast tweet
+    """
+    forecast = weather_data['forecast']
+    units = weather_data['units']
+    return 'The forecast for today is ' + forecast.summary.lower() + '  ' + str(round(forecast.temperatureMax)) + \
+           units['temperatureMax'] + '/' + str(round(forecast.temperatureMin)) + units['temperatureMin'] + \
+           '. ' + random.choice(strings.endings)
 
 
-def make_special_tweet(weather_data):
-    if (weather_data['units']['temperature'] == 'F' and weather_data['wind_chill'] <= -30) or \
-            (weather_data['units']['temperature'] == 'C' and weather_data['wind_chill'] <= -34):
-        return "Wow, mother nature hates us. The windchill is " + str(weather_data['wind_chill']) \
-               + weather_data['deg_unit'] + " and the wind is blowing at " + weather_data['wind_speed_and_unit'] \
-               + " from the " + weather_data['wind_direction'] + ". My face hurts."
-    elif weather_data['code'] == 23 or weather_data['code'] == 24:
-        return "Looks like we've got some wind at " + weather_data['wind_speed_and_unit'] + " coming from the " \
-               + weather_data['wind_direction'] + "."
-    elif weather_data['code'] == 0 or weather_data['code'] == 1 or weather_data['code'] == 2:
-        return "HOLY SHIT, THERE'S A " + weather_data['condition'].upper() + "!"
-    elif weather_data['code'] == 3:
-        return "IT BE STORMIN'! Severe thunderstorms right now."
-    elif weather_data['code'] == 4:
-        return "Meh, just a thunderstorm."
-    elif weather_data['code'] == 17 or weather_data['code'] == 35:
-        return "IT'S HAILIN'!"
-    elif weather_data['code'] == 20:
-        return "Do you even fog bro?"
-    elif weather_data['code'] == 5 or weather_data['code'] == 6 or weather_data['code'] == 7:
-        return "What a mix! Currently, there's " + weather_data['condition'] + " falling from the sky."
-    elif weather_data['code'] == 13 or weather_data['code'] == 14 or weather_data['code'] == 15 or \
-            weather_data['code'] == 16 or weather_data['code'] == 41 or weather_data['code'] == 43:
-        return weather_data['condition'].capitalize() + ". Bundle up."
-    elif weather_data['code'] == 8 or weather_data['code'] == 9:
-        return "Drizzlin' yo."
-    elif (weather_data['units']['speed'] == 'mph' and weather_data['wind_speed'] >= 35.0) or \
-            (weather_data['units']['speed'] == 'km/h' and weather_data['wind_speed'] >= 56.0):
-        return "Hold onto your hats, the wind is blowing at " + weather_data['wind_speed_and_unit'] \
-            + " coming from the " + weather_data['wind_direction'] + "."
-    elif weather_data['humidity'] <= 5:
-        return "It's dry as strained pasta. " + str(weather_data['humidity']) + "% humid right now."
-    elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] <= -20) or \
-            (weather_data['units']['temperature'] == 'C' and weather_data['temp'] <= -28):
-        return "It's " + weather_data['temp_and_unit'] + ". Too cold."
-    elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 100) or \
-            (weather_data['units']['temperature'] == 'C' and 37 <= weather_data['temp'] <= 50):
-        return "Holy moly it's " + weather_data['temp_and_unit'] + ". I could literally (figuratively) melt."
-    elif weather_data['code'] == 3200:
-        return "Someone messed up, apparently the current condition is \"not available\" " + \
-            "http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif"
-    else:
-        return "normal"  # keep normal as is determines if the weather is normal (boring) or special (exciting!)
-
-
-def make_forecast(dt, weather_data):
-    # Could use '%-d', but it does not work on all platforms (*cough *cough Windows *cough)
-    date = dt.strftime('X%d %b %Y').replace('X0', '').replace('X', '')
-    endings = ["Exciting!", "Nice!", "Sweet!", "Wow!", "I can't wait!", "Nifty!",
-               "Excellent!", "What a day!", "This should be interesting!"]
-    for day in weather_data['forecast']:
-        if day['date'] == date:
-            logging.debug('Found a forecast: %s', day)
-            return "The forecast for today is " + day['text'].lower() + " with a high of " + day['high'] + \
-                   weather_data['deg_unit'] + " and a low of " + day['low'] + weather_data['deg_unit'] + \
-                   ". " + random.choice(endings)
-    return "Sorry, today's forecast is \"not available\" " \
-           "http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif Go yell at @bman4789"
-
-
-def do_tweet(content, weather_data, tweet_location, variable_location):
+def do_tweet(text, weather_data, tweet_location, variable_location):
+    """
+    :param text: text for the tweet
+    :param weather_data: dict containing weather information
+    :param tweet_location: boolean that determines whether or not to include Twitter location
+    :param variable_location: boolean that determines whether or not to prefix the tweet with the location
+    :return: a tweepy status object
+    """
     api = get_tweepy_api()
-    content += HASHTAG
-    logging.debug('Trying to tweet: %s', content)
-    # Add the current city to tweet if variable location is enabled
+    text += HASHTAG
+    logging.debug('Trying to tweet: {0}'.format(text))
     if variable_location:
-        if LAST_VAR_LOC_NAME is not "":
-            content = LAST_VAR_LOC_NAME + ": " + content
-        elif not weather_data['region']:
-            content = weather_data['city'] + ": " + content
-        else:
-            content = weather_data['city'] + ", " + weather_data['region'] + ": " + content
+        text = weather_data['location'] + ': ' + text
     try:
         if tweet_location:
-            status = api.update_status(status=content, lat=weather_data['latitude'], long=weather_data['longitude'])
+            status = api.update_status(status=text, lat=weather_data['latitude'], long=weather_data['longitude'])
         else:
-            status = api.update_status(status=content)
-        logging.info('Tweet success: %s', content)
+            status = api.update_status(status=text)
+        logging.info('Tweet success: {0}'.format(text))
         return status
     except tweepy.TweepError as e:
-        logging.error('Tweet failed: %s', e.reason)
-        logging.warning('Tweet skipped due to error: %s', content)
+        logging.error('Tweet failed: {0}'.format(e.reason))
+        logging.warning('Tweet skipped due to error: {0}'.format(text))
+        return None
+
+
+def alert_logic(weather_data, timezone_id, now_utc):
+    """
+    :param weather_data: dict containing weather information
+    :param timezone_id: string containing a datetime timezone id
+    :param now_utc: datetime.datetime in utc timezone
+    :return: list of text to use for alert tweets, can be an empty list
+    """
+    global throttle_times
+    alerts = weather_data['alerts']
+    tweets = list()
+    if alerts:
+        for alert in alerts:
+            full_alert = alert.title + str(alert.expires)
+            sha256 = hashlib.sha256(full_alert.encode()).hexdigest()  # a (hopefully) unique id on each alert
+            # if the alert has not been tweeted, and the expiration is older than the current time
+            expires = datetime.utcfromtimestamp(alert.expires)
+            if sha256 not in throttle_times and pytz.utc.localize(expires) > now_utc:
+                local_expires_time = utils.get_local_datetime(timezone_id, expires)
+                throttle_times[sha256] = pytz.utc.localize(expires)
+                tweets.append(strings.get_alert_text(alert.title, local_expires_time, alert.uri))
+    return tweets
 
 
 def tweet_logic(weather_data):
-    global last_special
-    now = datetime.now()
-    content_special = make_special_tweet(weather_data)
-    content_normal = make_normal_tweet(weather_data)
-    # Standard timed tweet
-    forecast_tweet(now.replace(hour=6, minute=0, second=0, microsecond=0), now, weather_data)
-    timed_tweet(now.replace(hour=7, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
-    timed_tweet(now.replace(hour=12, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
-    timed_tweet(now.replace(hour=15, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
-    timed_tweet(now.replace(hour=18, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
-    timed_tweet(now.replace(hour=22, minute=0, second=0, microsecond=0), now, content_normal, weather_data)
-    if content_special != "normal" and now > last_special + timedelta(minutes=30):
-        # Post special weather event at any time. Do not tweet more than one special event every 30 minutes
-        logging.debug("Special event")
-        do_tweet(content_special, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
-        last_special = now
+    """
+    :param weather_data: dict containing weather information
+    """
+    global throttle_times
+    special_description, special_text = strings.get_special_condition(weather_data)
+    normal_text = strings.get_normal_condition(weather_data)
+
+    timezone_id = weather_data['timezone']
+    now = datetime.utcnow()
+    now_utc = utils.get_utc_datetime('UTC', now)
+    now_local = utils.get_local_datetime(timezone_id, now)
+
+    # weather alerts
+    for alert in alert_logic(weather_data, timezone_id, now_utc):
+        do_tweet(alert, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
+
+    # forecast
+    forecast_dt = now_local.replace(hour=6, minute=0, second=0, microsecond=0).astimezone(pytz.utc)
+    forecast_tweet(forecast_dt, now_utc, weather_data)
+
+    # standard timed tweet
+    times = list()
+    # all times are local to the timezone that is found from the coordinates used for location
+    times.append(now_local.replace(hour=7, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
+    times.append(now_local.replace(hour=12, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
+    times.append(now_local.replace(hour=15, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
+    times.append(now_local.replace(hour=18, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
+    times.append(now_local.replace(hour=22, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
+    for dt in times:
+        timed_tweet(dt, now_utc, normal_text, weather_data)
+
+    # special condition
+    if special_description != 'normal':
+        logging.debug('Special event')
+        try:
+            next_allowed = throttle_times[special_description]
+        except KeyError:
+            next_allowed = throttle_times['default']
+
+        if now_utc >= next_allowed:
+            try:
+                minutes = SPECIAL_EVENT_TIMES[special_description]
+            except KeyError:
+                minutes = SPECIAL_EVENT_TIMES['default']
+            do_tweet(special_text, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
+            throttle_times[special_description] = now_utc + timedelta(minutes=minutes)
+        logging.debug(throttle_times)
 
 
 def timed_tweet(tweet_at, now, content, weather_data):
-    if tweet_at <= now < tweet_at + timedelta(minutes=1):
-        logging.debug("Timed tweet or forecast")
+    """
+    :param tweet_at: datetime.datetime for when a tweet is supposed to be tweeted
+    :param now: datetime.datetime that is the current time
+    :param content: text for tweet
+    :param weather_data: dict containing weather information, used for location lat/lng and name
+    """
+    if tweet_at <= now < tweet_at + timedelta(minutes=REFRESH_RATE):
+        logging.debug('Timed tweet or forecast')
         do_tweet(content, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
 
 
 def forecast_tweet(tweet_at, now, weather_data):
-    if tweet_at <= now < tweet_at + timedelta(minutes=1):
-        logging.debug("Scheduled forecast")
-        do_tweet(make_forecast(now, weather_data), weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
+    """
+    :param tweet_at: datetime.datetime for when a tweet is supposed to be tweeted
+    :param now: datetime.datetime that is the current time
+    :param weather_data: dict containing weather information, used for location lat/lng and name
+    :return:
+    """
+    if tweet_at <= now < tweet_at + timedelta(minutes=REFRESH_RATE):
+        logging.debug('Scheduled forecast')
+        do_tweet(make_forecast(weather_data), weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
 
 
 def main():
+    global throttle_times
     try:
         initialize_logger(LOG_PATHNAME)
-        set_twitter_env_vars()
-        if VARIABLE_LOCATION:
-            set_flickr_env_vars()
-        updated_time = datetime.now()
-        woeid = WOEID
+        keys.set_twitter_env_vars()
+        keys.set_forecastio_env_vars()
+
+        location = DEFAULT_LOCATION
+        updated_time = utils.get_utc_datetime('UTC', datetime.utcnow()) - timedelta(minutes=30)
         while True:
             # check for new location every 30 minutes
-            if VARIABLE_LOCATION and updated_time + timedelta(minutes=30) < datetime.now():
-                woeid = get_woeid_from_variable_location(woeid, USER_FOR_LOCATION)
-                updated_time = datetime.now()
-            weather_data = get_weather_variables(get_weather(woeid, UNIT))
+            now_utc = utils.get_utc_datetime('UTC', datetime.utcnow())
+            if VARIABLE_LOCATION and updated_time + timedelta(minutes=30) < now_utc:
+                location = get_location_from_user_timeline(USER_FOR_LOCATION, location)
+                updated_time = now_utc
+            forecast = get_forecast_object(location['lat'], location['lng'])
+            weather_data = get_weather_variables(forecast, location)
             if weather_data['valid'] is True:
                 tweet_logic(weather_data)
-            time.sleep(60)
+            # cleanse throttle_times of expired keys
+            to_delete = [key for key, expires in throttle_times.items() if expires <= now_utc]
+            for key in to_delete:
+                if key != 'default':
+                    del throttle_times[key]
+            time.sleep(REFRESH_RATE * 60)
     except Exception as err:
         logging.error(err)
         logging.error('We got an exception!', exc_info=True)
+        if DM_ERRORS:
+            api = get_tweepy_api()
+            api.send_direct_message(screen_name=api.me().screen_name,
+                                    text=str(random.randint(0, 9999)) + traceback.format_exc())
 
 if __name__ == '__main__':
-    if "-d" in sys.argv:
+    if '-d' in sys.argv:
         with daemon.DaemonContext():
             main()
     else:
