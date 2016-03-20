@@ -57,19 +57,17 @@ There is a constants section near the top of the weatherBot.py file where you ca
 The Twitter app consumer key and secret as well as the access token key and secret are located either in environmental variables or in the keys.py file. The script will pull in the keys from the environmental variables over the keys.py file. See https://apps.twitter.com to get your keys and secrets.
 They names of the environmental variables are as follows: `WEATHERBOT_CONSUMER_KEY`, `WEATHERBOT_CONSUMER_SECRET`, `WEATHERBOT_ACCESS_KEY`, `WEATHERBOT_ACCESS_SECRET`, and `WEATHERBOT_FORECASTIO_KEY`. Entering keys into keys.py is not required if you have entered them as environmental variables.
 
-The wording for tweets can be edited or added in strings.py. Mind the order in `get_special_condition` so more or less common ones are called when not desired.
+The wording for tweets can be edited or added in strings.py. Mind the order in `get_special_condition` so more or less common ones are called when desired.
 
 Timing of daily scheduled current conditions and forecasts are done by setting the hour and minute in last few lines of the `timed_tweet` method.
 
-**Note: the times entered here are triggered by the host's time as returned by datetime. If the host machine and weather location do not match, but sure to set accordingly here.**
-
 ### Variable Location
-Enable `VARIABLE_LOCATION` to have the location for weather change. The Twitter username stored in the `USER_FOR_LOCATION` constant will be used to determine this location. The specified user must tweet with location fairly regularly (at least every 20 tweets), or the manually entered location will be used. The most recent tweet with a location will be used to get the location for weather.
+Enable `VARIABLE_LOCATION` to have the location for weather change. The Twitter username stored in the `USER_FOR_LOCATION` constant will be used to determine this location. The specified user must tweet with location fairly regularly (at least every 20 tweets, not including retweets), or the manually entered location will be used. The most recent tweet with a location will be used to get the location for weather.
 For example, say the given user tweets from Minneapolis, MN one day. Minneapolis will be used as the location indefinitely until a new tweet with location is posted (or that tweet is deleted, and the next newest location will be used).
 In addition to the location changing, the human readable Twitter location will be added to the beginning of each tweet. For example, in the same case as earlier, "Minneapolis, MN: " would be prefixed to every tweet.
 
 ## Testing
-Tests have been written for a fair amount of the code. It's hard (or I don't know how) to test tweeting and fetching weather data, so that somewhat limits what tests can be written. Note: to make tweeting tests pass, the consumer and secret keys/tokens need to be stored as an environmental variable.
+Tests have been written for a fair amount of the code. It's hard (or I don't know how) to test tweeting and fetching weather data, so that somewhat limits what tests can be written. Note: to make tweeting tests pass on your own machine, the consumer and secret keys/tokens need to be stored as an environmental variable or in the keys.py file.
 ```shell
 python3 test.py
 ```
