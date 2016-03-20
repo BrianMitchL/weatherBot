@@ -29,13 +29,11 @@ DM_ERRORS = True  # send crash logs as a direct message to the Twitter account o
 DEFAULT_LOCATION = {'lat': 45.585, 'lng': -95.91, 'name': 'Morris, MN'}  # Used for location, or fallback location
 UNITS = 'us'  # Choose from 'us', 'ca', 'uk2', or 'si'
 TWEET_LOCATION = True  # include location in tweet (Twitter location)
-# HASHTAG = ' #MorrisWeather'  # if no hashtag is desired, set HASHTAG to be an empty string
-# VARIABLE_LOCATION = False  # whether or not to change the location based on a user's most recent tweet location
-HASHTAG = ''  # if no hashtag is desired, set HASHTAG to be an empty string
-VARIABLE_LOCATION = True  # whether or not to change the location based on a user's most recent tweet location
+HASHTAG = ' #MorrisWeather'  # if no hashtag is desired, set HASHTAG to be an empty string
+VARIABLE_LOCATION = False  # whether or not to change the location based on a user's most recent tweet location
 USER_FOR_LOCATION = 'bman4789'  # username for account to track location with
 LOG_PATHNAME = expanduser('~') + '/weatherBot.log'  # expanduser('~') returns the path to the current user's home dir
-REFRESH_RATE = 3  # how often to check for new weather (note, watch out for API rate limiting)
+REFRESH_RATE = 3  # time in minutes to check for new weather (note, watch out for API rate limiting and costs per API call)
 SPECIAL_EVENT_TIMES = {  # time in minutes to throttle each event type
     'default': 120,
     'wind-chill': 120,
