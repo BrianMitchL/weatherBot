@@ -39,16 +39,26 @@ SPECIAL_EVENT_TIMES = {  # time in minutes to throttle each event type
     'wind-chill': 120,
     'medium-wind': 180,
     'heavy-wind': 120,
-    'heavy-rain': 60,
     'fog': 180,
-    'mixed-precipitation': 120,
-    'snow': 120,
-    'sleet': 120,
-    'very-light-rain': 120,
-    'drizzle': 120,
     'cold': 120,
     'hot': 120,
-    'dry': 120
+    'dry': 120,
+    'heavy-rain': 60,
+    'moderate-rain': 60,
+    'light-rain': 90,
+    'very-light-rain': 120,
+    'heavy-snow': 60,
+    'moderate-snow': 60,
+    'light-snow': 90,
+    'very-light-snow': 120,
+    'heavy-sleet': 45,
+    'moderate-sleet': 60,
+    'light-sleet': 90,
+    'very-light-sleet': 120,
+    'heavy-hail': 15,
+    'moderate-hail': 15,
+    'light-hail': 20,
+    'very-light-hail': 30
 }
 
 # Global variables
@@ -170,6 +180,11 @@ def get_weather_variables(forecast, location):
             weather_data['units']['temperature']
         weather_data['humidity'] = round(forecast.currently().humidity * 100)
         weather_data['precipIntensity'] = forecast.currently().precipIntensity
+        weather_data['precipProbability'] = forecast.currently().precipProbability
+        if forecast.currently().precipProbability != 0:
+            weather_data['precipType'] = forecast.currently().precipType
+        else:
+            weather_data['precipType'] = 'none'
         weather_data['summary'] = forecast.currently().summary.lower()
         weather_data['icon'] = forecast.currently().icon
         weather_data['location'] = location['name']

@@ -3,6 +3,7 @@
 # See the GitHub repository: https://github.com/bman4789/weatherBot
 
 import random
+import utils
 
 # strings that will be randomly chosen to be appended to a forecast tweet
 endings = ['Exciting!', 'Nice!', 'Sweet!', 'Wow!', 'I can\'t wait!', 'Nifty!',
@@ -83,25 +84,9 @@ def get_special_condition(weather_data):
         text = 'Hold onto your hats! The wind is blowing at ' + weather_data['windSpeed_and_unit'] + \
                ' coming from the ' + weather_data['windBearing'] + '.'
         return 'heavy-wind', text
-    elif 'heavy-rain' in code:
-        text = 'Run for cover and stay dry! It\'s ' + weather_data['temp_and_unit'] + ' and raining heavily right now.'
-        return 'heavy-rain', text
     elif 'fog' in code:
-        text = 'Do you even fog bro?'
+        text = 'Do you even fog bro? 🌫'
         return 'fog', text
-    elif 'mixed-precipitation' in code:
-        text = 'What a mix! Currently, there\'s ' + weather_data['summary'] + ' falling from the sky.'
-        return 'mixed-precipitation', text
-    elif 'snow' in code and 'possible' not in code:
-        text = weather_data['summary'].capitalize() + ' and ' + weather_data['temp_and_unit'] + '. Bundle up.'
-        return 'snow', text
-    elif 'sleet' in code and 'possible' not in code:
-        text = weather_data['summary'].capitalize() + ' and ' + weather_data['temp_and_unit'] + '. Stay safe.'
-        return 'sleet', text
-    elif 'very-light-rain' and (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 32) or \
-            (weather_data['units']['temperature'] == 'C' and weather_data['temp'] >= 0):
-        text = 'Drizzlin\' yo.'
-        return 'drizzle', text
     elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] <= -20) or \
             (weather_data['units']['temperature'] == 'C' and weather_data['temp'] <= -28):
         text = 'It\'s ' + weather_data['temp_and_unit'] + '. Too cold.'
@@ -136,3 +121,60 @@ def get_alert_text(title, expires, uri):
         'It\'s official now! ' + title + ' until ' + expires_formatted + '. ' + uri
         ]
     return random.choice(text)
+
+
+def get_precipitation(precip_intensity, precip_probability, precip_type, units):
+    """
+    :param precip_intensity: float containing the currently precipIntensity
+    :param precip_probability: float containing the currently precipProbability
+    :param precip_type: float containing the currently precipType
+    :param units: dict of units as returned by get_units
+    :return: tuple containing the event description and tweet text
+    """
+
+    text = {
+        'rain': {
+            'heavy': ['Run for cover and stay dry! It\'s raining heavily.',
+                      'Heavy rain detected, I hope your windows are closed.'],
+            'moderate': ['Alert: there is water falling from the sky.',
+                         'It\'s raining 🌧',
+                         'Grab your umbrella, it\'s raining! ☔️',
+                         '☔️'],
+            'light': ['Light rain!'],
+            'very-light': ['Drizzlin\' yo.',
+                           'Very light rain detected.']
+        },
+        'snow': {
+            'heavy': ['Heavy snow, bundle up.',
+                      'Heavy snow detected, good luck with that.'],
+            'moderate': ['Alert: there are flakes of crystalline water ice falling from the clouds.',
+                         'It\'s snowing. ❄️',
+                         'It\'s snowing. 🌨',
+                         '🌨',
+                         '❄️'],
+            'light': ['Light snow!',
+                      'It\'s lightly snowing.'],
+            'very-light': ['Flurries.',
+                           'Flurries detected.']
+        },
+        'sleet': {
+            'heavy': ['Heavy sleet.'],
+            'moderate': ['Sleet.'],
+            'light': ['Light sleet.'],
+            'very-light': ['Very light sleet.']
+        },
+        'hail': {
+            'heavy': ['Heavy hail, run for cover!'],
+            'moderate': ['Hail, watch out.'],
+            'light': ['Light hail.'],
+            'very-light': ['Very light hail.']
+        }
+    }
+    # TODO KeyError handling and tests
+
+    intensity = utils.precipitation_intensity(precip_intensity, units['precipIntensity'])
+
+    if precip_probability >= 0.80:  # Consider 80% chance and above as fact
+        return intensity + '-' + precip_type, random.choice(text[precip_type][intensity])
+    else:
+        return 'none', 'none'

@@ -133,3 +133,36 @@ def get_utc_datetime(timezone_id, dt):
     tz = pytz.timezone(timezone_id)
     local_dt = tz.localize(dt)
     return local_dt.astimezone(pytz.utc)
+
+
+def precipitation_intensity(precip_intensity, unit):
+    """
+    :param precip_intensity: float containing the currently precipIntensity
+    :param unit: string of unit for precipitation rate ('in/h' or 'mm/h')
+    :return: string of precipitation rate. Note: this is appended to and used in special event times
+    """
+    intensities = {
+        'in/h': {
+            'very-light': ('very-light', 0.002),
+            'light': ('light', 0.017),
+            'moderate': ('moderate', 0.1),
+            'heavy': ('heavy', 0.4)
+        },
+        'mm/h': {
+            'very-light':('very-light', 0.051),
+            'light': ('light', 0.432),
+            'moderate': ('moderate', 2.540),
+            'heavy': ('heavy', 5.08)
+        }
+    }
+
+    if precip_intensity >= intensities[unit]['heavy'][1]:
+        return intensities[unit]['heavy'][0]
+    elif precip_intensity >= intensities[unit]['moderate'][1]:
+        return intensities[unit]['moderate'][0]
+    elif precip_intensity >= intensities[unit]['light'][1]:
+        return intensities[unit]['light'][0]
+    elif precip_intensity >= intensities[unit]['very-light'][1]:
+        return intensities[unit]['very-light'][0]
+    else:
+        return 'none'
