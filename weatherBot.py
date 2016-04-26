@@ -181,7 +181,7 @@ def get_weather_variables(forecast, location):
         weather_data['humidity'] = round(forecast.currently().humidity * 100)
         weather_data['precipIntensity'] = forecast.currently().precipIntensity
         weather_data['precipProbability'] = forecast.currently().precipProbability
-        if forecast.currently().precipProbability != 0:
+        if hasattr(forecast.currently(), 'precipType'):
             weather_data['precipType'] = forecast.currently().precipType
         else:
             weather_data['precipType'] = 'none'
