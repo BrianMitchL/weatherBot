@@ -100,6 +100,20 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utils.get_units('si')['pressure'], 'hPa')
         self.assertEqual(utils.get_units('si')['visibility'], 'km')
 
+    def test_precipitation_intensity(self):
+        """Testing getting string description from precipitation intensity"""
+        self.assertEqual(utils.precipitation_intensity(0.00, 'in/h'), 'none')
+        self.assertEqual(utils.precipitation_intensity(0.002, 'in/h'), 'very-light')
+        self.assertEqual(utils.precipitation_intensity(0.017, 'in/h'), 'light')
+        self.assertEqual(utils.precipitation_intensity(0.1, 'in/h'), 'moderate')
+        self.assertEqual(utils.precipitation_intensity(0.4, 'in/h'), 'heavy')
+        self.assertEqual(utils.precipitation_intensity(0.00, 'mm/h'), 'none')
+        self.assertEqual(utils.precipitation_intensity(0.051, 'mm/h'), 'very-light')
+        self.assertEqual(utils.precipitation_intensity(0.432, 'mm/h'), 'light')
+        self.assertEqual(utils.precipitation_intensity(2.540, 'mm/h'), 'moderate')
+        self.assertEqual(utils.precipitation_intensity(5.08, 'mm/h'), 'heavy')
+
+
 class TestWB(unittest.TestCase):
     def setUp(self):
         self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
