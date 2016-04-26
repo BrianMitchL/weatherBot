@@ -59,6 +59,8 @@ def get_special_condition(weather_data):
     :return: tuple of strings containing a short description of the event
             and the text of a tweet, or if no special event, return 'normal'
     """
+    precip = get_precipitation(weather_data['precipIntensity'], weather_data['precipProbability'],
+                           weather_data['precipType'], weather_data['units'])
     code = weather_data['icon']
     if (weather_data['units']['temperature'] == 'F' and weather_data['apparentTemperature'] <= -30) or \
             (weather_data['units']['temperature'] == 'C' and weather_data['apparentTemperature'] <= -34):
@@ -73,6 +75,8 @@ def get_special_condition(weather_data):
     #            weather_data['windSpeed_and_unit'] + ' from the ' \
     #            + weather_data['windBearing'] + ' and there is precipitation at a rate of ' + \
     #            str(weather_data['precipIntensity']) + ' ' + weather_data['units']['precipIntensity'] + '.'
+    elif precip[0] != 'none':
+        return precip
     elif 'medium-wind' in code:
         text = 'Looks like we\'ve got some medium wind at ' + weather_data['windSpeed_and_unit'] + \
                ' coming from the ' + weather_data['windBearing'] + '.'
@@ -134,7 +138,7 @@ def get_precipitation(precip_intensity, precip_probability, precip_type, units):
 
     text = {
         'rain': {
-            'heavy': ['Run for cover and stay dry! It\'s raining heavily.',
+            'heavy': ['Run for cover and stay dry! Heavy rain!',
                       'Heavy rain detected, I hope your windows are closed.'],
             'moderate': ['Alert: there is water falling from the sky.',
                          'It\'s raining 🌧',
@@ -170,11 +174,11 @@ def get_precipitation(precip_intensity, precip_probability, precip_type, units):
             'very-light': ['Very light hail.']
         }
     }
-    # TODO KeyError handling and tests
 
     intensity = utils.precipitation_intensity(precip_intensity, units['precipIntensity'])
 
-    if precip_probability >= 0.80:  # Consider 80% chance and above as fact
+    # Consider 80% chance and above as fact
+    if precip_probability >= 0.80 and precip_type != 'none' and intensity != 'none':
         return intensity + '-' + precip_type, random.choice(text[precip_type][intensity])
     else:
         return 'none', 'none'
