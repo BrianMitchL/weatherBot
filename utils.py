@@ -25,7 +25,7 @@ def get_units(unit):
     elif unit is 'ca':
         return {
             'unit': 'ca',
-            'nearestStormDistance': 'km/h',
+            'nearestStormDistance': 'km',
             'precipIntensity': 'mm/h',
             'precipIntensityMax': 'mm/h',
             'precipAccumulation': 'cm',
@@ -57,7 +57,7 @@ def get_units(unit):
     else:  # si
         return {
             'unit': 'si',
-            'nearestStormDistance': 'km/h',
+            'nearestStormDistance': 'km',
             'precipIntensity': 'mm/h',
             'precipIntensityMax': 'mm/h',
             'precipAccumulation': 'cm',
