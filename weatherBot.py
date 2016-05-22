@@ -11,11 +11,10 @@ import random
 import sys
 import time
 import traceback
+import configparser
 from datetime import datetime
 from datetime import timedelta
-from os.path import expanduser
 
-import daemon
 import forecastio
 import pytz
 import tweepy
@@ -24,72 +23,90 @@ import keys
 import strings
 import utils
 
-# Constants - Configure things here
-DM_ERRORS = True  # send crash logs as a direct message to the Twitter account owning the app
-DEFAULT_LOCATION = {'lat': 45.585, 'lng': -95.91, 'name': 'Morris, MN'}  # Used for location, or fallback location
-UNITS = 'us'  # Choose from 'us', 'ca', 'uk2', or 'si'
-TWEET_LOCATION = True  # include location in tweet (Twitter location)
-HASHTAG = ' #MorrisWeather'  # if no hashtag is desired, set HASHTAG to be an empty string
-VARIABLE_LOCATION = False  # whether or not to change the location based on a user's most recent tweet location
-USER_FOR_LOCATION = 'bman4789'  # username for account to track location with
-LOG_PATHNAME = expanduser('~') + '/weatherBot.log'  # expanduser('~') returns the path to the current user's home dir
-REFRESH_RATE = 3  # time in minutes to check for new weather (note, watch out for API rate limiting and costs per API call)
-SPECIAL_EVENT_TIMES = {  # time in minutes to throttle each event type
-    'default': 120,
-    'wind-chill': 120,
-    'medium-wind': 180,
-    'heavy-wind': 120,
-    'fog': 180,
-    'cold': 120,
-    'hot': 120,
-    'dry': 120,
-    'heavy-rain': 60,
-    'moderate-rain': 60,
-    'light-rain': 90,
-    'very-light-rain': 120,
-    'heavy-snow': 60,
-    'moderate-snow': 60,
-    'light-snow': 90,
-    'very-light-snow': 120,
-    'heavy-sleet': 45,
-    'moderate-sleet': 60,
-    'light-sleet': 90,
-    'very-light-sleet': 120,
-    'heavy-hail': 15,
-    'moderate-hail': 15,
-    'light-hail': 20,
-    'very-light-hail': 30
-}
-
 # Global variables
 throttle_times = {'default': pytz.utc.localize(datetime.utcnow()).astimezone(pytz.utc)}  # TODO store as a file (pickle)
-# if variable location is enabled, but no user is given, disable variable location
-if VARIABLE_LOCATION and USER_FOR_LOCATION is '':
-    VARIABLE_LOCATION = False
+CONFIG = {}
 
 
 class BadForecastDataError(Exception):
     pass
 
 
-def initialize_logger(log_pathname):
+def load_config(path):
+    """
+    :param path: path to the conf file
+    """
+    global CONFIG
+    conf = configparser.ConfigParser()
+    conf.read(path)
+    CONFIG = {
+        'basic': {
+            'dm_errors': conf['basic'].getboolean('dm_errors', True),
+            'units': conf['basic'].get('units', 'us'),
+            'tweet_location': conf['basic'].getboolean('tweet_location', True),
+            'hashtag': conf['basic'].get('hashtag', ' #MorrisWeather'),
+            'refresh': conf['basic'].getint('refresh', 3)
+        },
+        'default_location': {
+            'lat': conf['default location'].getfloat('lat', 45.585),
+            'lng': conf['default location'].getfloat('lng', -95.91),
+            'name': conf['default location'].get('name', 'Morris, MN')
+        },
+        'variable_location': {
+            'enabled': conf['variable location'].getboolean('enabled', False),
+            'user': conf['variable location'].get('user', 'bman4789')
+        },
+        'log': {
+            'enabled': conf['log'].getboolean('enabled', True),
+            'log_path': conf['log'].get('log_path', os.path.expanduser('~') + '/weatherBot.log')
+        },
+        'throttles': {
+            'default': conf['throttles'].getint('default', 120),
+            'wind-chill': conf['throttles'].getint('wind-chill', 120),
+            'medium-wind': conf['throttles'].getint('medium-wind', 180),
+            'heavy-wind': conf['throttles'].getint('heavy-wind', 120),
+            'fog': conf['throttles'].getint('fog', 180),
+            'cold': conf['throttles'].getint('cold', 120),
+            'hot': conf['throttles'].getint('hot', 120),
+            'dry': conf['throttles'].getint('dry', 120),
+            'heavy-rain': conf['throttles'].getint('heavy-rain', 60),
+            'moderate-rain': conf['throttles'].getint('moderate-rain', 60),
+            'light-rain': conf['throttles'].getint('light-rain', 90),
+            'very-light-rain': conf['throttles'].getint('very-light-rain', 120),
+            'heavy-snow': conf['throttles'].getint('heavy-snow', 60),
+            'moderate-snow': conf['throttles'].getint('moderate-snow', 60),
+            'light-snow': conf['throttles'].getint('light-snow', 90),
+            'very-light-snow': conf['throttles'].getint('very-light-snow', 120),
+            'heavy-sleet': conf['throttles'].getint('heavy-sleet', 45),
+            'moderate-sleet': conf['throttles'].getint('moderate-sleet', 60),
+            'light-sleet': conf['throttles'].getint('light-sleet', 90),
+            'very-light-sleet': conf['throttles'].getint('very-light-sleet', 120),
+            'heavy-hail': conf['throttles'].getint('heavy-hail', 15),
+            'moderate-hail': conf['throttles'].getint('moderate-hail', 15),
+            'light-hail': conf['throttles'].getint('light-hail', 20),
+            'very-light-hail': conf['throttles'].getint('very-light-hail', 30)
+        }
+    }
+
+
+def initialize_logger(log_enabled, log_pathname):
     """
     :param log_pathname: string containing the full path of where to write the log
     """
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)  # global level of debug, so debug or anything less can be used
+    formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
     # Console handler
     console = logging.StreamHandler()
     console.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
     console.setFormatter(formatter)
     logger.addHandler(console)
     # Log file handler
-    log = logging.FileHandler(log_pathname, 'a')
-    log.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
-    log.setFormatter(formatter)
-    logger.addHandler(log)
+    if log_enabled:
+        log = logging.FileHandler(log_pathname, 'a')
+        log.setLevel(logging.INFO)
+        log.setFormatter(formatter)
+        logger.addHandler(log)
     logger.info('Starting weatherBot with Python {0}'.format(sys.version))
 
 
@@ -102,13 +119,14 @@ def get_tweepy_api():
     return tweepy.API(auth)
 
 
-def get_forecast_object(lat, lng):
+def get_forecast_object(lat, lng, units):
     """
     :param lat: float containing latitude
     :param lng: float containing longitude
+    :param units: string containing the units standard, ex "us", "ca", "uk2", "si"
     :return:
     """
-    return forecastio.load_forecast(os.getenv('WEATHERBOT_FORECASTIO_KEY'), lat, lng, units=UNITS)
+    return forecastio.load_forecast(os.getenv('WEATHERBOT_FORECASTIO_KEY'), lat, lng, units=units)
 
 
 def get_location_from_user_timeline(username, fallback):
@@ -159,7 +177,7 @@ def get_weather_variables(forecast, location):
             raise BadForecastDataError('Temp is None')
         if not forecast.currently().summary:
             raise BadForecastDataError('Summary is None')
-        weather_data['units'] = utils.get_units(UNITS)
+        weather_data['units'] = utils.get_units(CONFIG['basic']['units'])
         # forecast.io doesn't always include 'windBearing' or 'nearestStormDistance'
         if hasattr(forecast.currently(), 'windBearing'):
             weather_data['windBearing'] = utils.get_wind_direction(forecast.currently().windBearing)
@@ -225,7 +243,8 @@ def do_tweet(text, weather_data, tweet_location, variable_location):
     :return: a tweepy status object
     """
     api = get_tweepy_api()
-    text += HASHTAG
+    if CONFIG['basic']['hashtag']:
+        text += ' ' + CONFIG['basic']['hashtag']
     logging.debug('Trying to tweet: {0}'.format(text))
     if variable_location:
         text = weather_data['location'] + ': ' + text
@@ -280,7 +299,7 @@ def tweet_logic(weather_data):
 
     # weather alerts
     for alert in alert_logic(weather_data, timezone_id, now_utc):
-        do_tweet(alert, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
+        do_tweet(alert, weather_data, CONFIG['basic']['tweet_location'], CONFIG['variable_location']['enabled'])
 
     # forecast
     forecast_dt = now_local.replace(hour=6, minute=0, second=0, microsecond=0).astimezone(pytz.utc)
@@ -301,16 +320,17 @@ def tweet_logic(weather_data):
     if special_description != 'normal':
         logging.debug('Special event')
         try:
-            next_allowed = throttle_times[special_description]
+            next_allowed = CONFIG['throttles'][special_description]
         except KeyError:
             next_allowed = throttle_times['default']
 
         if now_utc >= next_allowed:
             try:
-                minutes = SPECIAL_EVENT_TIMES[special_description]
+                minutes = CONFIG['throttles'][special_description]
             except KeyError:
-                minutes = SPECIAL_EVENT_TIMES['default']
-            do_tweet(special_text, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
+                minutes = CONFIG['throttles']['default']
+            do_tweet(special_text, weather_data, CONFIG['basic']['tweet_location'],
+                     CONFIG['variable_location']['enabled'])
             throttle_times[special_description] = now_utc + timedelta(minutes=minutes)
         logging.debug(throttle_times)
 
@@ -322,9 +342,9 @@ def timed_tweet(tweet_at, now, content, weather_data):
     :param content: text for tweet
     :param weather_data: dict containing weather information, used for location lat/lng and name
     """
-    if tweet_at <= now < tweet_at + timedelta(minutes=REFRESH_RATE):
+    if tweet_at <= now < tweet_at + timedelta(minutes=CONFIG['basic']['refresh']):
         logging.debug('Timed tweet or forecast')
-        do_tweet(content, weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
+        do_tweet(content, weather_data, CONFIG['basic']['tweet_location'], CONFIG['variable_location']['enabled'])
 
 
 def forecast_tweet(tweet_at, now, weather_data):
@@ -334,27 +354,29 @@ def forecast_tweet(tweet_at, now, weather_data):
     :param weather_data: dict containing weather information, used for location lat/lng and name
     :return:
     """
-    if tweet_at <= now < tweet_at + timedelta(minutes=REFRESH_RATE):
+    if tweet_at <= now < tweet_at + timedelta(minutes=CONFIG['basic']['refresh']):
         logging.debug('Scheduled forecast')
-        do_tweet(make_forecast(weather_data), weather_data, TWEET_LOCATION, VARIABLE_LOCATION)
+        do_tweet(make_forecast(weather_data), weather_data, CONFIG['basic']['tweet_location'],
+                 CONFIG['variable_location']['enabled'])
 
 
-def main():
+def main(path):
     global throttle_times
     try:
-        initialize_logger(LOG_PATHNAME)
+        load_config(os.path.abspath(path))
+        initialize_logger(CONFIG['log']['enabled'], CONFIG['log']['log_path'])
         keys.set_twitter_env_vars()
         keys.set_forecastio_env_vars()
 
-        location = DEFAULT_LOCATION
+        location = CONFIG['default_location']
         updated_time = utils.get_utc_datetime('UTC', datetime.utcnow()) - timedelta(minutes=30)
         while True:
             # check for new location every 30 minutes
             now_utc = utils.get_utc_datetime('UTC', datetime.utcnow())
-            if VARIABLE_LOCATION and updated_time + timedelta(minutes=30) < now_utc:
-                location = get_location_from_user_timeline(USER_FOR_LOCATION, location)
+            if CONFIG['variable_location']['enabled'] and updated_time + timedelta(minutes=30) < now_utc:
+                location = get_location_from_user_timeline(CONFIG['variable_location']['user'], location)
                 updated_time = now_utc
-            forecast = get_forecast_object(location['lat'], location['lng'])
+            forecast = get_forecast_object(location['lat'], location['lng'], CONFIG['basic']['units'])
             weather_data = get_weather_variables(forecast, location)
             if weather_data['valid'] is True:
                 tweet_logic(weather_data)
@@ -363,18 +385,19 @@ def main():
             for key in to_delete:
                 if key != 'default':
                     del throttle_times[key]
-            time.sleep(REFRESH_RATE * 60)
+            time.sleep(CONFIG['basic']['refresh'] * 60)
     except Exception as err:
         logging.error(err)
         logging.error('We got an exception!', exc_info=True)
-        if DM_ERRORS:
+        if CONFIG['basic']['dm_errors']:
             api = get_tweepy_api()
             api.send_direct_message(screen_name=api.me().screen_name,
                                     text=str(random.randint(0, 9999)) + traceback.format_exc())
 
 if __name__ == '__main__':
-    if '-d' in sys.argv:
-        with daemon.DaemonContext():
-            main()
+    if len(sys.argv) < 2:
+        print('You need to pass in the path of the conf file. Try again.')
+        exit()
     else:
-        main()
+        main(sys.argv[1])
+

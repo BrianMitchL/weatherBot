@@ -1,1 +1,1 @@
-worker: python weatherBot.py
+worker: python weatherBot.py weatherBot.conf

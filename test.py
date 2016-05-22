@@ -13,6 +13,7 @@ import tweepy
 import forecastio
 import pytz
 import datetime
+import configparser
 from testfixtures import LogCapture
 
 
@@ -285,12 +286,116 @@ class TestWB(unittest.TestCase):
             'icon': 'partly-cloudy-night'
         }
 
+    def test_config(self):
+        """Testing config file handling"""
+        equal = {
+            'basic': {
+                'dm_errors': False,
+                'units': 'si',
+                'tweet_location': False,
+                'hashtag': '',
+                'refresh': 300
+             },
+            'default_location': {
+                'lat': -79,
+                'lng': 12,
+                'name': 'Just a Test'
+            },
+            'variable_location': {
+                'enabled': True,
+                'user': 'test_user'
+            },
+            'log': {
+                'enabled': False,
+                'log_path': '/tmp/weatherBotTest.log'
+            },
+            'throttles': {
+                'default': 24,
+                'wind-chill': 23,
+                'medium-wind': 22,
+                'heavy-wind': 21,
+                'fog': 20,
+                'cold': 19,
+                'hot': 18,
+                'dry': 17,
+                'heavy-rain': 16,
+                'moderate-rain': 15,
+                'light-rain': 14,
+                'very-light-rain': 13,
+                'heavy-snow': 12,
+                'moderate-snow': 11,
+                'light-snow': 10,
+                'very-light-snow': 9,
+                'heavy-sleet': 8,
+                'moderate-sleet': 7,
+                'light-sleet': 6,
+                'very-light-sleet': 5,
+                'heavy-hail': 4,
+                'moderate-hail': 3,
+                'light-hail': 2,
+                'very-light-hail': 1
+            }
+        }
+
+        conf = configparser.ConfigParser()
+        conf['basic'] = {
+            'dm_errors': 'off',
+            'units': 'si',
+            'tweet_location': 'no',
+            'hashtag': '',
+            'refresh': '300'
+        }
+        conf['default location'] = {
+            'lat': '-79',
+            'lng': '12',
+            'name': 'Just a Test'
+        }
+        conf['variable location'] = {
+            'enabled': 'yes',
+            'user': 'test_user'
+        }
+        conf['log'] = {
+            'enabled': '0',
+            'log_path': '/tmp/weatherBotTest.log'
+        }
+        conf['throttles'] = {
+            'default': '24',
+            'wind-chill': '23',
+            'medium-wind': '22',
+            'heavy-wind': '21',
+            'fog': '20',
+            'cold': '19',
+            'hot': '18',
+            'dry': '17',
+            'heavy-rain': '16',
+            'moderate-rain': '15',
+            'light-rain': '14',
+            'very-light-rain': '13',
+            'heavy-snow': '12',
+            'moderate-snow': '11',
+            'light-snow': '10',
+            'very-light-snow': '9',
+            'heavy-sleet': '8',
+            'moderate-sleet': '7',
+            'light-sleet': '6',
+            'very-light-sleet': '5',
+            'heavy-hail': '4',
+            'moderate-hail': '3',
+            'light-hail': '2',
+            'very-light-hail': '1'
+        }
+        with open(os.getcwd() + '/weatherBotTest.conf', 'w') as configfile:
+            conf.write(configfile)
+        weatherBot.load_config(os.getcwd() + '/weatherBotTest.conf')
+        self.assertEqual(weatherBot.CONFIG, equal)
+        os.remove(os.getcwd() + '/weatherBotTest.conf')
+
     def test_logging(self):
         """Testing if the system version is in the log and log file"""
         with LogCapture() as l:
             logger = logging.getLogger()
             logger.info('info')
-            weatherBot.initialize_logger(os.getcwd() + '/weatherBotTest.log')
+            weatherBot.initialize_logger(True, os.getcwd() + '/weatherBotTest.log')
             logger.debug('debug')
             logger.warning('uh oh')
         l.check(('root', 'INFO', 'info'), ('root', 'INFO', 'Starting weatherBot with Python ' + sys.version),
@@ -314,7 +419,7 @@ class TestWB(unittest.TestCase):
 
     def test_get_forecast_object(self):
         """Testing getting the forecastio object"""
-        forecast = weatherBot.get_forecast_object(self.location['lat'], self.location['lng'])
+        forecast = weatherBot.get_forecast_object(self.location['lat'], self.location['lng'], 'us')
         self.assertEqual(forecast.response.status_code, 200)
 
     # def test_get_normal_weather_variables(self):
