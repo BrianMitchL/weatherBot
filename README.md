@@ -32,10 +32,11 @@ pip3 install -r requirements.txt
 ## Use
 weatherBot.py has been built for Python 3 (tested with 3.3 and above). Legacy Python is not supported. 
 
-If you wish to run it in a console, just run normally:
+Set your location and other settings in `weatherBot.conf`, set your API keys and secrets in `keys.py` or as environmental variables, then run:
 ```shell
 python3 weatherBot.py weatherBot.conf
 ```
+You're all set!
 
 ## Settings and Customizing
 Many features of weatherBot can be customized in a conf file. This ships with a file named `weatherBot.conf`, but can be called whatever you'd like. Each option has a comment above it describing its purpose.
