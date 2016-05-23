@@ -21,6 +21,7 @@ weatherBot can tweet the current weather condition and temperature at scheduled 
 * Weather data from Forecast.io
 * Python 3.3 or higher
 * Configuration file for easy configuration
+* Deploy via Heroku or Docker
 
 ## Install Dependencies
 Run the following from the repository root directory to install the needed dependencies.
@@ -70,6 +71,16 @@ The twitter and forecast.io keys need to be added. The format to do so is:
 heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx WEATHERBOT_FORECASTIO_KEY=xxxxx
 ```
 You can also add keys/environmental variables on the Heroku project's settings page.
+
+## Deploying with Docker
+weatherBot can easily be deployed using Docker. To create the Docker image run:
+```shell
+./build.sh
+```
+Start the bot with the follwing, replacing the API keys and secrets with the correct strings:
+```shell
+docker run --name weatherBot -d -e WEATHERBOT_CONSUMER_KEY=xxx -e WEATHERBOT_CONSUMER_SECRET=xxx -e WEATHERBOT_ACCESS_KEY=xxx -e WEATHERBOT_ACCESS_SECRET=xxx -e WEATHERBOT_FORECASTIO_KEY=xxx weatherbot python weatherBot.py weatherBot.conf
+```
 
 ## Tools Used
 * [Tweepy](https://github.com/tweepy/tweepy)
