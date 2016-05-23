@@ -320,7 +320,7 @@ def tweet_logic(weather_data):
     if special_description != 'normal':
         logging.debug('Special event')
         try:
-            next_allowed = CONFIG['throttles'][special_description]
+            next_allowed = throttle_times[special_description]
         except KeyError:
             next_allowed = throttle_times['default']
 
