@@ -16,6 +16,7 @@ from datetime import datetime
 from datetime import timedelta
 
 import forecastio
+import requests
 import pytz
 import tweepy
 
@@ -124,9 +125,14 @@ def get_forecast_object(lat, lng, units):
     :param lat: float containing latitude
     :param lng: float containing longitude
     :param units: string containing the units standard, ex "us", "ca", "uk2", "si"
-    :return:
+    :return: Forecast object or None if HTTPError
     """
-    return forecastio.load_forecast(os.getenv('WEATHERBOT_FORECASTIO_KEY'), lat, lng, units=units)
+    try:
+        return forecastio.load_forecast(os.getenv('WEATHERBOT_FORECASTIO_KEY'), lat, lng, units=units)
+    except requests.exceptions.HTTPError as err:
+        logging.error(err)
+        logging.error('HTTPError when getting Forecast object', exc_info=True)
+        return None
 
 
 def get_location_from_user_timeline(username, fallback):
@@ -377,15 +383,18 @@ def main(path):
                 location = get_location_from_user_timeline(CONFIG['variable_location']['user'], location)
                 updated_time = now_utc
             forecast = get_forecast_object(location['lat'], location['lng'], CONFIG['basic']['units'])
-            weather_data = get_weather_variables(forecast, location)
-            if weather_data['valid'] is True:
-                tweet_logic(weather_data)
-            # cleanse throttle_times of expired keys
-            to_delete = [key for key, expires in throttle_times.items() if expires <= now_utc]
-            for key in to_delete:
-                if key != 'default':
-                    del throttle_times[key]
-            time.sleep(CONFIG['basic']['refresh'] * 60)
+            if forecast is not None:
+                weather_data = get_weather_variables(forecast, location)
+                if weather_data['valid'] is True:
+                    tweet_logic(weather_data)
+                # cleanse throttle_times of expired keys
+                to_delete = [key for key, expires in throttle_times.items() if expires <= now_utc]
+                for key in to_delete:
+                    if key != 'default':
+                        del throttle_times[key]
+                time.sleep(CONFIG['basic']['refresh'] * 60)
+            else:
+                time.sleep(60)
     except Exception as err:
         logging.error(err)
         logging.error('We got an exception!', exc_info=True)

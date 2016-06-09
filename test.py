@@ -421,6 +421,8 @@ class TestWB(unittest.TestCase):
         """Testing getting the forecastio object"""
         forecast = weatherBot.get_forecast_object(self.location['lat'], self.location['lng'], 'us')
         self.assertEqual(forecast.response.status_code, 200)
+        bad_forecast = weatherBot.get_forecast_object(345.5, 123.45, 'us')
+        self.assertEqual(bad_forecast, None)
 
     # def test_get_normal_weather_variables(self):
     #     """Testing if weather data fields copied successfully"""
