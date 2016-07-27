@@ -1,4 +1,5 @@
-# weatherBot [![Python Version](https://img.shields.io/badge/python-3.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master)
+# weatherBot [![Python Version](https://img.shields.io/badge/python-3.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master) [![Dependency Status](https://gemnasium.com/badges/github.com/BrianMitchL/baeaas.svg)](https://gemnasium.com/github.com/BrianMitchL/baeaas)
+
 A Twitter bot for weather. Powered by [Forecast](https://forecast.io).
 
 _**Note: Any language or wording suggestions are appreciated and should be submitted as an issue. Feel free to add new choices for normal tweets and submit a pull request!**_
