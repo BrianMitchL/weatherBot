@@ -92,6 +92,7 @@ def load_config(path):
 
 def initialize_logger(log_enabled, log_pathname):
     """
+    :param log_enabled: boolean determining whether or not to write a log file
     :param log_pathname: string containing the full path of where to write the log
     """
     logger = logging.getLogger()
@@ -409,4 +410,3 @@ if __name__ == '__main__':
         exit()
     else:
         main(sys.argv[1])
-
