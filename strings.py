@@ -1,6 +1,6 @@
 # weatherBot strings
 # Copyright 2015-2016 Brian Mitchell under the MIT license
-# See the GitHub repository: https://github.com/bman4789/weatherBot
+# See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 
 import random
 import utils
