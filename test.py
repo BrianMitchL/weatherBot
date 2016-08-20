@@ -21,6 +21,7 @@ import weatherBot
 import keys
 import strings
 import utils
+from utils import Time
 
 # TODO write tests
 
@@ -130,6 +131,58 @@ class TestUtils(unittest.TestCase):
         correct_dt = pytz.timezone('Europe/Copenhagen').localize(dt).astimezone(pytz.utc)
         self.assertEqual(utc_dt, correct_dt)
 
+    def test_parse_time_string(self):
+        self.assertEqual(utils.parse_time_string('7:00'), Time(hour=7, minute=0))
+        self.assertEqual(utils.parse_time_string('0:0'), Time(hour=0, minute=0))
+        self.assertEqual(utils.parse_time_string('000000001:00000'), Time(hour=1, minute=0))
+        self.assertEqual(utils.parse_time_string('18:00000001'), Time(hour=18, minute=1))
+        self.assertEqual(utils.parse_time_string('22:59'), Time(hour=22, minute=59))
+        self.assertEqual(utils.parse_time_string('1:45'), Time(hour=1, minute=45))
+        self.assertEqual(utils.parse_time_string('0000002:000003'), Time(hour=2, minute=3))
+        with self.assertRaises(utils.InvalidTimeError):
+            utils.parse_time_string('12')
+        with self.assertRaises(utils.InvalidTimeError):
+            utils.parse_time_string('1:2:3;4')
+        with self.assertRaises(utils.InvalidTimeError):
+            utils.parse_time_string('34:')
+        with self.assertRaises(utils.InvalidTimeError):
+            utils.parse_time_string(':5')
+        with self.assertRaises(utils.InvalidTimeError):
+            utils.parse_time_string(':')
+        with self.assertRaises(utils.InvalidTimeError):
+            utils.parse_time_string('not an int:but nice try')
+        with self.assertRaises(utils.InvalidTimeError):
+            utils.parse_time_string('34:00')
+        with self.assertRaises(utils.InvalidTimeError):
+            utils.parse_time_string('00:65')
+        with self.assertRaises(utils.InvalidTimeError):
+            utils.parse_time_string('-46:00')
+        with self.assertRaises(utils.InvalidTimeError):
+            utils.parse_time_string('00:-34')
+
+    def test_get_times(self):
+        raw_simple = '7:00\n12:00\n15:00\n18:00\n22:00'
+        raw_complex = '0:0\n00000000001:00000\n18:00000001\n22:59\n23:00\n1:45\n00:00\n23:59\n1:01\n01:00\n01:02\n11:32'
+        list_simple = [Time(hour=7, minute=0),
+                       Time(hour=12, minute=0),
+                       Time(hour=15, minute=0),
+                       Time(hour=18, minute=0),
+                       Time(hour=22, minute=0)]
+        list_complex = [Time(hour=0, minute=0),
+                        Time(hour=0, minute=0),
+                        Time(hour=1, minute=0),
+                        Time(hour=1, minute=0),
+                        Time(hour=1, minute=1),
+                        Time(hour=1, minute=2),
+                        Time(hour=1, minute=45),
+                        Time(hour=11, minute=32),
+                        Time(hour=18, minute=1),
+                        Time(hour=22, minute=59),
+                        Time(hour=23, minute=0),
+                        Time(hour=23, minute=59)]
+        self.assertEqual(utils.get_times(raw_simple), list_simple)
+        self.assertEqual(utils.get_times(raw_complex), list_complex)
+
 
 class TestStrings(unittest.TestCase):
     def test_get_precipitation(self):
@@ -186,7 +239,7 @@ class TestWB(unittest.TestCase):
             'windSpeed': 11.77,
             'temp': 44.32,
             'icon': 'partly-cloudy-night'
-            }
+        }
         self.wd_ca = {
             'windBearing': 'SW',
             'temp_and_unit': '7ºC',
@@ -299,7 +352,15 @@ class TestWB(unittest.TestCase):
                 'tweet_location': False,
                 'hashtag': '',
                 'refresh': 300
-             },
+            },
+            'scheduled_times': {
+                'forecast': Time(hour=6, minute=0),
+                'conditions': [Time(hour=7, minute=0),
+                               Time(hour=12, minute=0),
+                               Time(hour=15, minute=0),
+                               Time(hour=18, minute=0),
+                               Time(hour=22, minute=0)]
+            },
             'default_location': {
                 'lat': -79,
                 'lng': 12,
@@ -348,6 +409,10 @@ class TestWB(unittest.TestCase):
             'tweet_location': 'no',
             'hashtag': '',
             'refresh': '300'
+        }
+        conf['scheduled times'] = {
+            'forecast': '6:00',
+            'conditions': '7:00\n12:00\n15:00\n18:00\n22:00'
         }
         conf['default location'] = {
             'lat': '-79',

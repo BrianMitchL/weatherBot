@@ -48,6 +48,11 @@ def load_config(path):
             'hashtag': conf['basic'].get('hashtag', ' #MorrisWeather'),
             'refresh': conf['basic'].getint('refresh', 3)
         },
+        'scheduled_times': {
+            'forecast': utils.parse_time_string(conf['scheduled times'].get('forecast', '6:00')),
+            'conditions': utils.get_times(conf['scheduled times'].get('conditions',
+                                                                      '7:00\n12:00\n15:00\n18:00\n22:00'))
+        },
         'default_location': {
             'lat': conf['default location'].getfloat('lat', 45.585),
             'lng': conf['default location'].getfloat('lng', -95.91),
@@ -309,18 +314,16 @@ def tweet_logic(weather_data):
         do_tweet(alert, weather_data, CONFIG['basic']['tweet_location'], CONFIG['variable_location']['enabled'])
 
     # forecast
-    forecast_dt = now_local.replace(hour=6, minute=0, second=0, microsecond=0).astimezone(pytz.utc)
+    forecast_dt = now_local.replace(hour=CONFIG['scheduled_times']['forecast'].hour,
+                                    minute=CONFIG['scheduled_times']['forecast'].minute,
+                                    second=0, microsecond=0).astimezone(pytz.utc)
     forecast_tweet(forecast_dt, now_utc, weather_data)
 
-    # standard timed tweet
-    times = list()
-    # all times are local to the timezone that is found from the coordinates used for location
-    times.append(now_local.replace(hour=7, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
-    times.append(now_local.replace(hour=12, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
-    times.append(now_local.replace(hour=15, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
-    times.append(now_local.replace(hour=18, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
-    times.append(now_local.replace(hour=22, minute=0, second=0, microsecond=0).astimezone(pytz.utc))
-    for dt in times:
+    # scheduled tweet
+    for t in CONFIG['scheduled_times']['conditions']:
+        dt = now_local.replace(hour=t.hour,
+                               minute=t.minute,
+                               second=0, microsecond=0).astimezone(pytz.utc)
         timed_tweet(dt, now_utc, normal_text, weather_data)
 
     # special condition
@@ -372,6 +375,7 @@ def main(path):
     try:
         load_config(os.path.abspath(path))
         initialize_logger(CONFIG['log']['enabled'], CONFIG['log']['log_path'])
+        logging.debug(CONFIG)
         keys.set_twitter_env_vars()
         keys.set_forecastio_env_vars()
 

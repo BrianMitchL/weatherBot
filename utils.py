@@ -3,6 +3,13 @@
 # See the GitHub repository: https://github.com/bman4789/weatherBot
 
 import pytz
+from collections import namedtuple
+
+Time = namedtuple('Time', ['hour', 'minute'])
+
+
+class InvalidTimeError(Exception):
+    pass
 
 
 def get_units(unit):
@@ -149,7 +156,7 @@ def precipitation_intensity(precip_intensity, unit):
             'heavy': ('heavy', 0.4)
         },
         'mm/h': {
-            'very-light':('very-light', 0.051),
+            'very-light': ('very-light', 0.051),
             'light': ('light', 0.432),
             'moderate': ('moderate', 2.540),
             'heavy': ('heavy', 5.08)
@@ -166,3 +173,41 @@ def precipitation_intensity(precip_intensity, unit):
         return intensities[unit]['very-light'][0]
     else:
         return 'none'
+
+
+def parse_time_string(raw_string):
+    """
+    :param raw_string: string representing time in the format of '6:00'
+    :return: Time namedtuple with an hour and minute field
+    """
+    tmp_time = raw_string.split(':')
+    if len(tmp_time) != 2:
+        raise InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string))
+    if tmp_time[0] == '' or tmp_time[1] == '':
+        raise InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string))
+    try:
+        time_tuple = Time(hour=int(tmp_time[0]), minute=int(tmp_time[1]))
+    except ValueError as err:
+        raise InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string)) from err
+    if time_tuple.hour < 0:
+        raise InvalidTimeError('hour field ({0}) is negative'.format(time_tuple.hour))
+    if time_tuple.hour > 23:
+        raise InvalidTimeError('hour field ({0}) is larger than 23'.format(time_tuple.hour))
+    if time_tuple.minute < 0:
+        raise InvalidTimeError('minute field ({0}) is negative'.format(time_tuple.minute))
+    if time_tuple.minute > 59:
+        raise InvalidTimeError('minute field ({0}) is larger than 59'.format(time_tuple.minute))
+    return time_tuple
+
+
+def get_times(raw_string_list):
+    """
+        :param raw_string_list: string as returned from ConfigParser in the format of '7:00\n12:00\n15:00\n18:00\n22:00'
+        :return: list of Time namedtuples with an hour and minute field
+        """
+    string_times = list(filter(None, (x.strip() for x in raw_string_list.splitlines())))
+    tuple_times = []
+    for time in string_times:
+        tuple_times.append(parse_time_string(time))
+    tuple_times.sort()
+    return tuple_times
