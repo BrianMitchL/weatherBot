@@ -296,7 +296,7 @@ def tweet_logic(weather_data):
     :param weather_data: dict containing weather information
     """
     global throttle_times
-    special_description, special_text = strings.get_special_condition(weather_data)
+    special = strings.get_special_condition(weather_data)
     normal_text = strings.get_normal_condition(weather_data)
 
     timezone_id = weather_data['timezone']
@@ -324,21 +324,21 @@ def tweet_logic(weather_data):
         timed_tweet(dt, now_utc, normal_text, weather_data)
 
     # special condition
-    if special_description != 'normal':
+    if special.type != 'normal':
         logging.debug('Special event')
         try:
-            next_allowed = throttle_times[special_description]
+            next_allowed = throttle_times[special.type]
         except KeyError:
             next_allowed = throttle_times['default']
 
         if now_utc >= next_allowed:
             try:
-                minutes = CONFIG['throttles'][special_description]
+                minutes = CONFIG['throttles'][special.type]
             except KeyError:
                 minutes = CONFIG['throttles']['default']
-            do_tweet(special_text, weather_data, CONFIG['basic']['tweet_location'],
+            do_tweet(special.text, weather_data, CONFIG['basic']['tweet_location'],
                      CONFIG['variable_location']['enabled'])
-            throttle_times[special_description] = now_utc + timedelta(minutes=minutes)
+            throttle_times[special.type] = now_utc + timedelta(minutes=minutes)
         logging.debug(throttle_times)
 
 

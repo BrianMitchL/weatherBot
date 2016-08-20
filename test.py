@@ -135,10 +135,14 @@ class TestStrings(unittest.TestCase):
     def test_get_precipitation(self):
         """Testing if a precipitation condition is met"""
         # testing for 'none' with too low of a probability or precipitation type is 'none'
-        self.assertEqual(strings.get_precipitation(0.3, 0.5, 'rain', utils.get_units('us')), ('none', 'none'))
-        self.assertEqual(strings.get_precipitation(0.3, 1, 'none', utils.get_units('us')), ('none', 'none'))
-        self.assertEqual(strings.get_precipitation(0, 1, 'rain', utils.get_units('us')), ('none', 'none'))
-        self.assertEqual(strings.get_precipitation(0, 1, 'none', utils.get_units('us')), ('none', 'none'))
+        self.assertEqual(strings.get_precipitation(0.3, 0.5, 'rain', utils.get_units('us')),
+                         strings.Condition(type='none', text=''))
+        self.assertEqual(strings.get_precipitation(0.3, 1, 'none', utils.get_units('us')),
+                         strings.Condition(type='none', text=''))
+        self.assertEqual(strings.get_precipitation(0, 1, 'rain', utils.get_units('us')),
+                         strings.Condition(type='none', text=''))
+        self.assertEqual(strings.get_precipitation(0, 1, 'none', utils.get_units('us')),
+                         strings.Condition(type='none', text=''))
         # testing with a few possible conditions
         self.assertEqual(strings.get_precipitation(0.3, 1, 'rain', utils.get_units('us'))[0], 'moderate-rain')
         self.assertEqual(strings.get_precipitation(0.4, 0.85, 'snow', utils.get_units('us'))[0], 'heavy-snow')
