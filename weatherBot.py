@@ -122,7 +122,7 @@ def get_tweepy_api():
     :return: tweepy api object
     """
     auth = tweepy.OAuthHandler(os.getenv('WEATHERBOT_CONSUMER_KEY'), os.getenv('WEATHERBOT_CONSUMER_SECRET'))
-    auth.set_access_token(os.getenv('WEATHERBOT_ACCESS_KEY'), os.getenv('WEATHERBOT_ACCESS_SECRET'))
+    auth.set_access_token(os.getenv('WEATHERBOT_ACCESS_TOKEN'), os.getenv('WEATHERBOT_ACCESS_TOKEN_SECRET'))
     return tweepy.API(auth)
 
 
@@ -154,19 +154,21 @@ def get_location_from_user_timeline(username, fallback):
     for tweet in timeline:
         # if tweet has coordinates (from a smartphone)
         if tweet.coordinates is not None:
-            loc = dict()
-            loc['lat'] = tweet.coordinates['coordinates'][1]
-            loc['lng'] = tweet.coordinates['coordinates'][0]
-            loc['name'] = tweet.place.full_name
+            loc = {
+                'lat': tweet.coordinates['coordinates'][1],
+                'lng': tweet.coordinates['coordinates'][0],
+                'name': tweet.place.full_name
+            }
             logging.debug('Found {0}: {1}, {2}'.format(loc['name'], loc['lat'], loc['lng']))
             return loc
         # if the location is a place, not coordinates
         elif tweet.place is not None:
             point = utils.centerpoint(tweet.place.bounding_box.coordinates[0])
-            loc = dict()
-            loc['lat'] = point[0]
-            loc['lng'] = point[1]
-            loc['name'] = tweet.place.full_name
+            loc = {
+                'lat': point[0],
+                'lng': point[1],
+                'name': tweet.place.full_name
+            }
             logging.debug('Found the center of bounding box at {0}: {1}, {2}'
                           .format(loc['name'], loc['lat'], loc['lng']))
             return loc

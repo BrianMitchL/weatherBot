@@ -1,4 +1,4 @@
-# weatherBot [![Python Version](https://img.shields.io/badge/python-3.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master) [![Dependency Status](https://gemnasium.com/badges/github.com/BrianMitchL/baeaas.svg)](https://gemnasium.com/github.com/BrianMitchL/baeaas)
+# weatherBot [![Python Version](https://img.shields.io/badge/python-3.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master) [![Dependency Status](https://gemnasium.com/badges/github.com/BrianMitchL/weatherBot.svg)](https://gemnasium.com/github.com/BrianMitchL/weatherBot)
 
 A Twitter bot for weather. Powered by [Forecast](https://forecast.io).
 
@@ -43,12 +43,10 @@ You're all set!
 Many features of weatherBot can be customized in a conf file. This ships with a file named `weatherBot.conf`, but can be called whatever you'd like. Each option has a comment above it describing its purpose.
 If you want a clean conf file, feel free to remove all but the settings you set, they are all optional.
 
-The Twitter app consumer key and secret as well as the access token key and secret are located either in environmental variables or in the `keys.py` file. The script will pull in the keys from the environmental variables over the keys.py file. See https://apps.twitter.com to get your keys and secrets.
-They names of the environmental variables are as follows: `WEATHERBOT_CONSUMER_KEY`, `WEATHERBOT_CONSUMER_SECRET`, `WEATHERBOT_ACCESS_KEY`, `WEATHERBOT_ACCESS_SECRET`, and `WEATHERBOT_FORECASTIO_KEY`. Entering keys into keys.py is not required if you have entered them as environmental variables.
+The Twitter app consumer key and secret as well as the access token and token secret are located either in environmental variables or in the `keys.py` file. The script will pull in the keys from the environmental variables over the keys.py file. See https://apps.twitter.com to get your keys and secrets.
+The names of the environmental variables are as follows: `WEATHERBOT_CONSUMER_KEY`, `WEATHERBOT_CONSUMER_SECRET`, `WEATHERBOT_ACCESS_TOKEN`, `WEATHERBOT_ACCESS_TOKEN_SECRET`, and `WEATHERBOT_FORECASTIO_KEY`. Entering keys into keys.py is not required if you have entered them as environmental variables.
 
 The wording for tweets can be edited or added in `strings.py`. Mind the order in `get_special_condition` so more or less common ones are called when desired.
-
-Timing of daily scheduled current conditions and forecasts are done by setting the hour and minute in last few lines of the `timed_tweet` method.
 
 ### Variable Location
 Enable variable location to have the location for weather change. The Twitter username in the variable location user setting will be used to determine this location. The specified user must tweet with location fairly regularly (at least every 20 tweets, not including retweets), or the manually entered location will be used. The most recent tweet with a location will be used to get the location for weather.
@@ -70,7 +68,7 @@ git push heroku master
 ```
 The twitter and forecast.io keys need to be added. The format to do so is:
 ```shell
-heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_KEY=xxxxx WEATHERBOT_ACCESS_SECRET=xxxxx WEATHERBOT_FORECASTIO_KEY=xxxxx
+heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_TOKEN=xxxxx WEATHERBOT_ACCESS_TOKEN_SECRET=xxxxx WEATHERBOT_FORECASTIO_KEY=xxxxx
 ```
 You can also add keys/environmental variables on the Heroku project's settings page.
 
@@ -79,9 +77,9 @@ weatherBot can easily be deployed using Docker. To create the Docker image run:
 ```shell
 ./build.sh
 ```
-Start the bot with the follwing, replacing the API keys and secrets with the correct strings:
+Start the bot with the following, replacing the API keys and secrets with the correct strings:
 ```shell
-docker run --name weatherBot -d -e WEATHERBOT_CONSUMER_KEY=xxx -e WEATHERBOT_CONSUMER_SECRET=xxx -e WEATHERBOT_ACCESS_KEY=xxx -e WEATHERBOT_ACCESS_SECRET=xxx -e WEATHERBOT_FORECASTIO_KEY=xxx weatherbot python weatherBot.py weatherBot.conf
+docker run --name weatherBot -d -e WEATHERBOT_CONSUMER_KEY=xxx -e WEATHERBOT_CONSUMER_SECRET=xxx -e WEATHERBOT_ACCESS_TOKEN=xxx -e WEATHERBOT_ACCESS_TOKEN_SECRET=xxx -e WEATHERBOT_FORECASTIO_KEY=xxx weatherbot python weatherBot.py weatherBot.conf
 ```
 
 ## Tools Used

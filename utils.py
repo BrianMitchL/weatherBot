@@ -206,7 +206,7 @@ def get_times(raw_string_list):
         :return: list of Time namedtuples with an hour and minute field
         """
     string_times = list(filter(None, (x.strip() for x in raw_string_list.splitlines())))
-    tuple_times = []
+    tuple_times = list()
     for time in string_times:
         tuple_times.append(parse_time_string(time))
     tuple_times.sort()

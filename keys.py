@@ -7,22 +7,22 @@
 import os
 
 
-keys = dict(
-    consumer_key='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    consumer_secret='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    access_key='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    access_secret='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    forecastio_key='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-)
+keys = {
+    'consumer_key': 'xxx',
+    'consumer_secret': 'xxx',
+    'access_token': 'xxx',
+    'access_token_secret': 'xxx',
+    'forecastio_key': 'xxx'
+}
 
 
 def set_twitter_env_vars():
     if os.getenv('WEATHERBOT_CONSUMER_KEY', 0) is 0 or os.getenv('WEATHERBOT_CONSUMER_SECRET', 0) is 0 \
-            or os.getenv('WEATHERBOT_ACCESS_KEY', 0) is 0 or os.getenv('WEATHERBOT_ACCESS_SECRET', 0) is 0:
+            or os.getenv('WEATHERBOT_ACCESS_TOKEN', 0) is 0 or os.getenv('WEATHERBOT_ACCESS_TOKEN_SECRET', 0) is 0:
         os.environ['WEATHERBOT_CONSUMER_KEY'] = keys['consumer_key']
         os.environ['WEATHERBOT_CONSUMER_SECRET'] = keys['consumer_secret']
-        os.environ['WEATHERBOT_ACCESS_KEY'] = keys['access_key']
-        os.environ['WEATHERBOT_ACCESS_SECRET'] = keys['access_secret']
+        os.environ['WEATHERBOT_ACCESS_TOKEN'] = keys['access_token']
+        os.environ['WEATHERBOT_ACCESS_TOKEN_SECRET'] = keys['access_token_secret']
 
 
 def set_forecastio_env_vars():
