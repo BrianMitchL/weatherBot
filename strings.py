@@ -98,11 +98,11 @@ def get_special_condition(weather_data):
         text = 'It\'s ' + weather_data['temp_and_unit'] + '. Too cold.'
         return Condition(type='cold', text=text)
     elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 110) or \
-            (weather_data['units']['temperature'] == 'C' and 43 <= weather_data['temp']):
+            (weather_data['units']['temperature'] == 'C' and weather_data['temp'] >= 43):
         text = 'Wowowowowowowowow, it\'s ' + weather_data['temp_and_unit'] + '. I need some A/C ASAP.'
         return Condition(type='super-hot', text=text)
     elif (weather_data['units']['temperature'] == 'F' and weather_data['temp'] >= 100) or \
-            (weather_data['units']['temperature'] == 'C' and 37 <= weather_data['temp'] <= 50):
+            (weather_data['units']['temperature'] == 'C' and weather_data['temp'] >= 37):
         text = 'Holy moly it\'s ' + weather_data['temp_and_unit'] + '. I could literally (figuratively) melt.'
         return Condition(type='hot', text=text)
     elif weather_data['humidity'] <= 10:
@@ -115,7 +115,7 @@ def get_special_condition(weather_data):
 
 def get_alert_text(title, expires, uri):
     """
-    :param title: dict containing weather information
+    :param title: string of weather alert title
     :param expires: a datetime.datetime object containing the expiration time
     :param uri: a uri encoded link to view more information about the alert
     :return: string: the text of a tweet

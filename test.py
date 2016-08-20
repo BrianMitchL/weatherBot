@@ -9,8 +9,6 @@ import sys
 import logging
 import os
 import random
-import tweepy
-import forecastio
 import pytz
 import datetime
 import configparser
@@ -22,6 +20,7 @@ import keys
 import strings
 import utils
 from utils import Time
+from strings import Condition
 
 # TODO write tests
 
@@ -118,6 +117,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utils.precipitation_intensity(5.08, 'mm/h'), 'heavy')
 
     def test_get_local_datetime(self):
+        """Testing localizing a plain datetime object to a pytz timezone aware object"""
         dt = datetime.datetime.fromtimestamp(1461731335)  # datetime.datetime(2016, 4, 26, 23, 28, 55)
         timezone_id = 'Europe/Copenhagen'
         localized_dt = utils.get_local_datetime(timezone_id, dt)
@@ -125,6 +125,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(localized_dt, pytz.timezone('Europe/Copenhagen').localize(correct_dt))
 
     def test_get_utc_datetime(self):
+        """Testing localize a normal datetime object to timezone id, then convert to UTC"""
         dt = datetime.datetime.fromtimestamp(1461738535)  # datetime.datetime(2016, 4, 27, 1, 28, 55)
         timezone_id = 'Europe/Copenhagen'
         utc_dt = utils.get_utc_datetime(timezone_id, dt)
@@ -132,6 +133,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utc_dt, correct_dt)
 
     def test_parse_time_string(self):
+        """Testing parsing string representing time to a Time namedtuple"""
         self.assertEqual(utils.parse_time_string('7:00'), Time(hour=7, minute=0))
         self.assertEqual(utils.parse_time_string('0:0'), Time(hour=0, minute=0))
         self.assertEqual(utils.parse_time_string('000000001:00000'), Time(hour=1, minute=0))
@@ -161,6 +163,7 @@ class TestUtils(unittest.TestCase):
             utils.parse_time_string('00:-34')
 
     def test_get_times(self):
+        """Testing converting a string of times into a list of Time namedtuples"""
         raw_simple = '7:00\n12:00\n15:00\n18:00\n22:00'
         raw_complex = '0:0\n00000000001:00000\n18:00000001\n22:59\n23:00\n1:45\n00:00\n23:59\n1:01\n01:00\n01:02\n11:32'
         list_simple = [Time(hour=7, minute=0),
@@ -185,25 +188,6 @@ class TestUtils(unittest.TestCase):
 
 
 class TestStrings(unittest.TestCase):
-    def test_get_precipitation(self):
-        """Testing if a precipitation condition is met"""
-        # testing for 'none' with too low of a probability or precipitation type is 'none'
-        self.assertEqual(strings.get_precipitation(0.3, 0.5, 'rain', utils.get_units('us')),
-                         strings.Condition(type='none', text=''))
-        self.assertEqual(strings.get_precipitation(0.3, 1, 'none', utils.get_units('us')),
-                         strings.Condition(type='none', text=''))
-        self.assertEqual(strings.get_precipitation(0, 1, 'rain', utils.get_units('us')),
-                         strings.Condition(type='none', text=''))
-        self.assertEqual(strings.get_precipitation(0, 1, 'none', utils.get_units('us')),
-                         strings.Condition(type='none', text=''))
-        # testing with a few possible conditions
-        self.assertEqual(strings.get_precipitation(0.3, 1, 'rain', utils.get_units('us'))[0], 'moderate-rain')
-        self.assertEqual(strings.get_precipitation(0.4, 0.85, 'snow', utils.get_units('us'))[0], 'heavy-snow')
-        self.assertEqual(strings.get_precipitation(0.06, 1, 'sleet', utils.get_units('us'))[0], 'light-sleet')
-        self.assertEqual(strings.get_precipitation(0.005, 1, 'rain', utils.get_units('us'))[0], 'very-light-rain')
-
-
-class TestWB(unittest.TestCase):
     def setUp(self):
         self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
         self.wd_us = {
@@ -227,6 +211,7 @@ class TestWB(unittest.TestCase):
                 'temperature': 'F'
             },
             'summary': 'mostly cloudy',
+            'hour_summary': 'Mostly cloudy for the hour.',
             'apparentTemperature': 38.35,
             'longitude': 12.49,
             'location': 'Lyngby-Taarbæk, Hovedstaden',
@@ -238,7 +223,12 @@ class TestWB(unittest.TestCase):
             'precipIntensity': 0,
             'windSpeed': 11.77,
             'temp': 44.32,
-            'icon': 'partly-cloudy-night'
+            'icon': 'partly-cloudy-night',
+            'hour_icon': 'partly-cloudy-night',
+            'precipType': 'none',
+            'precipProbability': 0,
+            'alerts': [],
+            'timezone': 'Europe/Copenhagen'
         }
         self.wd_ca = {
             'windBearing': 'SW',
@@ -261,6 +251,7 @@ class TestWB(unittest.TestCase):
                 'temperature': 'C'
             },
             'summary': 'mostly cloudy',
+            'hour_summary': 'Mostly cloudy for the hour.',
             'apparentTemperature': 3.46,
             'longitude': 12.49,
             'location': 'Lyngby-Taarbæk, Hovedstaden',
@@ -272,7 +263,12 @@ class TestWB(unittest.TestCase):
             'precipIntensity': 0,
             'windSpeed': 18.94,
             'temp': 6.78,
-            'icon': 'partly-cloudy-night'
+            'icon': 'partly-cloudy-night',
+            'hour_icon': 'partly-cloudy-night',
+            'precipType': 'none',
+            'precipProbability': 0,
+            'alerts': [],
+            'timezone': 'Europe/Copenhagen'
         }
         self.wd_uk2 = {
             'windBearing': 'SW',
@@ -295,6 +291,7 @@ class TestWB(unittest.TestCase):
                 'temperature': 'C'
             },
             'summary': 'mostly cloudy',
+            'hour_summary': 'Mostly cloudy for the hour.',
             'apparentTemperature': 3.43,
             'longitude': 12.49,
             'location': 'Lyngby-Taarbæk, Hovedstaden',
@@ -306,7 +303,12 @@ class TestWB(unittest.TestCase):
             'precipIntensity': 0,
             'windSpeed': 11.77,
             'temp': 6.76,
-            'icon': 'partly-cloudy-night'
+            'icon': 'partly-cloudy-night',
+            'hour_icon': 'partly-cloudy-night',
+            'precipType': 'none',
+            'precipProbability': 0,
+            'alerts': [],
+            'timezone': 'Europe/Copenhagen'
         }
         self.wd_si = {
             'windBearing': 'SW',
@@ -329,6 +331,7 @@ class TestWB(unittest.TestCase):
                 'temperature': 'C'
             },
             'summary': 'mostly cloudy',
+            'hour_summary': 'Mostly cloudy for the hour.',
             'apparentTemperature': 3.41,
             'longitude': 12.49,
             'location': 'Lyngby-Taarbæk, Hovedstaden',
@@ -340,8 +343,143 @@ class TestWB(unittest.TestCase):
             'precipIntensity': 0,
             'windSpeed': 5.26,
             'temp': 6.74,
-            'icon': 'partly-cloudy-night'
+            'icon': 'partly-cloudy-night',
+            'hour_icon': 'partly-cloudy-night',
+            'precipType': 'none',
+            'precipProbability': 0,
+            'alerts': [],
+            'timezone': 'Europe/Copenhagen'
         }
+
+    def test_get_precipitation(self):
+        """Testing if a precipitation condition is met"""
+        # testing for 'none' with too low of a probability or precipitation type is 'none'
+        self.assertEqual(strings.get_precipitation(0.3, 0.5, 'rain', utils.get_units('us')),
+                         strings.Condition(type='none', text=''))
+        self.assertEqual(strings.get_precipitation(0.3, 1, 'none', utils.get_units('us')),
+                         strings.Condition(type='none', text=''))
+        self.assertEqual(strings.get_precipitation(0, 1, 'rain', utils.get_units('us')),
+                         strings.Condition(type='none', text=''))
+        self.assertEqual(strings.get_precipitation(0, 1, 'none', utils.get_units('us')),
+                         strings.Condition(type='none', text=''))
+        # testing with a few possible conditions
+        self.assertEqual(strings.get_precipitation(0.3, 1, 'rain', utils.get_units('us'))[0], 'moderate-rain')
+        self.assertEqual(strings.get_precipitation(0.4, 0.85, 'snow', utils.get_units('us'))[0], 'heavy-snow')
+        self.assertEqual(strings.get_precipitation(0.06, 1, 'sleet', utils.get_units('us'))[0], 'light-sleet')
+        self.assertEqual(strings.get_precipitation(0.005, 1, 'rain', utils.get_units('us'))[0], 'very-light-rain')
+
+    def test_get_normal_condition(self):
+        """Testing if normal tweet contains necessary strings"""
+        returned = strings.get_normal_condition(self.wd_si)
+        self.assertIn(self.wd_si['summary'], returned)
+        self.assertIn(self.wd_si['temp_and_unit'], returned)
+        self.assertIn(' ' + self.wd_si['hour_summary'], returned)
+        self.wd_si['hour_summary'] = None
+        returned = strings.get_normal_condition(self.wd_si)
+        self.assertIn(self.wd_si['summary'], returned)
+        self.assertIn(self.wd_si['temp_and_unit'], returned)
+        self.assertNotEqual(returned[-1:], ' ')
+
+    def test_get_alert_text(self):
+        """Testing if alert contains necessary strings and converts time"""
+        title = 'test alert'
+        expires = pytz.utc.localize(datetime.datetime.utcfromtimestamp(1471725505))
+        expires_formatted = 'Sat, Aug 20 at 20:38:25 UTC'
+        uri = 'https://github.com/BrianMitchL/weatherBot'
+        result = strings.get_alert_text(title, expires, uri)
+        self.assertIn(title, result)
+        self.assertIn(expires_formatted, result)
+        self.assertIn(uri, result)
+
+    def test_get_special_condition(self):
+        """Testing if normal event is triggered"""
+        cond = Condition(type='normal', text='')
+        self.assertEqual(cond, strings.get_special_condition(self.wd_si))
+
+    def test_special_wind_chill(self):
+        """Testing if wind-chill type is triggered"""
+        self.wd_si['apparentTemperature'] = -34
+        self.wd_us['apparentTemperature'] = -30
+        cond = Condition(type='wind-chill', text='test')
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_us).type)
+
+    def test_special_precip(self):
+        """Testing if precip type is triggered"""
+        self.wd_si['precipProbability'] = 0.9
+        self.wd_si['precipType'] = 'rain'
+        self.wd_si['precipIntensity'] = 10.0
+        self.wd_us['precipProbability'] = 0.9
+        self.wd_us['precipType'] = 'rain'
+        self.wd_us['precipIntensity'] = 1.0
+        cond = Condition(type='heavy-rain', text='test')
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_us).type)
+        self.wd_si['precipType'] = 'none'
+        cond = Condition(type='normal', text='test')
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+
+    def test_special_medium_wind(self):
+        """Testing if medium-wind type is triggered"""
+        self.wd_si['icon'] = 'medium-wind'
+        cond = Condition(type='medium-wind', text='test')
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+
+    def test_special_heavy_wind(self):
+        """Testing if heavy-wind type is triggered"""
+        self.wd_si['icon'] = 'heavy-wind'
+        cond = Condition(type='heavy-wind', text='test')
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+        self.wd_si['icon'] = 'partly-cloudy-night'
+        self.wd_si['windSpeed'] = 15.0
+        self.wd_ca['windSpeed'] = 56.0
+        self.wd_us['windSpeed'] = 35.0
+        self.wd_uk2['windSpeed'] = 35.0
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_ca).type)
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_us).type)
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_uk2).type)
+
+    def test_special_fog(self):
+        """Testing if fog type is triggered"""
+        self.wd_si['icon'] = 'fog'
+        cond = Condition(type='fog', text='test')
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+
+    def test_special_cold(self):
+        """Testing if cold type is triggered"""
+        cond = Condition(type='cold', text='test')
+        self.wd_si['temp'] = -28.0
+        self.wd_us['temp'] = -20.0
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_us).type)
+
+    def test_special_super_hot(self):
+        """Testing if super-hot type is triggered"""
+        cond = Condition(type='super-hot', text='test')
+        self.wd_si['temp'] = 43.0
+        self.wd_us['temp'] = 110.0
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_us).type)
+
+    def test_special_hot(self):
+        """Testing if hot type is triggered"""
+        cond = Condition(type='hot', text='test')
+        self.wd_si['temp'] = 37.0
+        self.wd_us['temp'] = 100.0
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_us).type)
+
+    def test_special_humidity(self):
+        """Testing if dry type is triggered"""
+        cond = Condition(type='dry', text='test')
+        self.wd_si['humidity'] = 10.0
+        self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
+
+
+class TestWB(unittest.TestCase):
+    def setUp(self):
+        self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
 
     def test_config(self):
         """Testing config file handling"""
@@ -456,7 +594,7 @@ class TestWB(unittest.TestCase):
         with open(os.getcwd() + '/weatherBotTest.conf', 'w') as configfile:
             conf.write(configfile)
         weatherBot.load_config(os.getcwd() + '/weatherBotTest.conf')
-        self.assertEqual(weatherBot.CONFIG, equal)
+        self.assertDictEqual(weatherBot.CONFIG, equal)
         os.remove(os.getcwd() + '/weatherBotTest.conf')
 
     def test_logging(self):
@@ -493,275 +631,217 @@ class TestWB(unittest.TestCase):
         bad_forecast = weatherBot.get_forecast_object(345.5, 123.45, 'us')
         self.assertEqual(bad_forecast, None)
 
-    # def test_get_normal_weather_variables(self):
-    #     """Testing if weather data fields copied successfully"""
-    #     weather_data = weatherBot.get_weather_variables(ydataNorm)
-    #     self.assertEqual(weather_data['windSpeed'], 9.0)
-    #     self.assertEqual(weather_data['wind_direction'], 'NW')
-    #     self.assertEqual(weather_data['apparentTemperature'], 37)
-    #     self.assertEqual(weather_data['windSpeed_and_unit'], '9 mph')
-    #     self.assertEqual(weather_data['humidity'], 70)
-    #     self.assertEqual(weather_data['temp'], 43)
-    #     self.assertEqual(weather_data['code'], 33)
-    #     self.assertEqual(weather_data['condition'], 'fair')
-    #     self.assertEqual(weather_data['deg_unit'], deg + 'F')
-    #     self.assertEqual(weather_data['temp_and_unit'], '43' + deg + 'F')
-    #     self.assertEqual(weather_data['city'], 'Morris')
-    #     self.assertEqual(weather_data['region'], 'MN')
-    #     self.assertEqual(weather_data['latitude'], '45.59')
-    #     self.assertEqual(weather_data['longitude'], '-95.9')
-    #     self.assertEqual(weather_data['forecast'], [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}])
-    #     self.assertTrue(weather_data['valid'])
-    #
-    # def test_get_empty_weather_variables(self):
-    #     """Testing if variables with a fallback are set correctly"""
-    #     ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '37', 'direction': '', 'speed': ''}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data = weatherBot.get_weather_variables(ydata)
-    #     self.assertEqual(weather_data['windSpeed'], 0.0)
-    #     self.assertEqual(weather_data['wind_direction'], 'N')
-    #     self.assertEqual(weather_data['apparentTemperature'], 37)
-    #     self.assertEqual(weather_data['windSpeed_and_unit'], '0 mph')
-    #     self.assertEqual(weather_data['humidity'], 70)
-    #     self.assertEqual(weather_data['temp'], 43)
-    #     self.assertEqual(weather_data['code'], 33)
-    #     self.assertEqual(weather_data['condition'], 'fair')
-    #     self.assertEqual(weather_data['deg_unit'], deg + 'F')
-    #     self.assertEqual(weather_data['temp_and_unit'], '43' + deg + 'F')
-    #     self.assertEqual(weather_data['city'], 'Morris')
-    #     self.assertEqual(weather_data['region'], 'MN')
-    #     self.assertEqual(weather_data['latitude'], '45.59')
-    #     self.assertEqual(weather_data['longitude'], '-95.9')
-    #     self.assertEqual(weather_data['forecast'], [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}])
-    #     self.assertTrue(weather_data['valid'])
-    #
-    # def test_get_weather_variables_error(self):
-    #     """Testing if getting weather variables with a malformed input is valid"""
-    #     ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {}, 'count': 1}}}
-    #     weather_data = weatherBot.get_weather_variables(ydata)
-    #     self.assertFalse(weather_data['valid'])
-    #
-    # def test_normal_tweet(self):
-    #     """Testing if normal tweet contains the condition and temperature"""
-    #     weather_data = weatherBot.get_weather_variables(ydataNorm)
-    #     returned = weatherBot.make_normal_tweet(weather_data)
-    #     self.assertTrue('fair' in returned)
-    #     self.assertTrue('43' + deg + 'F' in returned)
-    #
-    # def test_make_special_tweet_normal(self):
-    #     """Testing if normal event is triggered"""
-    #     weather_data = weatherBot.get_weather_variables(ydataNorm)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data), 'normal')
-    #
-    # def test_make_special_tweet_error3200(self):
-    #     """Testing if weather code is 3200/an error event is triggered"""
-    #     ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '3200', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '37', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data = weatherBot.get_weather_variables(ydata)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data), 'Someone messed up, apparently the current condition is \"not available\" http://www.reactiongifs.com/wp-content/uploads/2013/08/air-quotes.gif')
-    #
-    # def test_make_special_tweet_very_hot(self):
-    #     """Testing if very hot temperatures event is triggered"""
-    #     ydata_f = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '100', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '95', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data_f = weatherBot.get_weather_variables(ydata_f)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data_f), 'Holy moly it\'s 100' + deg + 'F. I could literally (figuratively) melt.')
-    #     ydata_c = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '37', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '35', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data_c = weatherBot.get_weather_variables(ydata_c)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data_c), 'Holy moly it\'s 37' + deg + 'C. I could literally (figuratively) melt.')
-    #     ydata_c2 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '52', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '35', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data_c2 = weatherBot.get_weather_variables(ydata_c2)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data_c2), 'normal')
-    #
-    # def test_make_special_tweet_cold(self):
-    #     """Testing if cold temperatures event is triggered"""
-    #     ydata_f = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '-22', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data_f = weatherBot.get_weather_variables(ydata_f)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data_f), 'It\'s -22' + deg + 'F. Too cold.')
-    #     ydata_c = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '-30', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-33', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data_c = weatherBot.get_weather_variables(ydata_c)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data_c), 'It\'s -30' + deg + 'C. Too cold.')
-    #
-    # def test_make_special_tweet_low_humidity(self):
-    #     """Testing if low humidity event is triggered"""
-    #     ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '4', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '3200', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '37', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data = weatherBot.get_weather_variables(ydata)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data), 'It\'s dry as strained pasta. 4% humid right now.')
-    #
-    # def test_make_special_tweet_high_wind(self):
-    #     """Testing if high wind event is triggered"""
-    #     ydata_f = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '35'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data_f = weatherBot.get_weather_variables(ydata_f)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data_f),
-    #                      'Hold onto your hats, the wind is blowing at 35 mph coming from the NW.')
-    #     ydata_c = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '8', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-33', 'direction': '310', 'speed': '56'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data_c = weatherBot.get_weather_variables(ydata_c)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data_c),
-    #                      'Hold onto your hats, the wind is blowing at 56 km/h coming from the NW.')
-    #
-    # def test_make_special_tweet_drizzle(self):
-    #     """Testing if drizzle event is triggered"""
-    #     ydata1 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '8', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data1 = weatherBot.get_weather_variables(ydata1)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data1), 'Drizzlin\' yo.')
-    #     ydata2 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '8', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '9', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-33', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data2 = weatherBot.get_weather_variables(ydata2)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data2), 'Drizzlin\' yo.')
-    #
-    # def test_make_special_tweet_snow(self):
-    #     """Testing if snow event is triggered"""
-    #     ydata1 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '13', 'text': 'Snow Flurries'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data1 = weatherBot.get_weather_variables(ydata1)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data1), 'Snow flurries. Bundle up.')
-    #     ydata2 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '8', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '14', 'text': 'Light Snow Showers'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-33', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data2 = weatherBot.get_weather_variables(ydata2)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data2), 'Light snow showers. Bundle up.')
-    #     ydata3 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '15', 'text': 'Blowing Snow'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data3 = weatherBot.get_weather_variables(ydata3)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data3), 'Blowing snow. Bundle up.')
-    #     ydata4 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '8', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '16', 'text': 'Snow'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-33', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data4 = weatherBot.get_weather_variables(ydata4)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data4), 'Snow. Bundle up.')
-    #     ydata5 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '41', 'text': 'Heavy Snow'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data5 = weatherBot.get_weather_variables(ydata5)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data5), 'Heavy snow. Bundle up.')
-    #     ydata6 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '8', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '43', 'text': 'Heavy Snow'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-33', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data6 = weatherBot.get_weather_variables(ydata6)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data6), 'Heavy snow. Bundle up.')
-    #
-    # def test_make_special_tweet_mixes(self):
-    #     """Testing if mixes event is triggered"""
-    #     ydata1 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '5', 'text': 'Mixed Rain and Snow'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data1 = weatherBot.get_weather_variables(ydata1)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data1),
-    #                      'What a mix! Currently, there\'s mixed rain and snow falling from the sky.')
-    #     ydata2 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '8', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '6', 'text': 'Mixed Rain and Sleet'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-33', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data2 = weatherBot.get_weather_variables(ydata2)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data2),
-    #                      'What a mix! Currently, there\'s mixed rain and sleet falling from the sky.')
-    #     ydata3 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '6', 'text': 'Mixed Snow and Sleet'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data3 = weatherBot.get_weather_variables(ydata3)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data3),
-    #                      'What a mix! Currently, there\'s mixed snow and sleet falling from the sky.')
-    #
-    # def test_make_special_tweet_fog(self):
-    #     """Testing if fog event is triggered"""
-    #     ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '4', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '20', 'text': 'Fog'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '37', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data1 = weatherBot.get_weather_variables(ydata)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data1), 'Do you even fog bro?')
-    #
-    # def test_make_special_tweet_hail(self):
-    #     """Testing if hail event is triggered"""
-    #     ydata1 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '17', 'text': 'Hail'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data1 = weatherBot.get_weather_variables(ydata1)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data1), 'IT\'S HAILIN\'!')
-    #     ydata2 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '8', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '35', 'text': 'Mixed Rain and Hail'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-33', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data2 = weatherBot.get_weather_variables(ydata2)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data2), 'IT\'S HAILIN\'!')
-    #
-    # def test_make_special_tweet_thunderstorms(self):
-    #     """Testing if thunderstorm event is triggered"""
-    #     ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '4', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '4', 'text': 'Thunderstorms'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '37', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data = weatherBot.get_weather_variables(ydata)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data), 'Meh, just a thunderstorm.')
-    #
-    # def test_make_special_tweet_severe_thunderstorms(self):
-    #     """Testing if severe thunderstorm event is triggered"""
-    #     ydata = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '4', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '3', 'text': 'Severe Thunderstorms'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '37', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data = weatherBot.get_weather_variables(ydata)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data),
-    #                      'IT BE STORMIN\'! Severe thunderstorms right now.')
-    #
-    # def test_make_special_tweet_very_severe_storms(self):
-    #     """Testing if very severe thunderstorm event is triggered"""
-    #     ydata1 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '0', 'text': 'Tornado'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data1 = weatherBot.get_weather_variables(ydata1)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data1), 'HOLY SHIT, THERE\'S A TORNADO!')
-    #     ydata2 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '8', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '1', 'text': 'Tropical Storm'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-33', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data2 = weatherBot.get_weather_variables(ydata2)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data2), 'HOLY SHIT, THERE\'S A TROPICAL STORM!')
-    #     ydata3 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '2', 'text': 'Hurricane'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data3 = weatherBot.get_weather_variables(ydata3)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data3), 'HOLY SHIT, THERE\'S A HURRICANE!')
-    #
-    # def test_make_special_tweet_wind_condition(self):
-    #     """Testing if wind event is triggered"""
-    #     ydata1 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '43', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '23', 'text': 'Blustery'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-26', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data1 = weatherBot.get_weather_variables(ydata1)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data1),
-    #                      'Looks like we\'ve got some wind at 9 mph coming from the NW.')
-    #     ydata2 = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '8', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '24', 'text': 'Windy'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-33', 'direction': '310', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data2 = weatherBot.get_weather_variables(ydata2)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data2),
-    #                      'Looks like we\'ve got some wind at 9 km/h coming from the NW.')
-    #
-    # def test_make_special_tweet_windchill(self):
-    #     """Testing if windchill event is triggered"""
-    #     ydata_f = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '-22', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'mph', 'temperature': 'F', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-34', 'direction': '15', 'speed': '9'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data1 = weatherBot.get_weather_variables(ydata_f)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data1),
-    #                      'Wow, mother nature hates us. The windchill is -34' + deg +
-    #                      'F and the wind is blowing at 9 mph from the N. My face hurts.')
-    #     ydata_c = {'query': {'lang': 'en-US', 'created': '2015-04-02T05:49:55Z', 'results': {'channel': {'image': {'link': 'http://weather.yahoo.com', 'width': '142', 'url': 'http://l.yimg.com/a/i/brand/purplelogo//uh/us/news-wea.gif', 'height': '18', 'title': 'Yahoo! Weather'}, 'atmosphere': {'rising': '1', 'visibility': '10', 'humidity': '70', 'pressure': '29.67'}, 'item': {'lat': '45.59', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'forecast': [{'low': '40', 'text': 'Partly Cloudy', 'high': '73', 'day': 'Wed', 'date': '1 Apr 2015', 'code': '29'}, {'low': '23', 'text': 'Partly Cloudy/Wind', 'high': '59', 'day': 'Thu', 'date': '2 Apr 2015', 'code': '24'}, {'low': '28', 'text': 'Partly Cloudy', 'high': '46', 'day': 'Fri', 'date': '3 Apr 2015', 'code': '30'}, {'low': '32', 'text': 'Mostly Sunny', 'high': '57', 'day': 'Sat', 'date': '4 Apr 2015', 'code': '34'}, {'low': '29', 'text': 'Partly Cloudy', 'high': '52', 'day': 'Sun', 'date': '5 Apr 2015', 'code': '30'}], 'description': '\n<img src="http://l.yimg.com/a/i/us/we/52/33.gif"/><br />\n<b>Current Conditions:</b><br />\nFair, 43 F<BR />\n<BR /><b>Forecast:</b><BR />\nWed - Partly Cloudy. High: 73 Low: 40<br />\nThu - Partly Cloudy/Wind. High: 59 Low: 23<br />\nFri - Partly Cloudy. High: 46 Low: 28<br />\nSat - Mostly Sunny. High: 57 Low: 32<br />\nSun - Partly Cloudy. High: 52 Low: 29<br />\n<br />\n<a href="http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html">Full Forecast at Yahoo! Weather</a><BR/><BR/>\n(provided by <a href="http://www.weather.com" >The Weather Channel</a>)<br/>\n', 'guid': {'isPermaLink': 'false', 'content': 'USMN0518_2015_04_05_7_00_CDT'}, 'condition': {'temp': '-30', 'date': 'Thu, 02 Apr 2015 12:33 am CDT', 'code': '33', 'text': 'Fair'}, 'long': '-95.9', 'title': 'Conditions for Morris, MN at 12:33 am CDT', 'pubDate': 'Thu, 02 Apr 2015 12:33 am CDT'}, 'location': {'country': 'United States', 'city': 'Morris', 'region': 'MN'}, 'units': {'speed': 'km/h', 'temperature': 'C', 'pressure': 'in', 'distance': 'mi'}, 'wind': {'chill': '-38', 'direction': '163', 'speed': '42'}, 'ttl': '60', 'link': 'http://us.rd.yahoo.com/dailynews/rss/weather/Morris__MN/*http://weather.yahoo.com/forecast/USMN0518_f.html', 'lastBuildDate': 'Thu, 02 Apr 2015 12:33 am CDT', 'description': 'Yahoo! Weather for Morris, MN', 'astronomy': {'sunrise': '7:03 am', 'sunset': '7:49 pm'}, 'title': 'Yahoo! Weather - Morris, MN', 'language': 'en-us'}}, 'count': 1}}
-    #     weather_data2 = weatherBot.get_weather_variables(ydata_c)
-    #     self.assertEqual(weatherBot.make_special_tweet(weather_data2),
-    #                      'Wow, mother nature hates us. The windchill is -38' + deg +
-    #                      'C and the wind is blowing at 42 km/h from the S. My face hurts.')
-    #
-    # def test_make_forecast(self):
-    #     """Testing if forecast contains the conditions, high, and low temperatures"""
-    #     weather_data = weatherBot.get_weather_variables(ydataNorm)
-    #     now = datetime.now().replace(year=2015, month=4, day=2)
-    #     returned = weatherBot.make_forecast(now, weather_data)
-    #     self.assertTrue('partly cloudy/wind' in returned)
-    #     self.assertTrue('23' + deg + 'F' in returned)
-    #     self.assertTrue('59' + deg + 'F' in returned)
-    #
-    # def test_make_forecast_error(self):
-    #     """Testing if error condition tweet is returned"""
-    #     weather_data = weatherBot.get_weather_variables(ydataNorm)
-    #     now = datetime.now().replace(year=2015, month=4, day=10)
-    #     returned = weatherBot.make_forecast(now, weather_data)
-    #     self.assertTrue('not available' in returned)
-    #
-    # def test_do_tweet(self):
-    #     """Testing tweeting a test tweet using keys from env variables"""
-    #     tweet_location = False
-    #     variable_location = False
-    #     weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'windSpeed': 9.0, 'windSpeed_and_unit': '9 mph', 'apparentTemperature': 37}
-    #     content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
-    #     tweet_content = content + weatherBot.HASHTAG
-    #     status = weatherBot.do_tweet(content, weather_data, tweet_location, variable_location)
-    #     self.assertEqual(status.text, tweet_content)
-    #     # test destroy
-    #     api = weatherBot.get_tweepy_api()
-    #     deleted = api.destroy_status(id=status.id)
-    #     self.assertEqual(deleted.id, status.id)
-    #
-    # def test_do_tweet_with_location(self):
-    #     """Testing tweeting a test tweet with location using keys from env variables"""
-    #     tweet_location = True
-    #     variable_location = False
-    #     weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'windSpeed': 9.0, 'windSpeed_and_unit': '9 mph', 'apparentTemperature': 37}
-    #     content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
-    #     tweet_content = content + weatherBot.HASHTAG
-    #     status = weatherBot.do_tweet(content, weather_data, tweet_location, variable_location)
-    #     self.assertEqual(status.text, tweet_content)
-    #     # test destroy
-    #     api = weatherBot.get_tweepy_api()
-    #     deleted = api.destroy_status(id=status.id)
-    #     self.assertEqual(deleted.id, status.id)
-    #
-    # def test_do_tweet_with_variable_location(self):
-    #     """Testing tweeting a test tweet using keys from env variables"""
-    #     tweet_location = True
-    #     variable_location = True
-    #     weather_data = {'region': 'MN', 'code': 33, 'humidity': 70, 'units': {'distance': 'mi', 'pressure': 'in', 'speed': 'mph', 'temperature': 'F'}, 'wind_direction': 'NW', 'city': 'Morris', 'latitude': '45.59', 'temp': 43, 'temp_and_unit': '43ºF', 'condition': 'Fair', 'valid': True, 'deg_unit': 'º F', 'longitude': '-95.9', 'windSpeed': 9.0, 'windSpeed_and_unit': '9 mph', 'apparentTemperature': 37}
-    #     content = 'Just running unit tests, this should disappear...  %i' % random.randint(0, 1000)
-    #     tweet_content = weather_data['city'] + ", " + weather_data['region'] + ": " + content + weatherBot.HASHTAG
-    #     status = weatherBot.do_tweet(content, weather_data, tweet_location, variable_location)
-    #     self.assertEqual(status.text, tweet_content)
-    #     # test destroy
-    #     api = weatherBot.get_tweepy_api()
-    #     deleted = api.destroy_status(id=status.id)
-    #     self.assertEqual(deleted.id, status.id)
+    def test_do_tweet(self):
+        """Testing tweeting a test tweet using keys from env variables"""
+        tweet_location = False
+        variable_location = False
+        wd_si = {
+            'windBearing': 'SW',
+            'temp_and_unit': '7ºC',
+            'apparentTemperature_and_unit': '3ºC',
+            'latitude': 55.76,
+            'units': {
+                'unit': 'si',
+                'temperatureMin': 'C',
+                'pressure': 'hPa',
+                'precipIntensityMax': 'mm/h',
+                'temperatureMax': 'C',
+                'visibility': 'km',
+                'apparentTemperature': 'C',
+                'dewPoint': 'C',
+                'precipAccumulation': 'cm',
+                'nearestStormDistance': 'km/h',
+                'precipIntensity': 'mm/h',
+                'windSpeed': 'm/s',
+                'temperature': 'C'
+            },
+            'summary': 'mostly cloudy',
+            'hour_summary': 'Mostly cloudy for the hour.',
+            'apparentTemperature': 3.41,
+            'longitude': 12.49,
+            'location': 'Lyngby-Taarbæk, Hovedstaden',
+            'valid': True,
+            'forecast': {},
+            'windSpeed_and_unit': '5 m/s',
+            'humidity': 94,
+            'nearestStormDistance': 99999,
+            'precipIntensity': 0,
+            'windSpeed': 5.26,
+            'temp': 6.74,
+            'icon': 'partly-cloudy-night',
+            'hour_icon': 'partly-cloudy-night',
+            'precipType': 'none',
+            'precipProbability': 0,
+            'alerts': [],
+            'timezone': 'Europe/Copenhagen'
+        }
+        content = 'Just running unit tests, this should disappear... {0}'.format(random.randint(0, 9999))
+        tweet_content = content + weatherBot.CONFIG['basic']['hashtag']
+        status = weatherBot.do_tweet(content, wd_si, tweet_location, variable_location)
+        self.assertEqual(status.text, tweet_content)
+        # test destroy
+        api = weatherBot.get_tweepy_api()
+        deleted = api.destroy_status(id=status.id)
+        self.assertEqual(deleted.id, status.id)
+
+    def test_do_tweet_with_location(self):
+        """Testing tweeting a test tweet with location using keys from env variables"""
+        tweet_location = True
+        variable_location = False
+        wd_si = {
+            'windBearing': 'SW',
+            'temp_and_unit': '7ºC',
+            'apparentTemperature_and_unit': '3ºC',
+            'latitude': 55.76,
+            'units': {
+                'unit': 'si',
+                'temperatureMin': 'C',
+                'pressure': 'hPa',
+                'precipIntensityMax': 'mm/h',
+                'temperatureMax': 'C',
+                'visibility': 'km',
+                'apparentTemperature': 'C',
+                'dewPoint': 'C',
+                'precipAccumulation': 'cm',
+                'nearestStormDistance': 'km/h',
+                'precipIntensity': 'mm/h',
+                'windSpeed': 'm/s',
+                'temperature': 'C'
+            },
+            'summary': 'mostly cloudy',
+            'hour_summary': 'Mostly cloudy for the hour.',
+            'apparentTemperature': 3.41,
+            'longitude': 12.49,
+            'location': 'Lyngby-Taarbæk, Hovedstaden',
+            'valid': True,
+            'forecast': {},
+            'windSpeed_and_unit': '5 m/s',
+            'humidity': 94,
+            'nearestStormDistance': 99999,
+            'precipIntensity': 0,
+            'windSpeed': 5.26,
+            'temp': 6.74,
+            'icon': 'partly-cloudy-night',
+            'hour_icon': 'partly-cloudy-night',
+            'precipType': 'none',
+            'precipProbability': 0,
+            'alerts': [],
+            'timezone': 'Europe/Copenhagen'
+        }
+        content = 'Just running unit tests, this should disappear... {0}'.format(random.randint(0, 9999))
+        tweet_content = content + weatherBot.CONFIG['basic']['hashtag']
+        status = weatherBot.do_tweet(content, wd_si, tweet_location, variable_location)
+        self.assertEqual(status.text, tweet_content)
+        # test destroy
+        api = weatherBot.get_tweepy_api()
+        deleted = api.destroy_status(id=status.id)
+        self.assertEqual(deleted.id, status.id)
+
+    def test_do_tweet_with_variable_location(self):
+        """Testing tweeting a test tweet with location and variable location using keys from env variables"""
+        tweet_location = True
+        variable_location = True
+        wd_si = {
+            'windBearing': 'SW',
+            'temp_and_unit': '7ºC',
+            'apparentTemperature_and_unit': '3ºC',
+            'latitude': 55.76,
+            'units': {
+                'unit': 'si',
+                'temperatureMin': 'C',
+                'pressure': 'hPa',
+                'precipIntensityMax': 'mm/h',
+                'temperatureMax': 'C',
+                'visibility': 'km',
+                'apparentTemperature': 'C',
+                'dewPoint': 'C',
+                'precipAccumulation': 'cm',
+                'nearestStormDistance': 'km/h',
+                'precipIntensity': 'mm/h',
+                'windSpeed': 'm/s',
+                'temperature': 'C'
+            },
+            'summary': 'mostly cloudy',
+            'hour_summary': 'Mostly cloudy for the hour.',
+            'apparentTemperature': 3.41,
+            'longitude': 12.49,
+            'location': 'Lyngby-Taarbæk, Hovedstaden',
+            'valid': True,
+            'forecast': {},
+            'windSpeed_and_unit': '5 m/s',
+            'humidity': 94,
+            'nearestStormDistance': 99999,
+            'precipIntensity': 0,
+            'windSpeed': 5.26,
+            'temp': 6.74,
+            'icon': 'partly-cloudy-night',
+            'hour_icon': 'partly-cloudy-night',
+            'precipType': 'none',
+            'precipProbability': 0,
+            'alerts': [],
+            'timezone': 'Europe/Copenhagen'
+        }
+        content = 'Just running unit tests, this should disappear... {0}'.format(random.randint(0, 9999))
+        tweet_content = wd_si['location'] + ': ' + content + weatherBot.CONFIG['basic']['hashtag']
+        status = weatherBot.do_tweet(content, wd_si, tweet_location, variable_location)
+        self.assertEqual(status.text, tweet_content)
+        # test destroy
+        api = weatherBot.get_tweepy_api()
+        deleted = api.destroy_status(id=status.id)
+        self.assertEqual(deleted.id, status.id)
+
+    def test_do_tweet_error(self):
+        """Testing tweeting a test tweet that should throw and error using keys from env variables"""
+        tweet_location = False
+        variable_location = False
+        wd_si = {
+            'windBearing': 'SW',
+            'temp_and_unit': '7ºC',
+            'apparentTemperature_and_unit': '3ºC',
+            'latitude': 55.76,
+            'units': {
+                'unit': 'si',
+                'temperatureMin': 'C',
+                'pressure': 'hPa',
+                'precipIntensityMax': 'mm/h',
+                'temperatureMax': 'C',
+                'visibility': 'km',
+                'apparentTemperature': 'C',
+                'dewPoint': 'C',
+                'precipAccumulation': 'cm',
+                'nearestStormDistance': 'km/h',
+                'precipIntensity': 'mm/h',
+                'windSpeed': 'm/s',
+                'temperature': 'C'
+            },
+            'summary': 'mostly cloudy',
+            'hour_summary': 'Mostly cloudy for the hour.',
+            'apparentTemperature': 3.41,
+            'longitude': 12.49,
+            'location': 'Lyngby-Taarbæk, Hovedstaden',
+            'valid': True,
+            'forecast': {},
+            'windSpeed_and_unit': '5 m/s',
+            'humidity': 94,
+            'nearestStormDistance': 99999,
+            'precipIntensity': 0,
+            'windSpeed': 5.26,
+            'temp': 6.74,
+            'icon': 'partly-cloudy-night',
+            'hour_icon': 'partly-cloudy-night',
+            'precipType': 'none',
+            'precipProbability': 0,
+            'alerts': [],
+            'timezone': 'Europe/Copenhagen'
+        }
+        content = 'This tweet is over 140 characters.\n' \
+                  'This tweet is over 140 characters.\n' \
+                  'This tweet is over 140 characters.\n' \
+                  'This tweet is over 140 characters.\n' \
+                  'This tweet is over 140 characters.\n' \
+                  '{0}'.format(random.randint(0, 9999))
+        status = weatherBot.do_tweet(content, wd_si, tweet_location, variable_location)
+        self.assertEqual(None, status)
 
 if __name__ == '__main__':
     keys.set_twitter_env_vars()
