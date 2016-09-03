@@ -243,7 +243,7 @@ def make_forecast(weather_data):
     """
     forecast = weather_data['forecast']
     units = weather_data['units']
-    return 'The forecast for today is ' + forecast.summary.lower() + '  ' + str(round(forecast.temperatureMax)) + \
+    return 'The forecast for today is ' + forecast.summary.lower() + ' ' + str(round(forecast.temperatureMax)) + \
            units['temperatureMax'] + '/' + str(round(forecast.temperatureMin)) + units['temperatureMin'] + \
            '. ' + random.choice(strings.endings)
 
