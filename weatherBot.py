@@ -150,31 +150,36 @@ def get_location_from_user_timeline(username, fallback):
     """
     api = get_tweepy_api()
     # gets the 20 most recent tweets from the given profile
-    timeline = api.user_timeline(screen_name=username, include_rts=False, count=20)
-    for tweet in timeline:
-        # if tweet has coordinates (from a smartphone)
-        if tweet.coordinates is not None:
-            loc = {
-                'lat': tweet.coordinates['coordinates'][1],
-                'lng': tweet.coordinates['coordinates'][0],
-                'name': tweet.place.full_name
-            }
-            logging.debug('Found {0}: {1}, {2}'.format(loc['name'], loc['lat'], loc['lng']))
-            return loc
-        # if the location is a place, not coordinates
-        elif tweet.place is not None:
-            point = utils.centerpoint(tweet.place.bounding_box.coordinates[0])
-            loc = {
-                'lat': point[0],
-                'lng': point[1],
-                'name': tweet.place.full_name
-            }
-            logging.debug('Found the center of bounding box at {0}: {1}, {2}'
-                          .format(loc['name'], loc['lat'], loc['lng']))
-            return loc
-    # fallback to hardcoded location if there is no valid data
-    logging.warning('Could not find tweet with location, falling back to hardcoded location')
-    return fallback
+    try:
+        timeline = api.user_timeline(screen_name=username, include_rts=False, count=20)
+        for tweet in timeline:
+            # if tweet has coordinates (from a smartphone)
+            if tweet.coordinates is not None:
+                loc = {
+                    'lat': tweet.coordinates['coordinates'][1],
+                    'lng': tweet.coordinates['coordinates'][0],
+                    'name': tweet.place.full_name
+                }
+                logging.debug('Found {0}: {1}, {2}'.format(loc['name'], loc['lat'], loc['lng']))
+                return loc
+            # if the location is a place, not coordinates
+            elif tweet.place is not None:
+                point = utils.centerpoint(tweet.place.bounding_box.coordinates[0])
+                loc = {
+                    'lat': point[0],
+                    'lng': point[1],
+                    'name': tweet.place.full_name
+                }
+                logging.debug('Found the center of bounding box at {0}: {1}, {2}'
+                              .format(loc['name'], loc['lat'], loc['lng']))
+                return loc
+        # fallback to hardcoded location if there is no valid data
+        logging.warning('Could not find tweet with location, falling back to hardcoded location')
+        return fallback
+    except tweepy.TweepError as err:
+        logging.error(err)
+        logging.warning('Could not find tweet with location, falling back to hardcoded location')
+        return fallback
 
 
 def get_weather_variables(forecast, location):
