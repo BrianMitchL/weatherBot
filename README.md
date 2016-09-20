@@ -1,6 +1,8 @@
 # weatherBot [![Python Version](https://img.shields.io/badge/python-3.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master) [![Dependency Status](https://gemnasium.com/badges/github.com/BrianMitchL/weatherBot.svg)](https://gemnasium.com/github.com/BrianMitchL/weatherBot)
 
-A Twitter bot for weather. Powered by [Forecast](https://forecast.io).
+A Twitter bot for weather. [Powered by Dark Sky](https://darksky.net/poweredby/).
+
+<img src="https://darksky.net/dev/img/attribution/poweredby-oneline.png" alt="Powered by Dark Sky" width="200">
 
 _**Note: Any language or wording suggestions are appreciated and should be submitted as an issue. Feel free to add new choices for normal tweets and submit a pull request!**_
 
@@ -19,7 +21,7 @@ weatherBot can tweet the current weather condition and temperature at scheduled 
 * US, CA, UK, or SI units
 * Geo location in each tweet
 * Logs to the console and a file
-* Weather data from Forecast.io
+* Weather data from Dark Sky
 * Python 3.3 or higher
 * Configuration file for easy configuration
 * Deploy via Heroku or Docker
@@ -84,5 +86,5 @@ docker run --name weatherBot -d -e WEATHERBOT_CONSUMER_KEY=xxx -e WEATHERBOT_CON
 
 ## Tools Used
 * [Tweepy](https://github.com/tweepy/tweepy)
-* [forecast.io API](https://developer.forecast.io)
+* [Dark Sky API](https://darksky.net/poweredby/)
 * [python-forecast.io](https://github.com/ZeevG/python-forecast.io)
