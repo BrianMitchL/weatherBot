@@ -70,23 +70,52 @@ git push heroku master
 ```
 The twitter and forecast.io keys need to be added. The format to do so is:
 ```shell
-heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx WEATHERBOT_ACCESS_TOKEN=xxxxx WEATHERBOT_ACCESS_TOKEN_SECRET=xxxxx WEATHERBOT_FORECASTIO_KEY=xxxxx
+heroku config:set \
+WEATHERBOT_CONSUMER_KEY=xxx \
+WEATHERBOT_CONSUMER_SECRET=xxx \
+WEATHERBOT_ACCESS_TOKEN=xxx \
+WEATHERBOT_ACCESS_TOKEN_SECRET=xxx \
+WEATHERBOT_FORECASTIO_KEY=xxx
 ```
 You can also add keys/environmental variables on the Heroku project's settings page.
 
 ## Deploying with Docker
+
 weatherBot can easily be deployed using Docker.
+
+### weatherBot from Docker Hub
+
 To download the image, run:
 ```shell
 docker pull brianmitchl/weatherbot
 ```
+Start the bot with the following, replacing the API keys and secrets with the correct strings. You will also need to add your conf file to the container (I use the `-v` flag).
+```shell
+docker run --name weatherBot -d \
+-v /home/brianmitchell/weatherBot/dist/custom.conf:/src/custom.conf \
+-e WEATHERBOT_CONSUMER_KEY=xxx \
+-e WEATHERBOT_CONSUMER_SECRET=xxx \
+-e WEATHERBOT_ACCESS_TOKEN=xxx \
+-e WEATHERBOT_ACCESS_TOKEN_SECRET=xxx \
+-e WEATHERBOT_FORECASTIO_KEY=xxx \
+brianmitchl/weatherbot python weatherBot.py custom.conf
+```
+
+### Building Your Own weatherBot
+
 Alternatively, if you wish to build it yourself, run:
 ```shell
 docker build -t weatherbot .
 ```
-Start the bot with the following, replacing the API keys and secrets with the correct strings:
+Start the bot with the following, replacing the API keys and secrets with the correct strings.
 ```shell
-docker run --name weatherBot -d -e WEATHERBOT_CONSUMER_KEY=xxx -e WEATHERBOT_CONSUMER_SECRET=xxx -e WEATHERBOT_ACCESS_TOKEN=xxx -e WEATHERBOT_ACCESS_TOKEN_SECRET=xxx -e WEATHERBOT_FORECASTIO_KEY=xxx weatherbot python weatherBot.py weatherBot.conf
+docker run --name weatherBot -d \
+-e WEATHERBOT_CONSUMER_KEY=xxx \
+-e WEATHERBOT_CONSUMER_SECRET=xxx \
+-e WEATHERBOT_ACCESS_TOKEN=xxx \
+-e WEATHERBOT_ACCESS_TOKEN_SECRET=xxx \
+-e WEATHERBOT_FORECASTIO_KEY=xxx \
+weatherbot python weatherBot.py weatherBot.conf
 ```
 
 ## Tools Used
