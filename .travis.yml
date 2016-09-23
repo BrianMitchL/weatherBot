@@ -10,6 +10,8 @@ script:
 - coverage run --source=weatherBot,strings,utils test.py
 after_success:
 - coveralls
+- '[ "$TRAVIS_BRANCH" == "master" ] && curl -X POST -H "Content-Type: application/json"
+  --data ''{"docker_tag_name": "latest"}'' https://registry.hub.docker.com/u/brianmitchl/weatherbot/trigger/$DOCKER_HUB_TOKEN/'
 env:
   global:
   - secure: LFncgbbLgEy4dMPWk8ingY0bSM54Bb8eQ/FmSfFCNi1Lnq25P8/OnlyGQbmwYxh7sLI7BSbt5L59iIBuRCNzE/VKw40WQ7VtyFTgDOdAgU7eQ9nDb3FV5B989VijfnqqM1rAGilWoTfbu2HDrJH+qosDjG3GxgNlsh2HRHj4KQs=
@@ -17,3 +19,4 @@ env:
   - secure: iYWnJuXOUrGKmN1ST4A7sFRPMMuYaPtpYTtXFfWrG7i5Kos2G4BVl9uTVk4ByMKOcq2/oqMtmSTGthP8OVu/pFmiA3ceHihSe8AdR4dWDCz70n6ifYONUdm2P3duh0kv5x4Xb3oWfTBbIzqoKPVJViezNcAaWTSqA3d/eTnZ+3A=
   - secure: NOk7SNDUZeQ/ARRq9BijMT0A52RIR17y/uNw+vpxWzz12BOyrKc81l1+iRIeHmsDrdwmeiYRC4ERN9Eeo/i2qUbm4yG8IXTuc2/QzZM7vvk1Cdk/0F3JqWCh2GQ15sSCKHBvsjK5LJuefZIZGIs4QLNapAmu+SGMx7grjcD4+08=
   - secure: FS5UZeapMuh27U6qG8cV4R8IPKCH6t9dgRhfwXWgFH75WjYxs7GE7URbdbLMWizv6UqR1kX20mZtz6zXSQRNYVh4TauJdEbFB9yGwNBEZau2UYztgT7isYYGj5oRRpOB3e1VM7tDPZ2RPSXo9R6Ji8t6PD8EUG+Sdf+7l8tZvnI=
+  - secure: BJ7xxMyifP6L2rQBsSsogJo5MsdkrZH1bHSJ6U8fJW7tLANgDMdeP5u6ItD3/LFgT1nSnoBcG+ZLVf22eMZV0Ej/DZjr8WKFbfKoiOdTVbQSHkkiYp7FQXMausDcOQwXE0eUxpsObGmcKQ4iD/zeUqziHf0L/zss1l8M5n4aCrU=
