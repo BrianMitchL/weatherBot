@@ -10,8 +10,11 @@ script:
 - coverage run --source=weatherBot,strings,utils test.py
 after_success:
 - coveralls
-- '[ "$TRAVIS_BRANCH" == "master" ] && curl -X POST -H "Content-Type: application/json"
-  --data ''{"docker_tag_name": "latest"}'' https://registry.hub.docker.com/u/brianmitchl/weatherbot/trigger/$DOCKER_HUB_TOKEN/'
+deploy:
+  provider: script
+  script: curl -X POST -H "Content-Type: application/json" --data ''{"docker_tag_name": "latest"}'' https://registry.hub.docker.com/u/brianmitchl/weatherbot/trigger/$DOCKER_HUB_TOKEN/
+  on:
+    branch: master
 env:
   global:
   - secure: LFncgbbLgEy4dMPWk8ingY0bSM54Bb8eQ/FmSfFCNi1Lnq25P8/OnlyGQbmwYxh7sLI7BSbt5L59iIBuRCNzE/VKw40WQ7VtyFTgDOdAgU7eQ9nDb3FV5B989VijfnqqM1rAGilWoTfbu2HDrJH+qosDjG3GxgNlsh2HRHj4KQs=
