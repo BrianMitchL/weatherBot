@@ -14,9 +14,10 @@ import traceback
 import configparser
 from datetime import datetime
 from datetime import timedelta
+from requests.exceptions import ConnectionError
+from requests.exceptions import HTTPError
 
 import forecastio
-import requests
 import pytz
 import tweepy
 
@@ -135,9 +136,13 @@ def get_forecast_object(lat, lng, units):
     """
     try:
         return forecastio.load_forecast(os.getenv('WEATHERBOT_FORECASTIO_KEY'), lat, lng, units=units)
-    except requests.exceptions.HTTPError as err:
+    except (HTTPError, ConnectionError) as err:
         logging.error(err)
-        logging.error('HTTPError when getting Forecast object', exc_info=True)
+        logging.error('Error when getting Forecast object', exc_info=True)
+        if CONFIG['basic']['dm_errors']:
+            api = get_tweepy_api()
+            api.send_direct_message(screen_name=api.me().screen_name,
+                                    text=str(random.randint(0, 9999)) + 'Error when getting Forecast object\n' + err)
         return None
 
 
