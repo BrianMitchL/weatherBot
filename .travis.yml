@@ -12,7 +12,7 @@ after_success:
 - coveralls
 deploy:
   provider: script
-  script: curl -X POST -H "Content-Type: application/json" --data ''{"docker_tag_name": "latest"}'' https://registry.hub.docker.com/u/brianmitchl/weatherbot/trigger/$DOCKER_HUB_TOKEN/
+  script: 'curl -X POST -H "Content-Type: application/json" --data ''{"docker_tag_name": "latest"}'' https://registry.hub.docker.com/u/brianmitchl/weatherbot/trigger/$DOCKER_HUB_TOKEN/'
   on:
     branch: master
 env:
