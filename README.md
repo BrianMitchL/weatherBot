@@ -1,4 +1,4 @@
-# weatherBot [![Python Version](https://img.shields.io/badge/python-3.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master) [![Dependency Status](https://gemnasium.com/badges/github.com/BrianMitchL/weatherBot.svg)](https://gemnasium.com/github.com/BrianMitchL/weatherBot)
+# weatherBot [![GitHub release](https://img.shields.io/github/release/BrianMitchL/weatherBot.svg?maxAge=2592000)](https://github.com/BrianMitchL/weatherBot/releases/latest) [![Python Version](https://img.shields.io/badge/python-3.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master) [![Dependency Status](https://gemnasium.com/badges/github.com/BrianMitchL/weatherBot.svg)](https://gemnasium.com/github.com/BrianMitchL/weatherBot)
 
 A Twitter bot for weather. [Powered by Dark Sky](https://darksky.net/poweredby/).
 
@@ -75,9 +75,14 @@ heroku config:set WEATHERBOT_CONSUMER_KEY=xxxxx WEATHERBOT_CONSUMER_SECRET=xxxxx
 You can also add keys/environmental variables on the Heroku project's settings page.
 
 ## Deploying with Docker
-weatherBot can easily be deployed using Docker. To create the Docker image run:
+weatherBot can easily be deployed using Docker.
+To download the image, run:
 ```shell
-./build.sh
+docker pull brianmitchl/weatherbot
+```
+Alternatively, if you wish to build it yourself, run:
+```shell
+docker build -t weatherbot .
 ```
 Start the bot with the following, replacing the API keys and secrets with the correct strings:
 ```shell
