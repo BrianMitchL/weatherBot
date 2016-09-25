@@ -626,14 +626,15 @@ class TestWB(unittest.TestCase):
 
     def test_get_forecast_object(self):
         """Testing getting the forecastio object"""
-        forecast = weatherBot.get_forecast_object(self.location['lat'], self.location['lng'], units='us')
+        forecast = weatherBot.get_forecast_object(self.location['lat'], self.location['lng'], units='us', lang='de')
         self.assertEqual(forecast.response.status_code, 200)
         self.assertEqual(forecast.json['flags']['units'], 'us')
         bad_forecast = weatherBot.get_forecast_object(345.5, 123.45)
         self.assertEqual(bad_forecast, None)
-        alt_forecast = weatherBot.get_forecast_object(self.location['lat'], self.location['lng'], units='si', lang='de')
+        auto_forecast = weatherBot.get_forecast_object(49.8957, -97.1376, units='auto')
+        # Tim Hortons in downtown Winnipeg, Manitoba, Canada
         self.assertEqual(forecast.response.status_code, 200)
-        self.assertEqual(alt_forecast.json['flags']['units'], 'si')
+        self.assertEqual(auto_forecast.json['flags']['units'], 'ca')
 
     def test_do_tweet(self):
         """Testing tweeting a test tweet using keys from env variables"""

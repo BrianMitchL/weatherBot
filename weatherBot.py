@@ -131,8 +131,8 @@ def get_forecast_object(lat, lng, units='us', lang='en'):
     """
     :param lat: float containing latitude
     :param lng: float containing longitude
-    :param units: string containing the units standard, ex "us", "ca", "uk2", "si"
-    :param lang: string containing the language, ex: 'en', "de". See https://darksky.net/dev/docs/forecast for more
+    :param units: string containing the units standard, ex 'us', 'ca', 'uk2', 'si', 'auto'
+    :param lang: string containing the language, ex: 'en', 'de'. See https://darksky.net/dev/docs/forecast for more
     :return: Forecast object or None if HTTPError
     """
     try:
@@ -200,7 +200,7 @@ def get_weather_variables(forecast, location):
             raise BadForecastDataError('Temp is None')
         if not forecast.currently().summary:
             raise BadForecastDataError('Summary is None')
-        weather_data['units'] = utils.get_units(CONFIG['basic']['units'])
+        weather_data['units'] = utils.get_units(forecast.json['flags']['units'])
         # forecast.io doesn't always include 'windBearing' or 'nearestStormDistance'
         if hasattr(forecast.currently(), 'windBearing'):
             weather_data['windBearing'] = utils.get_wind_direction(forecast.currently().windBearing)

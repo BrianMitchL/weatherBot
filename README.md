@@ -18,7 +18,7 @@ weatherBot can tweet the current weather condition and temperature at scheduled 
 * Limiting how often the special event tweets are tweeted (at a granular level)
 * Variable location for all tweets based on the locations in a user's recent tweets
 * Timezone support for localizing times to the timezone of the given or found location
-* US, CA, UK, or SI units
+* Automatically select units based on geographic location or manually specify US, CA, UK, or SI
 * Geo location in each tweet
 * Logs to the console and a file
 * Weather data from Dark Sky
