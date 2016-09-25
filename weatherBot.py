@@ -127,22 +127,21 @@ def get_tweepy_api():
     return tweepy.API(auth)
 
 
-def get_forecast_object(lat, lng, units):
+def get_forecast_object(lat, lng, units='us', lang='en'):
     """
     :param lat: float containing latitude
     :param lng: float containing longitude
     :param units: string containing the units standard, ex "us", "ca", "uk2", "si"
+    :param lang: string containing the language, ex: 'en', "de". See https://darksky.net/dev/docs/forecast for more
     :return: Forecast object or None if HTTPError
     """
     try:
-        return forecastio.load_forecast(os.getenv('WEATHERBOT_DARKSKY_KEY'), lat, lng, units=units)
+        url = 'https://api.darksky.net/forecast/{0}/{1},{2}?units={3}&lang={4}'\
+            .format(os.getenv('WEATHERBOT_DARKSKY_KEY'), lat, lng, units, lang)
+        return forecastio.manual(url)
     except (HTTPError, ConnectionError) as err:
         logging.error(err)
         logging.error('Error when getting Forecast object', exc_info=True)
-        if CONFIG['basic']['dm_errors']:
-            api = get_tweepy_api()
-            api.send_direct_message(screen_name=api.me().screen_name,
-                                    text=str(random.randint(0, 9999)) + 'Error when getting Forecast object\n' + err)
         return None
 
 
