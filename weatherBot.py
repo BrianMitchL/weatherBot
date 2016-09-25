@@ -135,7 +135,7 @@ def get_forecast_object(lat, lng, units):
     :return: Forecast object or None if HTTPError
     """
     try:
-        return forecastio.load_forecast(os.getenv('WEATHERBOT_FORECASTIO_KEY'), lat, lng, units=units)
+        return forecastio.load_forecast(os.getenv('WEATHERBOT_DARKSKY_KEY'), lat, lng, units=units)
     except (HTTPError, ConnectionError) as err:
         logging.error(err)
         logging.error('Error when getting Forecast object', exc_info=True)

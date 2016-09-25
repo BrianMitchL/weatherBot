@@ -12,7 +12,7 @@ keys = {
     'consumer_secret': 'xxx',
     'access_token': 'xxx',
     'access_token_secret': 'xxx',
-    'forecastio_key': 'xxx'
+    'darksky_key': 'xxx'
 }
 
 
@@ -26,5 +26,5 @@ def set_twitter_env_vars():
 
 
 def set_forecastio_env_vars():
-    if os.getenv('WEATHERBOT_FORECASTIO_KEY', 0) is 0:
-        os.environ['WEATHERBOT_FORECASTIO_KEY'] = keys['forecastio_key']
+    if os.getenv('WEATHERBOT_DARKSKY_KEY', 0) is 0:
+        os.environ['WEATHERBOT_DARKSKY_KEY'] = keys['darksky_key']
