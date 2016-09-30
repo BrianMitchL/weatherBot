@@ -6,8 +6,9 @@ python:
 install:
 - pip install -r requirements.txt
 - pip install coveralls
+- pip install yamllint
 script:
-- coverage run --source=weatherBot,strings,utils test.py
+- yamllint strings.yml && coverage run --source=weatherBot,strings,utils test/test.py
 after_success:
 - coveralls
 deploy:

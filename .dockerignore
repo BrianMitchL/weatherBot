@@ -6,4 +6,4 @@ LICENSE
 .idea
 Procfile
 runtime.txt
-test.py
+test

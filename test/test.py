@@ -4,25 +4,49 @@
 # Copyright 2015-2016 Brian Mitchell under the MIT license
 # See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 
-import unittest
-import sys
+import configparser
+import datetime
+import json
 import logging
 import os
 import random
+import sys
+import unittest
+from unittest import mock
+
+import forecastio
 import pytz
-import datetime
-import configparser
+import yaml
 from testfixtures import LogCapture
 
-
-import weatherBot
 import keys
 import strings
 import utils
-from utils import Time
+import weatherBot
 from strings import Condition
+from utils import Time
+
 
 # TODO write tests
+
+def mocked_requests_get(*args, **kwargs):
+    class MockResponse:
+        def __init__(self, json_data, status_code):
+            self.json_data = json_data
+            self.status_code = status_code
+            self.headers = None
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return self.json_data
+
+    if args[0] == 'testing.forecast':
+        with open('test/response.json', 'r', encoding='utf-8') as file_stream:
+            return MockResponse(json.load(file_stream), 200)
+    else:
+        return MockResponse({}, 200)
 
 
 class TestUtils(unittest.TestCase):
@@ -189,6 +213,8 @@ class TestUtils(unittest.TestCase):
 
 class TestStrings(unittest.TestCase):
     def setUp(self):
+        with open('strings.yml', 'r') as file_stream:
+            self.weatherbot_strings = yaml.safe_load(file_stream)
         self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
         self.wd_us = {
             'windBearing': 'SW',
@@ -351,6 +377,76 @@ class TestStrings(unittest.TestCase):
             'timezone': 'Europe/Copenhagen'
         }
 
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_forecast(self, mock_get):
+        forecast = forecastio.manual('testing.forecast')
+        wd = weatherBot.get_weather_variables(forecast, self.location)
+        wbs = strings.WeatherBotString(self.weatherbot_strings)
+        wbs.set_weather(wd)
+        wbs.forecast_endings = []
+        forecast_string = wbs.forecast()
+        self.assertIn(forecast_string, wbs.forecasts)
+
+    def test_normal(self):
+        wbs = strings.WeatherBotString(self.weatherbot_strings)
+        wbs.weather_data = self.wd_us
+        normal_string = wbs.normal()
+        self.assertIn(normal_string, wbs.normal_conditions)
+
+    def test_alert(self):
+        wbs = strings.WeatherBotString(self.weatherbot_strings)
+        dt = datetime.datetime.utcfromtimestamp(1475129665)  # datetime.datetime(2016, 9, 29, 6, 14, 25)
+        alert = wbs.alert(title='title', expires=pytz.utc.localize(dt), uri='test.uri')
+        self.assertIn('Thu, Sep 29 at 06:14:25 UTC', alert)
+        self.assertNotIn(alert, wbs.alerts)
+
+    def test_precipitation(self):
+        """Testing if a precipitation condition is met"""
+        wbs = strings.WeatherBotString(self.weatherbot_strings)
+        wbs.weather_data = self.wd_us
+        self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
+        wbs.weather_data['precipIntensity'] = 0.3
+        wbs.weather_data['precipProbability'] = 0.5
+        wbs.weather_data['precipType'] = 'rain'
+        self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
+        wbs.weather_data['precipIntensity'] = 0.3
+        wbs.weather_data['precipProbability'] = 1
+        wbs.weather_data['precipType'] = 'none'
+        self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
+        wbs.weather_data['precipIntensity'] = 0
+        wbs.weather_data['precipProbability'] = 1
+        wbs.weather_data['precipType'] = 'rain'
+        self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
+        wbs.weather_data['precipIntensity'] = 0
+        wbs.weather_data['precipProbability'] = 1
+        wbs.weather_data['precipType'] = 'none'
+        self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
+        # testing with a few possible conditions
+        wbs.weather_data['precipIntensity'] = 0.3
+        wbs.weather_data['precipProbability'] = 1
+        wbs.weather_data['precipType'] = 'rain'
+        precip = wbs.precipitation()
+        self.assertEqual(precip.type, 'moderate-rain')
+        self.assertIn(precip.text, wbs.precipitations['rain']['moderate'])
+        wbs.weather_data['precipIntensity'] = 0.4
+        wbs.weather_data['precipProbability'] = 0.85
+        wbs.weather_data['precipType'] = 'snow'
+        precip = wbs.precipitation()
+        self.assertEqual(precip.type, 'heavy-snow')
+        self.assertIn(precip.text, wbs.precipitations['snow']['heavy'])
+        wbs.weather_data['precipIntensity'] = 0.06
+        wbs.weather_data['precipProbability'] = 1
+        wbs.weather_data['precipType'] = 'sleet'
+        precip = wbs.precipitation()
+        self.assertEqual(precip.type, 'light-sleet')
+        self.assertIn(precip.text, wbs.precipitations['sleet']['light'])
+        wbs.weather_data['precipIntensity'] = 0.005
+        wbs.weather_data['precipProbability'] = 1
+        wbs.weather_data['precipType'] = 'rain'
+        precip = wbs.precipitation()
+        self.assertEqual(precip.type, 'very-light-rain')
+        self.assertIn(precip.text, wbs.precipitations['rain']['very-light'])
+
     def test_get_precipitation(self):
         """Testing if a precipitation condition is met"""
         # testing for 'none' with too low of a probability or precipitation type is 'none'
@@ -477,6 +573,7 @@ class TestStrings(unittest.TestCase):
         self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
 
 
+@unittest.skip
 class TestWB(unittest.TestCase):
     def setUp(self):
         self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
