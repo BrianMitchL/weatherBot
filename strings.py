@@ -92,7 +92,7 @@ class WeatherBotString:
 
     def precipitation(self):
         """
-        :return: random normal condition string containing the text for a normal tweet
+        :return: Condition namedtuple with type and random text field names
         """
         intensity = utils.precipitation_intensity(self.weather_data['precipIntensity'],
                                                   self.weather_data['units']['precipIntensity'])
