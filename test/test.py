@@ -42,11 +42,8 @@ def mocked_requests_get(*args, **kwargs):
         def json(self):
             return self.json_data
 
-    if args[0] == 'testing.forecast':
-        with open('test/response.json', 'r', encoding='utf-8') as file_stream:
-            return MockResponse(json.load(file_stream), 200)
-    else:
-        return MockResponse({}, 200)
+    with open(args[0], 'r', encoding='utf-8') as file_stream:
+        return MockResponse(json.load(file_stream), 200)
 
 
 class TestUtils(unittest.TestCase):
@@ -379,7 +376,7 @@ class TestStrings(unittest.TestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_forecast(self, mock_get):
-        forecast = forecastio.manual('testing.forecast')
+        forecast = forecastio.manual('test/us.json')
         wd = weatherBot.get_weather_variables(forecast, self.location)
         wbs = strings.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
@@ -387,11 +384,125 @@ class TestStrings(unittest.TestCase):
         forecast_string = wbs.forecast()
         self.assertIn(forecast_string, wbs.forecasts)
 
-    def test_normal(self):
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_normal(self, mock_get):
+        forecast = forecastio.manual('test/us.json')
+        wd = weatherBot.get_weather_variables(forecast, self.location)
         wbs = strings.WeatherBotString(self.weatherbot_strings)
-        wbs.weather_data = self.wd_us
+        wbs.set_weather(wd)
         normal_string = wbs.normal()
         self.assertIn(normal_string, wbs.normal_conditions)
+
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_special(self, mock_get):
+        """Testing if special events are triggered"""
+        forecast_si = forecastio.manual('test/si.json')
+        forecast_us = forecastio.manual('test/us.json')
+        forecast_ca = forecastio.manual('test/ca.json')
+        forecast_uk2 = forecastio.manual('test/uk2.json')
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wbs = strings.WeatherBotString(self.weatherbot_strings)
+        wbs.set_weather(wd)
+        self.assertEqual('normal', wbs.special().type)
+        self.assertEqual('', wbs.special().text)
+        """Testing if wind-chill type is triggered"""
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd['apparentTemperature'] = -34
+        wbs = strings.WeatherBotString(self.weatherbot_strings)
+        wbs.set_weather(wd)
+        self.assertEqual('wind-chill', wbs.special().type)
+        self.assertIn(wbs.special().text, wbs.special_conditions[wbs.special().type])
+        wd = weatherBot.get_weather_variables(forecast_us, self.location)
+        wd['apparentTemperature'] = -30
+        wbs = strings.WeatherBotString(self.weatherbot_strings)
+        wbs.set_weather(wd)
+        self.assertEqual('wind-chill', wbs.special().type)
+        self.assertIn(wbs.special().text, wbs.special_conditions[wbs.special().type])
+        """Testing if precip type is triggered"""
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd['precipProbability'] = 0.9
+        wd['precipType'] = 'rain'
+        wd['precipIntensity'] = 10.0
+        wbs.set_weather(wd)
+        self.assertEqual('heavy-rain', wbs.special().type)
+        self.assertIn(wbs.special().text, wbs.precipitations['rain']['heavy'])
+        wd = weatherBot.get_weather_variables(forecast_us, self.location)
+        wd['precipProbability'] = 0.9
+        wd['precipType'] = 'rain'
+        wd['precipIntensity'] = 1.0
+        wbs.set_weather(wd)
+        self.assertEqual('heavy-rain', wbs.special().type)
+        self.assertIn(wbs.special().text, wbs.precipitations['rain']['heavy'])
+        wd = weatherBot.get_weather_variables(forecast_us, self.location)
+        wd['precipProbability'] = 0.9
+        wd['precipType'] = 'none'
+        wd['precipIntensity'] = 1.0
+        wbs.set_weather(wd)
+        self.assertEqual('normal', wbs.special().type)
+        self.assertEqual('', wbs.special().text)
+        """Testing if medium-wind type is triggered"""
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd['icon'] = 'medium-wind'
+        wbs.set_weather(wd)
+        self.assertEqual('medium-wind', wbs.special().type)
+        """Testing if heavy-wind type is triggered"""
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd['icon'] = 'heavy-wind'
+        wbs.set_weather(wd)
+        self.assertEqual('heavy-wind', wbs.special().type)
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd['windSpeed'] = 15.0
+        wbs.set_weather(wd)
+        self.assertEqual('heavy-wind', wbs.special().type)
+        wd = weatherBot.get_weather_variables(forecast_ca, self.location)
+        wd['windSpeed'] = 56.0
+        wbs.set_weather(wd)
+        self.assertEqual('heavy-wind', wbs.special().type)
+        wd = weatherBot.get_weather_variables(forecast_us, self.location)
+        wd['windSpeed'] = 35.0
+        wbs.set_weather(wd)
+        self.assertEqual('heavy-wind', wbs.special().type)
+        wd = weatherBot.get_weather_variables(forecast_uk2, self.location)
+        wd['windSpeed'] = 35.0
+        wbs.set_weather(wd)
+        self.assertEqual('heavy-wind', wbs.special().type)
+        """Testing if fog type is triggered"""
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd['icon'] = 'fog'
+        wbs.set_weather(wd)
+        self.assertEqual('fog', wbs.special().type)
+        """Testing if cold type is triggered"""
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd['temp'] = -28.0
+        wbs.set_weather(wd)
+        self.assertEqual('cold', wbs.special().type)
+        wd = weatherBot.get_weather_variables(forecast_us, self.location)
+        wd['temp'] = -20.0
+        wbs.set_weather(wd)
+        self.assertEqual('cold', wbs.special().type)
+        """Testing if super-hot type is triggered"""
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd['temp'] = 43.0
+        wbs.set_weather(wd)
+        self.assertEqual('super-hot', wbs.special().type)
+        wd = weatherBot.get_weather_variables(forecast_us, self.location)
+        wd['temp'] = 110.0
+        wbs.set_weather(wd)
+        self.assertEqual('super-hot', wbs.special().type)
+        """Testing if hot type is triggered"""
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd['temp'] = 37.0
+        wbs.set_weather(wd)
+        self.assertEqual('hot', wbs.special().type)
+        wd = weatherBot.get_weather_variables(forecast_us, self.location)
+        wd['temp'] = 100.0
+        wbs.set_weather(wd)
+        self.assertEqual('hot', wbs.special().type)
+        """Testing if dry type is triggered"""
+        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd['humidity'] = 30.0
+        wbs.set_weather(wd)
+        self.assertEqual('dry', wbs.special().type)
 
     def test_alert(self):
         wbs = strings.WeatherBotString(self.weatherbot_strings)
@@ -400,49 +511,60 @@ class TestStrings(unittest.TestCase):
         self.assertIn('Thu, Sep 29 at 06:14:25 UTC', alert)
         self.assertNotIn(alert, wbs.alerts)
 
-    def test_precipitation(self):
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_precipitation(self, mock_get):
         """Testing if a precipitation condition is met"""
         wbs = strings.WeatherBotString(self.weatherbot_strings)
-        wbs.weather_data = self.wd_us
+        forecast_us = forecastio.manual('test/us.json')
+        wd = weatherBot.get_weather_variables(forecast_us, self.location)
+        wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
-        wbs.weather_data['precipIntensity'] = 0.3
-        wbs.weather_data['precipProbability'] = 0.5
-        wbs.weather_data['precipType'] = 'rain'
+        wd['precipIntensity'] = 0.3
+        wd['precipProbability'] = 0.5
+        wd['precipType'] = 'rain'
+        wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
-        wbs.weather_data['precipIntensity'] = 0.3
-        wbs.weather_data['precipProbability'] = 1
-        wbs.weather_data['precipType'] = 'none'
+        wd['precipIntensity'] = 0.3
+        wd['precipProbability'] = 1
+        wd['precipType'] = 'none'
+        wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
-        wbs.weather_data['precipIntensity'] = 0
-        wbs.weather_data['precipProbability'] = 1
-        wbs.weather_data['precipType'] = 'rain'
+        wd['precipIntensity'] = 0
+        wd['precipProbability'] = 1
+        wd['precipType'] = 'rain'
+        wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
-        wbs.weather_data['precipIntensity'] = 0
-        wbs.weather_data['precipProbability'] = 1
-        wbs.weather_data['precipType'] = 'none'
+        wd['precipIntensity'] = 0
+        wd['precipProbability'] = 1
+        wd['precipType'] = 'none'
+        wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
         # testing with a few possible conditions
-        wbs.weather_data['precipIntensity'] = 0.3
-        wbs.weather_data['precipProbability'] = 1
-        wbs.weather_data['precipType'] = 'rain'
+        wd['precipIntensity'] = 0.3
+        wd['precipProbability'] = 1
+        wd['precipType'] = 'rain'
+        wbs.set_weather(wd)
         precip = wbs.precipitation()
         self.assertEqual(precip.type, 'moderate-rain')
         self.assertIn(precip.text, wbs.precipitations['rain']['moderate'])
-        wbs.weather_data['precipIntensity'] = 0.4
-        wbs.weather_data['precipProbability'] = 0.85
-        wbs.weather_data['precipType'] = 'snow'
+        wd['precipIntensity'] = 0.4
+        wd['precipProbability'] = 0.85
+        wd['precipType'] = 'snow'
+        wbs.set_weather(wd)
         precip = wbs.precipitation()
         self.assertEqual(precip.type, 'heavy-snow')
         self.assertIn(precip.text, wbs.precipitations['snow']['heavy'])
-        wbs.weather_data['precipIntensity'] = 0.06
-        wbs.weather_data['precipProbability'] = 1
-        wbs.weather_data['precipType'] = 'sleet'
+        wd['precipIntensity'] = 0.06
+        wd['precipProbability'] = 1
+        wd['precipType'] = 'sleet'
+        wbs.set_weather(wd)
         precip = wbs.precipitation()
         self.assertEqual(precip.type, 'light-sleet')
         self.assertIn(precip.text, wbs.precipitations['sleet']['light'])
-        wbs.weather_data['precipIntensity'] = 0.005
-        wbs.weather_data['precipProbability'] = 1
-        wbs.weather_data['precipType'] = 'rain'
+        wd['precipIntensity'] = 0.005
+        wd['precipProbability'] = 1
+        wd['precipType'] = 'rain'
+        wbs.set_weather(wd)
         precip = wbs.precipitation()
         self.assertEqual(precip.type, 'very-light-rain')
         self.assertIn(precip.text, wbs.precipitations['rain']['very-light'])
@@ -573,7 +695,6 @@ class TestStrings(unittest.TestCase):
         self.assertEqual(cond.type, strings.get_special_condition(self.wd_si).type)
 
 
-@unittest.skip
 class TestWB(unittest.TestCase):
     def setUp(self):
         self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}

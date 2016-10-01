@@ -18,6 +18,7 @@ class WeatherBotString:
         self.forecasts = __strings['forecasts']
         self.forecast_endings = __strings['forecast_endings']
         self.normal_conditions = __strings['normal_conditions']
+        self.special_conditions = __strings['special_conditions']
         self.alerts = __strings['alerts']
         self.precipitations = __strings['precipitations']
 
@@ -26,17 +27,12 @@ class WeatherBotString:
         :param weather_data: standard weather_data dict (see weatherBot.get_weather_variables)
         """
         self.weather_data = weather_data
-        self.__update_all()
+        self.update_forecast()
+        self.update_normal()
+        self.update_special()
+        self.update_precipitation()
 
-    def __update_all(self):
-        """
-        updates all strings' replacement fields
-        """
-        self.__update_forecast()
-        self.__update_normal()
-        self.__update_precipitation()
-
-    def __update_forecast(self):
+    def update_forecast(self):
         """
         updates all forecasts' replacement fields
         """
@@ -60,7 +56,7 @@ class WeatherBotString:
             forecast += ' ' + random.choice(self.forecast_endings)
         return forecast
 
-    def __update_normal(self):
+    def update_normal(self):
         """
         updates all normal conditions' replacement fields
         """
@@ -80,15 +76,80 @@ class WeatherBotString:
         """
         return random.choice(self.normal_conditions)
 
-    def __update_precipitation(self):
+    def update_special(self):
+        """
+        updates all normal conditions' replacement fields
+        """
+        units = self.weather_data['units']
+        apparent_temp = str(self.weather_data['apparentTemperature']) + 'º' + units['apparentTemperature']
+        temp = str(self.weather_data['temp']) + 'º' + units['apparentTemperature']
+        wind_speed = str(self.weather_data['windSpeed']) + units['windSpeed']
+        wind_bearing = self.weather_data['windBearing']
+        humidity = str(self.weather_data['humidity'])
+        summary = self.weather_data['summary']
+        hour_summary = self.weather_data['hour_summary']
+        location = self.weather_data['location']
+        for condition in self.special_conditions:
+            for i, special in enumerate(self.special_conditions[condition]):
+                self.special_conditions[condition][i] = special.format(apparent_temp=apparent_temp,
+                                                                       temp=temp,
+                                                                       wind_speed=wind_speed,
+                                                                       wind_bearing=wind_bearing,
+                                                                       humidity=humidity,
+                                                                       summary=summary,
+                                                                       hour_summary=hour_summary,
+                                                                       location=location)
+
+    def special(self):
+        """
+        :return: Condition namedtuple with random special condition string containing the text for a normal tweet
+        """
+        precip = self.precipitation()
+        units = self.weather_data['units']
+        apparent_temp = self.weather_data['apparentTemperature']
+        temp = self.weather_data['temp']
+        wind_speed = self.weather_data['windSpeed']
+        humidity = self.weather_data['humidity']
+        code = self.weather_data['icon']
+        weather_type = 'none'
+        if (units['temperature'] == 'F' and apparent_temp <= -30) or \
+                (units['temperature'] == 'C' and apparent_temp <= -34):
+            weather_type = 'wind-chill'
+        elif precip.type != 'none':
+            return precip
+        elif 'medium-wind' in code:
+            weather_type = 'medium-wind'
+        elif 'heavy-wind' in code or \
+                (units['windSpeed'] == 'mph' and wind_speed >= 35.0) or \
+                (units['windSpeed'] == 'km/h' and wind_speed >= 56.0) or \
+                (units['windSpeed'] == 'm/s' and wind_speed >= 15.0):
+            weather_type = 'heavy-wind'
+        elif 'fog' in code:
+            weather_type = 'fog'
+        elif (units['temperature'] == 'F' and temp <= -20) or (units['temperature'] == 'C' and temp <= -28):
+            weather_type = 'cold'
+        elif (units['temperature'] == 'F' and temp >= 110) or (units['temperature'] == 'C' and temp >= 43):
+            weather_type = 'super-hot'
+        elif (units['temperature'] == 'F' and temp >= 100) or (units['temperature'] == 'C' and temp >= 37):
+            weather_type = 'hot'
+        elif humidity <= 30:
+            weather_type = 'dry'
+
+        if weather_type == 'none':
+            return Condition(type='normal', text='')
+        else:
+            return Condition(type=weather_type, text=random.choice(self.special_conditions[weather_type]))
+
+    def update_precipitation(self):
         """
         updates all precipitation replacement fields
         """
         rate = str(self.weather_data['precipIntensity'])
         rate += self.weather_data['units']['precipIntensity']
         for precipType in self.precipitations:
-            for i, precip in enumerate(precipType):
-                self.precipitations[precipType][i] = precip.format(rate=rate)
+            for precipIntensity in self.precipitations[precipType]:
+                for i, precip in enumerate(self.precipitations[precipType][precipIntensity]):
+                    self.precipitations[precipType][precipIntensity][i] = precip.format(rate=rate)
 
     def precipitation(self):
         """
@@ -210,7 +271,7 @@ def get_special_condition(weather_data):
             (weather_data['units']['temperature'] == 'C' and weather_data['temp'] >= 37):
         text = 'Holy moly it\'s ' + weather_data['temp_and_unit'] + '. I could literally (figuratively) melt.'
         return Condition(type='hot', text=text)
-    elif weather_data['humidity'] <= 10:
+    elif weather_data['humidity'] <= 30:
         text = 'It\'s dry as strained pasta. ' + str(weather_data['humidity']) + '% humid right now.'
         return Condition(type='dry', text=text)
     else:

@@ -56,11 +56,29 @@ normal_conditions:
   - "Welcome to {location}, where it's {summary} and {temp}. {hour_summary}"
   - "Only in {location} would it be {temp} and {summary}
   right now. {hour_summary}"
-# use 'title', 'expires', and 'uri'
-alerts:
-  - Oh goody, a weather alert! {title} until {expires}. {uri}
-  - 'Weather alert: {title} until {expires}. {uri}'
-  - "It's official now! {title} until {expires}. {uri}"
+# use 'apparent_temp', 'temp', 'wind_speed', 'wind_bearing', 'humidity',
+# 'summary', 'hour_summary', or 'location'
+special_conditions:
+  wind-chill:  # wind chill at or below -30F or -34C
+    - "Brr! The windchill is {apparent_temp} and the wind is blowing at
+    {wind_speed} from the {wind_bearing}. Stay safe out there!"
+  medium-wind:
+    - "Looks like we've got some medium wind at {wind_speed} coming from
+    the {wind_bearing}."
+  heavy-wind:  # wind speed equal or above 35mph, 56km/h, or 15m/s
+    - "Hold onto your hats! The wind is blowing at {wind_speed} coming from
+    the {wind_bearing}."
+  fog:
+    - "Do you even fog bro? \U0001f32b"
+    - "The clouds are saying hi, it's foggy right now."
+  cold:  # below -28C or -20F
+    - "It's {temp}. Too cold."
+  super-hot:  # over 110F or 43C
+    - "Wowowowowowowowow, it's {apparent_temp}. I need some A/C ASAP."
+  hot:  # over 100F or 37C
+    - "Holy moly it's {temp}. I could literally (figuratively) melt."
+  dry:  # humidity under 30%
+    - "It's dry as strained pasta. {humidity}% humid right now."
 # use 'rate'
 precipitations:
   rain:
@@ -112,3 +130,8 @@ precipitations:
       - "Light hail."
     very-light:
       - "Very light hail."
+# use 'title', 'expires', and 'uri'
+alerts:
+  - Oh goody, a weather alert! {title} until {expires}. {uri}
+  - 'Weather alert: {title} until {expires}. {uri}'
+  - "It's official now! {title} until {expires}. {uri}"
