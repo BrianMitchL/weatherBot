@@ -13,14 +13,15 @@ after_success:
 - coveralls
 deploy:
   provider: script
-  script: 'curl -X POST -H "Content-Type: application/json" --data ''{"docker_tag_name": "latest"}'' https://registry.hub.docker.com/u/brianmitchl/weatherbot/trigger/$DOCKER_HUB_TOKEN/'
+  script: 'curl -X POST -H "Content-Type: application/json" --data ''{"docker_tag_name":
+    "latest"}'' https://registry.hub.docker.com/u/brianmitchl/weatherbot/trigger/$DOCKER_HUB_TOKEN/'
   on:
     branch: master
 env:
   global:
-  - secure: bXxTKC/k0zQwFptMPcUw63uncgeWa4qQzmECoFTl867N18TyOzYtXpgH0jQL4vLp42s7f9+Wge1c5uHXRFMlQyMwpLpG/Gjumgbv9ywvfEowpco0ZS5bker90luxdhmEgY0N2IqlFYsKuBRFJTKWEDLFzRIBE0o1ywQEEe3iWNA=
-  - secure: iYWnJuXOUrGKmN1ST4A7sFRPMMuYaPtpYTtXFfWrG7i5Kos2G4BVl9uTVk4ByMKOcq2/oqMtmSTGthP8OVu/pFmiA3ceHihSe8AdR4dWDCz70n6ifYONUdm2P3duh0kv5x4Xb3oWfTBbIzqoKPVJViezNcAaWTSqA3d/eTnZ+3A=
-  - secure: NOk7SNDUZeQ/ARRq9BijMT0A52RIR17y/uNw+vpxWzz12BOyrKc81l1+iRIeHmsDrdwmeiYRC4ERN9Eeo/i2qUbm4yG8IXTuc2/QzZM7vvk1Cdk/0F3JqWCh2GQ15sSCKHBvsjK5LJuefZIZGIs4QLNapAmu+SGMx7grjcD4+08=
-  - secure: FS5UZeapMuh27U6qG8cV4R8IPKCH6t9dgRhfwXWgFH75WjYxs7GE7URbdbLMWizv6UqR1kX20mZtz6zXSQRNYVh4TauJdEbFB9yGwNBEZau2UYztgT7isYYGj5oRRpOB3e1VM7tDPZ2RPSXo9R6Ji8t6PD8EUG+Sdf+7l8tZvnI=
+  - secure: Httle2zpXRyVPIdRZ2XE9WwdhdTicZBi7vltamQczSoiKK5MLquE9gUS5Vnyfs+8v58IiJdyfaRt2QG/03a3hf9F95BnVt00zWZKHLDpNgfDwRd1JMxIE+4ey+bcNVbcqNwQ7HvNcdknrV1NvBhkTtB5AUWKD3IK3fne7ziX0u0=
+  - secure: ewQCeaJM/mq+gsIRjwtpnP+aGF7xY4//JIxi3moebRIASdeCiei7edN9wlsei6p2N7ENDPrAjdUQc8pejS282jc9lM9mDqkXuawozVRNvNQh9JkILBEhFHyGHLHFQJOHJ3b875oMY0Gtp9i0ETuf/vppUw3jXgg8ylgdv+yfklQ=
+  - secure: Y69tiCnL2e37pb/8rTetVVK482sfg7AU1Vz5BRMursFSyUpes9rquCNXs6gAbAeNlENXZg9a/eE4FpYrGP5iIq4fLGDV3rnwmyf/Z4pzT33BgqYTp+44Np0zY7WKKJFGI2EW/z95DplKIwhP6BMokqNdqxvXampMAIev3jGIJeA=
+  - secure: C0m2NE7Goy30ne31Xrxq9diob2SgTPZBkHT9VcuKcOR0bPs8w6qoQapsR6NgNNNW7d+kmQ8KQY7dyBO1k7rH2sJhcTPgVDoP8mac8Ill8pAX2sT1gap2tUpwEQXrG2hbfE5cXT+OCwBjSisMWHRfAwyzPn06eAfe+SRF4BRcQ9U=
+  - secure: DOAbuJakg/OuwH/ySZJCkUyMrhVK/lodcIu6IE+nd3JdlHm86qBUm1dJVKKw81QBb9CLfpGt3oirvwAdwYpj8ZJ/M5VYTbaEmiUQMvKz6InyVcs1+Cf/Up1UhuUfRKyAUqzm4IFYUE00dbM563GwXOdN7o7Ofx6sBdMVnJR+a7M=
   - secure: BJ7xxMyifP6L2rQBsSsogJo5MsdkrZH1bHSJ6U8fJW7tLANgDMdeP5u6ItD3/LFgT1nSnoBcG+ZLVf22eMZV0Ej/DZjr8WKFbfKoiOdTVbQSHkkiYp7FQXMausDcOQwXE0eUxpsObGmcKQ4iD/zeUqziHf0L/zss1l8M5n4aCrU=
-  - secure: AMa5AyT5XFKhuEHGfm0ghDzXiveF2tEdRTDyi+I3cEXUsykYNbeRsOVk6ShFjuAWAQAojsF4N0qiB5G6cmcO0VIdxuziULegX8c/c/se3CbMn0VpS1x/4QuJZ1/TT9I7/AxRvtg53X8RUxLKqEJg8jvFQA3QIHvLF5T91StBqK8=
