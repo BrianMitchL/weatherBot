@@ -402,7 +402,7 @@ def main(path):
     initialize_logger(CONFIG['log']['enabled'], CONFIG['log']['log_path'])
     logging.debug(CONFIG)
     keys.set_twitter_env_vars()
-    keys.set_forecastio_env_vars()
+    keys.set_darksky_env_vars()
     with open(CONFIG['basic']['strings'], 'r') as file_stream:
         try:
             weatherbot_strings = yaml.safe_load(file_stream)

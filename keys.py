@@ -25,6 +25,6 @@ def set_twitter_env_vars():
         os.environ['WEATHERBOT_ACCESS_TOKEN_SECRET'] = keys['access_token_secret']
 
 
-def set_forecastio_env_vars():
+def set_darksky_env_vars():
     if os.getenv('WEATHERBOT_DARKSKY_KEY', 0) is 0:
         os.environ['WEATHERBOT_DARKSKY_KEY'] = keys['darksky_key']
