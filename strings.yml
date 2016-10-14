@@ -3,7 +3,7 @@
 # you will need to set the units in the conf file
 # a list of supported languages can be found at
 # https://darksky.net/dev/docs/forecast
-language: "us"
+language: "en"
 # use 'summary', 'summary_lower', 'high', and 'low'
 forecasts:
   - "The forecast for today is {summary_lower} {high}/{low}."
