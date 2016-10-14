@@ -2,8 +2,9 @@
 # Copyright 2015-2016 Brian Mitchell under the MIT license
 # See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 
-import pytz
 from collections import namedtuple
+
+import pytz
 
 Time = namedtuple('Time', ['hour', 'minute'])
 
@@ -13,7 +14,7 @@ class InvalidTimeError(Exception):
 
 
 def get_units(unit):
-    if unit is 'us':
+    if unit == 'us':
         return {
             'unit': 'us',
             'nearestStormDistance': 'mph',
@@ -29,7 +30,7 @@ def get_units(unit):
             'pressure': 'mb',
             'visibility': 'mi'
         }
-    elif unit is 'ca':
+    elif unit == 'ca':
         return {
             'unit': 'ca',
             'nearestStormDistance': 'km',
@@ -45,7 +46,7 @@ def get_units(unit):
             'pressure': 'hPa',
             'visibility': 'km'
         }
-    elif unit is 'uk2':
+    elif unit == 'uk2':
         return {
             'unit': 'uk2',
             'nearestStormDistance': 'mi',

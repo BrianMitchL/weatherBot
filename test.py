@@ -1068,6 +1068,17 @@ class TestWB(unittest.TestCase):
         status = weatherBot.do_tweet(content, wd_si, tweet_location, variable_location)
         self.assertEqual(None, status)
 
+    def test_cleanse_throttles(self):
+        now = pytz.utc.localize(datetime.datetime(2016, 10, 14, hour=14, minute=42)).astimezone(pytz.utc)
+        base = {'default': now - datetime.timedelta(hours=2)}
+        a = base
+        a['snow-light'] = now + datetime.timedelta(minutes=20)
+        self.assertDictEqual(a, weatherBot.cleanse_throttles(a, now))
+        b = base
+        b['dummy'] = now - datetime.timedelta(hours=3)
+        self.assertDictEqual(base, weatherBot.cleanse_throttles(b, now))
+        self.assertDictEqual({}, weatherBot.cleanse_throttles({}, now))
+
 if __name__ == '__main__':
     keys.set_twitter_env_vars()
     keys.set_forecastio_env_vars()

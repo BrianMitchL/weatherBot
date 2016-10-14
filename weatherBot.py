@@ -4,6 +4,7 @@
 # Copyright 2015-2016 Brian Mitchell under the MIT license
 # See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 
+import configparser
 import hashlib
 import logging
 import os
@@ -11,15 +12,15 @@ import random
 import sys
 import time
 import traceback
-import configparser
 from datetime import datetime
 from datetime import timedelta
-from requests.exceptions import ConnectionError
-from requests.exceptions import HTTPError
 
 import forecastio
 import pytz
 import tweepy
+import yaml
+from requests.exceptions import ConnectionError
+from requests.exceptions import HTTPError
 
 import keys
 import strings
@@ -47,7 +48,8 @@ def load_config(path):
             'units': conf['basic'].get('units', 'us'),
             'tweet_location': conf['basic'].getboolean('tweet_location', True),
             'hashtag': conf['basic'].get('hashtag', ' #MorrisWeather'),
-            'refresh': conf['basic'].getint('refresh', 3)
+            'refresh': conf['basic'].getint('refresh', 3),
+            'strings': conf['basic'].get('strings', 'strings.yml')
         },
         'scheduled_times': {
             'forecast': utils.parse_time_string(conf['scheduled times'].get('forecast', '6:00')),
@@ -133,7 +135,7 @@ def get_forecast_object(lat, lng, units='us', lang='en'):
     :param lng: float containing longitude
     :param units: string containing the units standard, ex 'us', 'ca', 'uk2', 'si', 'auto'
     :param lang: string containing the language, ex: 'en', 'de'. See https://darksky.net/dev/docs/forecast for more
-    :return: Forecast object or None if HTTPError
+    :return: Forecast object or None if HTTPError or ConnectionError
     """
     try:
         url = 'https://api.darksky.net/forecast/{0}/{1},{2}?units={3}&lang={4}'\
@@ -201,7 +203,7 @@ def get_weather_variables(forecast, location):
         if not forecast.currently().summary:
             raise BadForecastDataError('Summary is None')
         weather_data['units'] = utils.get_units(forecast.json['flags']['units'])
-        # forecast.io doesn't always include 'windBearing' or 'nearestStormDistance'
+        # Dark Sky doesn't always include 'windBearing' or 'nearestStormDistance'
         if hasattr(forecast.currently(), 'windBearing'):
             weather_data['windBearing'] = utils.get_wind_direction(forecast.currently().windBearing)
         else:
@@ -381,33 +383,52 @@ def forecast_tweet(tweet_at, now, weather_data):
                  CONFIG['variable_location']['enabled'])
 
 
+def cleanse_throttles(throttles, now):
+    """
+    :param throttles: throttles dictionary
+    :param now: datetime.datetime representing the current time to check against a throttle expirey time
+    :return: throttles dictionary with expired keys deleted
+    """
+    to_delete = [key for key, expires in throttles.items() if expires <= now]
+    for key in to_delete:
+        if key != 'default':
+            del throttles[key]
+    return throttles
+
+
 def main(path):
     global throttle_times
-    try:
-        load_config(os.path.abspath(path))
-        initialize_logger(CONFIG['log']['enabled'], CONFIG['log']['log_path'])
-        logging.debug(CONFIG)
-        keys.set_twitter_env_vars()
-        keys.set_forecastio_env_vars()
+    load_config(os.path.abspath(path))
+    initialize_logger(CONFIG['log']['enabled'], CONFIG['log']['log_path'])
+    logging.debug(CONFIG)
+    keys.set_twitter_env_vars()
+    keys.set_forecastio_env_vars()
+    with open(CONFIG['basic']['strings'], 'r') as file_stream:
+        try:
+            weatherbot_strings = yaml.safe_load(file_stream)
+            logging.debug(weatherbot_strings)
+            wb_string = strings.WeatherBotString(weatherbot_strings)
+        except yaml.YAMLError as err:
+            logging.error(err, exc_info=True)
+            logging.error('Could not read YAML file, please correct, run yamllint, and try again.')
+            exit()
 
-        location = CONFIG['default_location']
-        updated_time = utils.get_utc_datetime('UTC', datetime.utcnow()) - timedelta(minutes=30)
+    location = CONFIG['default_location']
+    updated_time = utils.get_utc_datetime('UTC', datetime.utcnow()) - timedelta(minutes=30)
+    try:
         while True:
             # check for new location every 30 minutes
             now_utc = utils.get_utc_datetime('UTC', datetime.utcnow())
             if CONFIG['variable_location']['enabled'] and updated_time + timedelta(minutes=30) < now_utc:
                 location = get_location_from_user_timeline(CONFIG['variable_location']['user'], location)
                 updated_time = now_utc
-            forecast = get_forecast_object(location['lat'], location['lng'], CONFIG['basic']['units'])
+            forecast = get_forecast_object(location['lat'], location['lng'], CONFIG['basic']['units'],
+                                           wb_string.language)
             if forecast is not None:
                 weather_data = get_weather_variables(forecast, location)
                 if weather_data['valid'] is True:
                     tweet_logic(weather_data)
-                # cleanse throttle_times of expired keys
-                to_delete = [key for key, expires in throttle_times.items() if expires <= now_utc]
-                for key in to_delete:
-                    if key != 'default':
-                        del throttle_times[key]
+                throttle_times = cleanse_throttles(throttle_times, now_utc)
                 time.sleep(CONFIG['basic']['refresh'] * 60)
             else:
                 time.sleep(60)
