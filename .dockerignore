@@ -3,7 +3,8 @@ LICENSE
 .git
 .gitignore
 .DS_Store
-.idea
+.idea/
 Procfile
 runtime.txt
-test
+fixtures/
+test.py

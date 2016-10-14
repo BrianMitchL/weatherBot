@@ -376,7 +376,7 @@ class TestStrings(unittest.TestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_forecast(self, mock_get):
-        forecast = forecastio.manual('test/us.json')
+        forecast = forecastio.manual('fixtures/us.json')
         wd = weatherBot.get_weather_variables(forecast, self.location)
         wbs = strings.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
@@ -386,7 +386,7 @@ class TestStrings(unittest.TestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_normal(self, mock_get):
-        forecast = forecastio.manual('test/us.json')
+        forecast = forecastio.manual('fixtures/us.json')
         wd = weatherBot.get_weather_variables(forecast, self.location)
         wbs = strings.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
@@ -396,10 +396,10 @@ class TestStrings(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_special(self, mock_get):
         """Testing if special events are triggered"""
-        forecast_si = forecastio.manual('test/si.json')
-        forecast_us = forecastio.manual('test/us.json')
-        forecast_ca = forecastio.manual('test/ca.json')
-        forecast_uk2 = forecastio.manual('test/uk2.json')
+        forecast_si = forecastio.manual('fixtures/si.json')
+        forecast_us = forecastio.manual('fixtures/us.json')
+        forecast_ca = forecastio.manual('fixtures/ca.json')
+        forecast_uk2 = forecastio.manual('fixtures/uk2.json')
         wd = weatherBot.get_weather_variables(forecast_si, self.location)
         wbs = strings.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
@@ -515,7 +515,7 @@ class TestStrings(unittest.TestCase):
     def test_precipitation(self, mock_get):
         """Testing if a precipitation condition is met"""
         wbs = strings.WeatherBotString(self.weatherbot_strings)
-        forecast_us = forecastio.manual('test/us.json')
+        forecast_us = forecastio.manual('fixtures/us.json')
         wd = weatherBot.get_weather_variables(forecast_us, self.location)
         wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), strings.Condition(type='none', text=''))
@@ -707,7 +707,8 @@ class TestWB(unittest.TestCase):
                 'units': 'si',
                 'tweet_location': False,
                 'hashtag': '',
-                'refresh': 300
+                'refresh': 300,
+                'strings': 'fake_path.yml'
             },
             'scheduled_times': {
                 'forecast': Time(hour=6, minute=0),
@@ -764,7 +765,8 @@ class TestWB(unittest.TestCase):
             'units': 'si',
             'tweet_location': 'no',
             'hashtag': '',
-            'refresh': '300'
+            'refresh': '300',
+            'strings': 'fake_path.yml'
         }
         conf['scheduled times'] = {
             'forecast': '6:00',
