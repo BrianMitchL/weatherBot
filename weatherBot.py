@@ -23,7 +23,7 @@ from requests.exceptions import ConnectionError
 from requests.exceptions import HTTPError
 
 import keys
-import strings
+import models
 import utils
 
 # Global variables
@@ -399,7 +399,7 @@ def main(path):
         try:
             weatherbot_strings = yaml.safe_load(file_stream)
             logging.debug(weatherbot_strings)
-            wb_string = strings.WeatherBotString(weatherbot_strings)
+            wb_string = models.WeatherBotString(weatherbot_strings)
         except yaml.YAMLError as err:
             logging.error(err, exc_info=True)
             logging.error('Could not read YAML file, please correct, run yamllint, and try again.')

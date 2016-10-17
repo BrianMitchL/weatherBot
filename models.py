@@ -1,4 +1,4 @@
-# weatherBot strings
+# weatherBot models
 # Copyright 2015-2016 Brian Mitchell under the MIT license
 # See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 
