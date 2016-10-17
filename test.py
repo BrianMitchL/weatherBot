@@ -383,6 +383,12 @@ class TestStrings(unittest.TestCase):
         wbs.forecast_endings = []
         forecast_string = wbs.forecast()
         self.assertIn(forecast_string, wbs.forecasts)
+        wbs.forecast_endings = ['Test ending!']
+        wbs.forecasts = ['The forecast for today is {summary_lower} {high}/{low}.']
+        wbs.update_forecast()
+        forecast_string = wbs.forecast()
+        self.assertEqual(forecast_string,
+                         'The forecast for today is mostly cloudy throughout the day. 66ºF/50ºF. Test ending!')
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_normal(self, mock_get):
