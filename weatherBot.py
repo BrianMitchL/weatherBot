@@ -286,9 +286,10 @@ def do_tweet(text, weather_data, tweet_location, variable_location):
         return None
 
 
-def alert_logic(weather_data, timezone_id, now_utc):
+def alert_logic(weather_data, wb_string, timezone_id, now_utc):
     """
     :param weather_data: dict containing weather information
+    :param wb_string: WeatherBotString object
     :param timezone_id: string containing a datetime timezone id
     :param now_utc: datetime.datetime in utc timezone
     :return: list of text to use for alert tweets, can be an empty list
@@ -305,17 +306,19 @@ def alert_logic(weather_data, timezone_id, now_utc):
             if sha256 not in throttle_times and pytz.utc.localize(expires) > now_utc:
                 local_expires_time = utils.get_local_datetime(timezone_id, expires)
                 throttle_times[sha256] = pytz.utc.localize(expires)
-                tweets.append(strings.get_alert_text(alert.title, local_expires_time, alert.uri))
+                tweets.append(wb_string.alert(alert.title, local_expires_time, alert.uri))
     return tweets
 
 
-def tweet_logic(weather_data):
+def tweet_logic(weather_data, wb_string):
     """
     :param weather_data: dict containing weather information
+    :param wb_string: WeatherBotString object
     """
     global throttle_times
-    special = strings.get_special_condition(weather_data)
-    normal_text = strings.get_normal_condition(weather_data)
+    wb_string.set_weather(weather_data)
+    special = wb_string.special()
+    normal_text = wb_string.normal()
 
     timezone_id = weather_data['timezone']
     now = datetime.utcnow()
@@ -323,7 +326,7 @@ def tweet_logic(weather_data):
     now_local = utils.get_local_datetime(timezone_id, now)
 
     # weather alerts
-    for alert in alert_logic(weather_data, timezone_id, now_utc):
+    for alert in alert_logic(weather_data, wb_string, timezone_id, now_utc):
         do_tweet(alert, weather_data, CONFIG['basic']['tweet_location'], CONFIG['variable_location']['enabled'])
 
     # forecast
@@ -427,7 +430,7 @@ def main(path):
             if forecast is not None:
                 weather_data = get_weather_variables(forecast, location)
                 if weather_data['valid'] is True:
-                    tweet_logic(weather_data)
+                    tweet_logic(weather_data, wb_string)
                 throttle_times = cleanse_throttles(throttle_times, now_utc)
                 time.sleep(CONFIG['basic']['refresh'] * 60)
             else:
