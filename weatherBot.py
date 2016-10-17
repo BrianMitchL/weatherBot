@@ -247,18 +247,6 @@ def get_weather_variables(forecast, location):
         return {'valid': False}
 
 
-def make_forecast(weather_data):
-    """
-    :param weather_data: dict containing weather information
-    :return: string containing the text for a forecast tweet
-    """
-    forecast = weather_data['forecast']
-    units = weather_data['units']
-    return 'The forecast for today is ' + forecast.summary.lower() + ' ' + str(round(forecast.temperatureMax)) + \
-           units['temperatureMax'] + '/' + str(round(forecast.temperatureMin)) + units['temperatureMin'] + \
-           '. ' + random.choice(strings.endings)
-
-
 def do_tweet(text, weather_data, tweet_location, variable_location):
     """
     :param text: text for the tweet
@@ -333,7 +321,7 @@ def tweet_logic(weather_data, wb_string):
     forecast_dt = now_local.replace(hour=CONFIG['scheduled_times']['forecast'].hour,
                                     minute=CONFIG['scheduled_times']['forecast'].minute,
                                     second=0, microsecond=0).astimezone(pytz.utc)
-    forecast_tweet(forecast_dt, now_utc, weather_data)
+    forecast_tweet(forecast_dt, now_utc, weather_data, wb_string)
 
     # scheduled tweet
     for t in CONFIG['scheduled_times']['conditions']:
@@ -373,16 +361,17 @@ def timed_tweet(tweet_at, now, content, weather_data):
         do_tweet(content, weather_data, CONFIG['basic']['tweet_location'], CONFIG['variable_location']['enabled'])
 
 
-def forecast_tweet(tweet_at, now, weather_data):
+def forecast_tweet(tweet_at, now, weather_data, wb_string):
     """
     :param tweet_at: datetime.datetime for when a tweet is supposed to be tweeted
     :param now: datetime.datetime that is the current time
     :param weather_data: dict containing weather information, used for location lat/lng and name
+    :param wb_string: WeatherBotString object
     :return:
     """
     if tweet_at <= now < tweet_at + timedelta(minutes=CONFIG['basic']['refresh']):
         logging.debug('Scheduled forecast')
-        do_tweet(make_forecast(weather_data), weather_data, CONFIG['basic']['tweet_location'],
+        do_tweet(wb_string.forecast(), weather_data, CONFIG['basic']['tweet_location'],
                  CONFIG['variable_location']['enabled'])
 
 
