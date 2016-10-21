@@ -208,7 +208,82 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utils.get_times(raw_complex), list_complex)
 
 
-class TestStrings(unittest.TestCase):
+class WeatherBotAlert(unittest.TestCase):
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_init(self, mock_get):
+        forecast = forecastio.manual('fixtures/us_alert.json')
+        alert = models.WeatherAlert(forecast.alerts()[0])
+        self.assertEqual(alert.title, 'Wind Advisory for Los Angeles, CA')
+        self.assertEqual(alert.time, pytz.utc.localize(datetime.datetime(2016, 10, 18, 4, 4)))
+        self.assertEqual(alert.expires, pytz.utc.localize(datetime.datetime(2016, 10, 20, 19, 0)))
+        self.assertEqual(alert.uri, 'https://alerts.weather.gov/cap/wwacapget.php?x=CA12561A519050.WindAdvisory.'
+                                    '12561A725D30CA.LOXNPWLOX.9240bcf720aae1b01b10f53f012e61bb')
+        self.assertEqual(alert.sha(), '7e220f06588bad306e05953409d8ec7ebe538ab76ecd4f4a562ac0e406a81c2e')
+        self.assertEqual(str(alert), '<WeatherAlert: Wind Advisory for Los Angeles, CA at 2016-10-18 04:04:00+00:00>')
+
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_expired(self, mock_get):
+        forecast = forecastio.manual('fixtures/us_alert.json')
+        alert = models.WeatherAlert(forecast.alerts()[0])
+        self.assertTrue(alert.expired(pytz.utc.localize(datetime.datetime(2017, 10, 18, 4, 4))))
+        self.assertFalse(alert.expired(pytz.utc.localize(datetime.datetime(2016, 10, 18, 4, 4))))
+        self.assertFalse(alert.expired(pytz.utc.localize(datetime.datetime(2015, 10, 18, 4, 4))))
+
+
+class WeatherBotData(unittest.TestCase):
+    def setUp(self):
+        with open('strings.yml', 'r') as file_stream:
+            self.weatherbot_strings = yaml.safe_load(file_stream)
+        self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
+
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_init(self, mock_get):
+        forecast = forecastio.manual('fixtures/us.json')
+        wd = models.WeatherData(forecast, self.location)
+        self.assertEqual(wd.units, utils.get_units('us'))
+        self.assertEqual(wd.windBearing, 'SW')
+        self.assertEqual(wd.windSpeed, 10.81)
+        self.assertEqual(wd.windSpeed_and_unit, '11 mph')
+        self.assertEqual(wd.apparentTemperature, 50.84)
+        self.assertEqual(wd.apparentTemperature_and_unit, '51ºF')
+        self.assertEqual(wd.temp, 50.84)
+        self.assertEqual(wd.temp_and_unit, '51ºF')
+        self.assertEqual(wd.humidity, 89)
+        self.assertEqual(wd.precipIntensity, 0)
+        self.assertEqual(wd.precipProbability, 0)
+        self.assertEqual(wd.precipType, 'none')
+        self.assertEqual(wd.summary, 'Partly Cloudy')
+        self.assertEqual(wd.icon, 'partly-cloudy-day')
+        self.assertEqual(wd.location, self.location['name'])
+        self.assertEqual(wd.lat, self.location['lat'])
+        self.assertEqual(wd.lng, self.location['lng'])
+        self.assertEqual(wd.timezone, 'Europe/Copenhagen')
+        self.assertEqual(wd.alerts, [])
+        self.assertTrue(wd.valid)
+        self.assertEqual(str(wd),
+                         '<WeatherData: Lyngby-Taarbæk, Hovedstaden(55.76,12.49) at 2016-10-01 05:56:38+00:00>')
+
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_alerts(self, mock_get):
+        location = {'lat': 34.2, 'lng': -118.36, 'name': 'Los Angeles, CA'}
+        forecast = forecastio.manual('fixtures/us_alert.json')
+        wd = models.WeatherData(forecast, location)
+        self.assertEqual(wd.alerts[0].title, 'Wind Advisory for Los Angeles, CA')
+        self.assertEqual(wd.alerts[1].title, 'Beach Hazards Statement for Los Angeles, CA')
+        self.assertEqual(wd.alerts[2].title, 'Red Flag Warning for Los Angeles, CA')
+
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_precipitation_in_hour(self, mock_get):
+        location = {'lat': 34.2, 'lng': -118.36, 'name': 'Los Angeles, CA'}
+        forecast = forecastio.manual('fixtures/us_cincinnati.json')
+        wd = models.WeatherData(forecast, location)
+        self.assertTrue(wd.precipitation_in_hour())
+        forecast = forecastio.manual('fixtures/us.json')
+        wd = models.WeatherData(forecast, self.location)
+        self.assertFalse(wd.precipitation_in_hour())
+
+
+class WeatherBotString(unittest.TestCase):
     def setUp(self):
         with open('strings.yml', 'r') as file_stream:
             self.weatherbot_strings = yaml.safe_load(file_stream)
@@ -575,7 +650,7 @@ class TestStrings(unittest.TestCase):
         self.assertEqual(precip.type, 'very-light-rain')
         self.assertIn(precip.text, wbs.precipitations['rain']['very-light'])
 
-
+@unittest.skip
 class TestWB(unittest.TestCase):
     def setUp(self):
         self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}

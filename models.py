@@ -4,10 +4,112 @@
 
 import random
 from collections import namedtuple
+from datetime import datetime
+from hashlib import sha256
+
+import pytz
 
 import utils
 
 Condition = namedtuple('Condition', ['type', 'text'])
+
+
+class BadForecastDataError(Exception):
+    pass
+
+
+class WeatherAlert:
+    def __init__(self, alert):
+        """
+        :type alert: forecastio.models.Alert
+        """
+        self.title = alert.title
+        self.time = pytz.utc.localize(datetime.utcfromtimestamp(alert.time))
+        self.expires = pytz.utc.localize(datetime.utcfromtimestamp(alert.expires))
+        self.uri = alert.uri
+
+    def __str__(self):
+        return '<WeatherAlert: {title} at {time}>'.format(title=self.title, time=self.time)
+
+    def expired(self, now=pytz.utc.localize(datetime.utcnow())):
+        """
+        :type now: datetime.datetime that is timezone aware to UTC
+        :return boolean
+        """
+        return now > self.expires
+
+    def sha(self):
+        """
+        :return: sha256 of alert as a string
+        """
+        full_alert = self.title + str(self.expires)
+        return sha256(full_alert.encode()).hexdigest()  # a (hopefully) unique id
+
+
+class WeatherData:
+    def __init__(self, forecast, location):
+        """
+        :type location: dict containing lat: number, lng: number, and name: str
+        :type forecast: forecastio.models.Forecast
+        """
+        self.__forecast = forecast
+
+        try:
+            if 'darksky-unavailable' in forecast.json['flags']:
+                raise BadForecastDataError('Darksky unavailable')
+            if not forecast.currently().temperature:
+                raise BadForecastDataError('Temp is None')
+            if not forecast.currently().summary:
+                raise BadForecastDataError('Summary is None')
+            self.units = utils.get_units(forecast.json['flags']['units'])
+            # Dark Sky doesn't always include 'windBearing' or 'nearestStormDistance'
+            if hasattr(forecast.currently(), 'windBearing'):
+                self.windBearing = utils.get_wind_direction(forecast.currently().windBearing)
+            else:
+                self.windBearing = 'unknown direction'
+            self.windSpeed = forecast.currently().windSpeed
+            self.windSpeed_and_unit = str(round(forecast.currently().windSpeed)) + ' ' + self.units['windSpeed']
+            self.apparentTemperature = forecast.currently().apparentTemperature
+            self.apparentTemperature_and_unit = str(round(forecast.currently().apparentTemperature)) + 'º' + \
+                                                self.units['apparentTemperature']
+            self.temp = forecast.currently().temperature
+            self.temp_and_unit = str(round(forecast.currently().temperature)) + 'º' + self.units['temperature']
+            self.humidity = round(forecast.currently().humidity * 100)
+            self.precipIntensity = forecast.currently().precipIntensity
+            self.precipProbability = forecast.currently().precipProbability
+            if hasattr(forecast.currently(), 'precipType'):
+                self.precipType = forecast.currently().precipType
+            else:
+                self.precipType = 'none'
+            self.summary = forecast.currently().summary
+            self.icon = forecast.currently().icon
+            self.location = location['name']
+            self.lat = location['lat']
+            self.lng = location['lng']
+            self.timezone = forecast.json['timezone']
+            self.forecast = forecast.daily().data[0]
+            self.minutely = forecast.minutely()  # this will return None in many parts of the world
+            self.alerts = list()
+            for alert in forecast.alerts():
+                self.alerts.append(WeatherAlert(alert))
+            self.valid = True
+        except (KeyError, TypeError, BadForecastDataError):
+            self.valid = False
+
+    def __str__(self):
+        time = pytz.utc.localize(self.__forecast.currently().time)
+        return '<WeatherData: {name}({lat},{lng}) at {time}>'.format(name=self.location,
+                                                                     lat=self.lat,
+                                                                     lng=self.lng,
+                                                                     time=time)
+
+    def precipitation_in_hour(self):
+        """
+        This will return a boolean indicating if precipitation is expected during the current hour
+        :return: boolean
+        """
+        # if this is found to not be very accurate, using precipProbability would be an alternative
+        return True if self.__forecast.hourly().data[0].icon in ['rain', 'snow', 'sleet'] else False
 
 
 class WeatherBotString:
