@@ -208,6 +208,18 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utils.get_times(raw_complex), list_complex)
 
 
+class WeatherLocation(unittest.TestCase):
+    def test_location(self):
+        lat = 55.76
+        lng = 12.49
+        name = 'Lyngby-Taarbæk, Hovedstaden'
+        location = models.WeatherLocation(lat, lng, name)
+        self.assertEqual(location.lat, lat)
+        self.assertEqual(location.lng, lng)
+        self.assertEqual(location.name, name)
+        self.assertEqual(str(location), '<WeatherLocation: Lyngby-Taarbæk, Hovedstaden at 55.76,12.49>')
+
+
 class WeatherBotAlert(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_init(self, mock_get):

@@ -18,6 +18,21 @@ class BadForecastDataError(Exception):
     pass
 
 
+class WeatherLocation:
+    def __init__(self, lat, lng, name):
+        """
+        :type lat: float
+        :type lng: float
+        :type name: str
+        """
+        self.lat = lat
+        self.lng = lng
+        self.name = name
+
+    def __str__(self):
+        return '<WeatherLocation: {name} at {lat},{lng}>'.format(lat=str(self.lat), lng=str(self.lng), name=self.name)
+
+
 class WeatherAlert:
     def __init__(self, alert):
         """
