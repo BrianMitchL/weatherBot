@@ -125,7 +125,7 @@ class WeatherData:
         :return: boolean
         """
         # if this is found to not be very accurate, using precipProbability would be an alternative
-        return True if self.__forecast.hourly().data[0].icon in ['rain', 'snow', 'sleet'] else False
+        return True if self.__forecast.minutely().icon in ['rain', 'snow', 'sleet'] else False
 
 
 class WeatherBotString:
