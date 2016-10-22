@@ -64,7 +64,7 @@ class WeatherAlert:
 class WeatherData:
     def __init__(self, forecast, location):
         """
-        :type location: dict containing lat: number, lng: number, and name: str
+        :type location: WeatherLocation
         :type forecast: forecastio.models.Forecast
         """
         self.__forecast = forecast
@@ -98,9 +98,7 @@ class WeatherData:
                 self.precipType = 'none'
             self.summary = forecast.currently().summary
             self.icon = forecast.currently().icon
-            self.location = location['name']
-            self.lat = location['lat']
-            self.lng = location['lng']
+            self.location = location
             self.timezone = forecast.json['timezone']
             self.forecast = forecast.daily().data[0]
             self.minutely = forecast.minutely()  # this will return None in many parts of the world
@@ -113,9 +111,9 @@ class WeatherData:
 
     def __str__(self):
         time = pytz.utc.localize(self.__forecast.currently().time)
-        return '<WeatherData: {name}({lat},{lng}) at {time}>'.format(name=self.location,
-                                                                     lat=self.lat,
-                                                                     lng=self.lng,
+        return '<WeatherData: {name}({lat},{lng}) at {time}>'.format(name=self.location.name,
+                                                                     lat=self.location.lat,
+                                                                     lng=self.location.lng,
                                                                      time=time)
 
     def precipitation_in_hour(self):

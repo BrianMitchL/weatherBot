@@ -246,7 +246,7 @@ class WeatherBotData(unittest.TestCase):
     def setUp(self):
         with open('strings.yml', 'r') as file_stream:
             self.weatherbot_strings = yaml.safe_load(file_stream)
-        self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
+        self.location = models.WeatherLocation(55.76, 12.49, 'Lyngby-Taarbæk, Hovedstaden')
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_init(self, mock_get):
@@ -266,9 +266,7 @@ class WeatherBotData(unittest.TestCase):
         self.assertEqual(wd.precipType, 'none')
         self.assertEqual(wd.summary, 'Partly Cloudy')
         self.assertEqual(wd.icon, 'partly-cloudy-day')
-        self.assertEqual(wd.location, self.location['name'])
-        self.assertEqual(wd.lat, self.location['lat'])
-        self.assertEqual(wd.lng, self.location['lng'])
+        self.assertEqual(wd.location, self.location)
         self.assertEqual(wd.timezone, 'Europe/Copenhagen')
         self.assertEqual(wd.alerts, [])
         self.assertTrue(wd.valid)
@@ -277,7 +275,7 @@ class WeatherBotData(unittest.TestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_alerts(self, mock_get):
-        location = {'lat': 34.2, 'lng': -118.36, 'name': 'Los Angeles, CA'}
+        location = models.WeatherLocation(34.2, -118.36, 'Los Angeles, CA')
         forecast = forecastio.manual('fixtures/us_alert.json')
         wd = models.WeatherData(forecast, location)
         self.assertEqual(wd.alerts[0].title, 'Wind Advisory for Los Angeles, CA')
@@ -286,7 +284,7 @@ class WeatherBotData(unittest.TestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_precipitation_in_hour(self, mock_get):
-        location = {'lat': 34.2, 'lng': -118.36, 'name': 'Los Angeles, CA'}
+        location = models.WeatherLocation(34.2, -118.36, 'Los Angeles, CA')
         forecast = forecastio.manual('fixtures/us_cincinnati.json')
         wd = models.WeatherData(forecast, location)
         self.assertTrue(wd.precipitation_in_hour())
@@ -877,60 +875,7 @@ class TestWB(unittest.TestCase):
         deleted = api.destroy_status(id=status.id)
         self.assertEqual(deleted.id, status.id)
 
-    def test_do_tweet_with_location(self):
-        """Testing tweeting a test tweet with location using keys from env variables"""
-        tweet_location = True
-        variable_location = False
-        wd_si = {
-            'windBearing': 'SW',
-            'temp_and_unit': '7ºC',
-            'apparentTemperature_and_unit': '3ºC',
-            'latitude': 55.76,
-            'units': {
-                'unit': 'si',
-                'temperatureMin': 'C',
-                'pressure': 'hPa',
-                'precipIntensityMax': 'mm/h',
-                'temperatureMax': 'C',
-                'visibility': 'km',
-                'apparentTemperature': 'C',
-                'dewPoint': 'C',
-                'precipAccumulation': 'cm',
-                'nearestStormDistance': 'km/h',
-                'precipIntensity': 'mm/h',
-                'windSpeed': 'm/s',
-                'temperature': 'C'
-            },
-            'summary': 'mostly cloudy',
-            'hour_summary': 'Mostly cloudy for the hour.',
-            'apparentTemperature': 3.41,
-            'longitude': 12.49,
-            'location': 'Lyngby-Taarbæk, Hovedstaden',
-            'valid': True,
-            'forecast': {},
-            'windSpeed_and_unit': '5 m/s',
-            'humidity': 94,
-            'nearestStormDistance': 99999,
-            'precipIntensity': 0,
-            'windSpeed': 5.26,
-            'temp': 6.74,
-            'icon': 'partly-cloudy-night',
-            'hour_icon': 'partly-cloudy-night',
-            'precipType': 'none',
-            'precipProbability': 0,
-            'alerts': [],
-            'timezone': 'Europe/Copenhagen'
-        }
-        content = 'Just running unit tests, this should disappear... {0}'.format(random.randint(0, 9999))
-        tweet_content = content + weatherBot.CONFIG['basic']['hashtag']
-        status = weatherBot.do_tweet(content, wd_si, tweet_location, variable_location)
-        self.assertEqual(status.text, tweet_content)
-        # test destroy
-        api = weatherBot.get_tweepy_api()
-        deleted = api.destroy_status(id=status.id)
-        self.assertEqual(deleted.id, status.id)
-
-    def test_do_tweet_with_variable_location(self):
+    def test_do_tweet_with_locations(self):
         """Testing tweeting a test tweet with location and variable location using keys from env variables"""
         tweet_location = True
         variable_location = True
