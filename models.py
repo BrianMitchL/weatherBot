@@ -32,6 +32,13 @@ class WeatherLocation:
     def __str__(self):
         return '<WeatherLocation: {name} at {lat},{lng}>'.format(lat=str(self.lat), lng=str(self.lng), name=self.name)
 
+    def __eq__(self, other):
+        return self.lat == other.lat and self.lng == other.lng and self.name == other.name and \
+               isinstance(other, WeatherLocation)
+
+    def __ne__(self, other):
+        return self.lat != other.lat or self.lng != other.lng or self.name != other.name
+
 
 class WeatherAlert:
     def __init__(self, alert):
@@ -83,12 +90,8 @@ class WeatherData:
             else:
                 self.windBearing = 'unknown direction'
             self.windSpeed = forecast.currently().windSpeed
-            self.windSpeed_and_unit = str(round(forecast.currently().windSpeed)) + ' ' + self.units['windSpeed']
             self.apparentTemperature = forecast.currently().apparentTemperature
-            self.apparentTemperature_and_unit = str(round(forecast.currently().apparentTemperature)) + 'º' + \
-                                                self.units['apparentTemperature']
             self.temp = forecast.currently().temperature
-            self.temp_and_unit = str(round(forecast.currently().temperature)) + 'º' + self.units['temperature']
             self.humidity = round(forecast.currently().humidity * 100)
             self.precipIntensity = forecast.currently().precipIntensity
             self.precipProbability = forecast.currently().precipProbability
@@ -130,7 +133,7 @@ class WeatherBotString:
         """
         :param __strings: dict containing fields from strings.yml file or similar
         """
-        self.weather_data = dict()
+        self.weather_data = None
         self.language = __strings['language']
         self.forecasts = __strings['forecasts']
         self.forecast_endings = __strings['forecast_endings']
@@ -141,7 +144,7 @@ class WeatherBotString:
 
     def set_weather(self, weather_data):
         """
-        :param weather_data: standard weather_data dict (see weatherBot.get_weather_variables)
+        :type weather_data: WeatherData
         """
         self.weather_data = weather_data
         self.update_forecast()
@@ -153,11 +156,11 @@ class WeatherBotString:
         """
         updates all forecasts' replacement fields
         """
-        summary = self.weather_data['forecast'].summary
-        summary_lower = self.weather_data['forecast'].summary.lower()
-        units = self.weather_data['units']
-        high = str(round(self.weather_data['forecast'].temperatureMax)) + 'º' + units['temperatureMax']
-        low = str(round(self.weather_data['forecast'].temperatureMin)) + 'º' + units['temperatureMin']
+        summary = self.weather_data.forecast.summary
+        summary_lower = self.weather_data.forecast.summary.lower()
+        units = self.weather_data.units
+        high = str(round(self.weather_data.forecast.temperatureMax)) + 'º' + units['temperatureMax']
+        low = str(round(self.weather_data.forecast.temperatureMin)) + 'º' + units['temperatureMin']
         for i, forecast in enumerate(self.forecasts):
             self.forecasts[i] = forecast.format(summary=summary,
                                                 summary_lower=summary_lower,
@@ -177,13 +180,11 @@ class WeatherBotString:
         """
         updates all normal conditions' replacement fields
         """
-        temp = self.weather_data['temp_and_unit']
-        summary = self.weather_data['summary']
-        hour_summary = self.weather_data['hour_summary']
-        location = self.weather_data['location']
+        temp = str(round(self.weather_data.temp)) + 'º' + self.weather_data.units['temperature']
+        summary = self.weather_data.summary
+        location = self.weather_data.location.name
         for i, normal in enumerate(self.normal_conditions):
             self.normal_conditions[i] = normal.format(summary=summary,
-                                                      hour_summary=hour_summary,
                                                       temp=temp,
                                                       location=location)
 
@@ -197,15 +198,14 @@ class WeatherBotString:
         """
         updates all normal conditions' replacement fields
         """
-        units = self.weather_data['units']
-        apparent_temp = str(self.weather_data['apparentTemperature']) + 'º' + units['apparentTemperature']
-        temp = str(self.weather_data['temp']) + 'º' + units['apparentTemperature']
-        wind_speed = str(self.weather_data['windSpeed']) + units['windSpeed']
-        wind_bearing = self.weather_data['windBearing']
-        humidity = str(self.weather_data['humidity'])
-        summary = self.weather_data['summary']
-        hour_summary = self.weather_data['hour_summary']
-        location = self.weather_data['location']
+        units = self.weather_data.units
+        apparent_temp = str(round(self.weather_data.apparentTemperature)) + 'º' + units['apparentTemperature']
+        temp = str(round(self.weather_data.temp)) + 'º' + units['temperature']
+        wind_speed = str(round(self.weather_data.windSpeed)) + ' ' + units['windSpeed']
+        wind_bearing = self.weather_data.windBearing
+        humidity = str(self.weather_data.humidity)
+        summary = self.weather_data.summary
+        location = self.weather_data.location.name
         for condition in self.special_conditions:
             for i, special in enumerate(self.special_conditions[condition]):
                 self.special_conditions[condition][i] = special.format(apparent_temp=apparent_temp,
@@ -214,7 +214,6 @@ class WeatherBotString:
                                                                        wind_bearing=wind_bearing,
                                                                        humidity=humidity,
                                                                        summary=summary,
-                                                                       hour_summary=hour_summary,
                                                                        location=location)
 
     def special(self):
@@ -222,12 +221,12 @@ class WeatherBotString:
         :return: Condition namedtuple with random special condition string containing the text for a normal tweet
         """
         precip = self.precipitation()
-        units = self.weather_data['units']
-        apparent_temp = self.weather_data['apparentTemperature']
-        temp = self.weather_data['temp']
-        wind_speed = self.weather_data['windSpeed']
-        humidity = self.weather_data['humidity']
-        code = self.weather_data['icon']
+        units = self.weather_data.units
+        apparent_temp = self.weather_data.apparentTemperature
+        temp = self.weather_data.temp
+        wind_speed = self.weather_data.windSpeed
+        humidity = self.weather_data.humidity
+        code = self.weather_data.icon
         weather_type = 'none'
         if (units['temperature'] == 'F' and apparent_temp <= -30) or \
                 (units['temperature'] == 'C' and apparent_temp <= -34):
@@ -261,8 +260,8 @@ class WeatherBotString:
         """
         updates all precipitation replacement fields
         """
-        rate = str(self.weather_data['precipIntensity'])
-        rate += self.weather_data['units']['precipIntensity']
+        rate = str(self.weather_data.precipIntensity)
+        rate += self.weather_data.units['precipIntensity']
         for precipType in self.precipitations:
             for precipIntensity in self.precipitations[precipType]:
                 for i, precip in enumerate(self.precipitations[precipType][precipIntensity]):
@@ -272,10 +271,10 @@ class WeatherBotString:
         """
         :return: Condition namedtuple with type and random text field names
         """
-        intensity = utils.precipitation_intensity(self.weather_data['precipIntensity'],
-                                                  self.weather_data['units']['precipIntensity'])
-        probability = self.weather_data['precipProbability']
-        precip_type = self.weather_data['precipType']
+        intensity = utils.precipitation_intensity(self.weather_data.precipIntensity,
+                                                  self.weather_data.units['precipIntensity'])
+        probability = self.weather_data.precipProbability
+        precip_type = self.weather_data.precipType
         # Consider 80% chance and above as fact
         if probability >= 0.80 and precip_type != 'none' and intensity != 'none':
             detailed_type = intensity + '-' + precip_type

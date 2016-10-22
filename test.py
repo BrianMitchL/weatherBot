@@ -209,15 +209,28 @@ class TestUtils(unittest.TestCase):
 
 
 class WeatherLocation(unittest.TestCase):
+    def setUp(self):
+        self.lat = 55.76
+        self.lng = 12.49
+        self.name = 'Lyngby-Taarbæk, Hovedstaden'
+        self.location = models.WeatherLocation(self.lat, self.lng, self.name)
+
     def test_location(self):
-        lat = 55.76
-        lng = 12.49
-        name = 'Lyngby-Taarbæk, Hovedstaden'
-        location = models.WeatherLocation(lat, lng, name)
-        self.assertEqual(location.lat, lat)
-        self.assertEqual(location.lng, lng)
-        self.assertEqual(location.name, name)
-        self.assertEqual(str(location), '<WeatherLocation: Lyngby-Taarbæk, Hovedstaden at 55.76,12.49>')
+        """Testing that locations are loaded correctly"""
+        self.assertEqual(self.location.lat, self.lat)
+        self.assertEqual(self.location.lng, self.lng)
+        self.assertEqual(self.location.name, self.name)
+
+    def test_str(self):
+        """Testing that stringifying the object works correctly"""
+        self.assertEqual(str(self.location), '<WeatherLocation: Lyngby-Taarbæk, Hovedstaden at 55.76,12.49>')
+
+    def test_equality(self):
+        """Testing equality comparisons"""
+        location_same = models.WeatherLocation(self.lat, self.lng, self.name)
+        self.assertEqual(self.location, location_same)
+        location2 = models.WeatherLocation(20, 16, 'testing')
+        self.assertNotEqual(self.location, location2)
 
 
 class WeatherBotAlert(unittest.TestCase):
@@ -250,16 +263,14 @@ class WeatherBotData(unittest.TestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_init(self, mock_get):
+        """Testing that weather data is loaded correctly"""
         forecast = forecastio.manual('fixtures/us.json')
         wd = models.WeatherData(forecast, self.location)
         self.assertEqual(wd.units, utils.get_units('us'))
         self.assertEqual(wd.windBearing, 'SW')
         self.assertEqual(wd.windSpeed, 10.81)
-        self.assertEqual(wd.windSpeed_and_unit, '11 mph')
         self.assertEqual(wd.apparentTemperature, 50.84)
-        self.assertEqual(wd.apparentTemperature_and_unit, '51ºF')
         self.assertEqual(wd.temp, 50.84)
-        self.assertEqual(wd.temp_and_unit, '51ºF')
         self.assertEqual(wd.humidity, 89)
         self.assertEqual(wd.precipIntensity, 0)
         self.assertEqual(wd.precipProbability, 0)
@@ -275,6 +286,7 @@ class WeatherBotData(unittest.TestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_alerts(self, mock_get):
+        """Testing that alerts are loaded correctly into a list"""
         location = models.WeatherLocation(34.2, -118.36, 'Los Angeles, CA')
         forecast = forecastio.manual('fixtures/us_alert.json')
         wd = models.WeatherData(forecast, location)
@@ -284,6 +296,7 @@ class WeatherBotData(unittest.TestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_precipitation_in_hour(self, mock_get):
+        """Testing if precipitation is expected in the hour"""
         location = models.WeatherLocation(34.2, -118.36, 'Los Angeles, CA')
         forecast = forecastio.manual('fixtures/us_cincinnati.json')
         wd = models.WeatherData(forecast, location)
@@ -297,172 +310,13 @@ class WeatherBotString(unittest.TestCase):
     def setUp(self):
         with open('strings.yml', 'r') as file_stream:
             self.weatherbot_strings = yaml.safe_load(file_stream)
-        self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
-        self.wd_us = {
-            'windBearing': 'SW',
-            'temp_and_unit': '44ºF',
-            'apparentTemperature_and_unit': '38ºF',
-            'latitude': 55.76,
-            'units': {
-                'unit': 'us',
-                'temperatureMin': 'F',
-                'pressure': 'mb',
-                'precipIntensityMax': 'in/h',
-                'temperatureMax': 'F',
-                'visibility': 'mi',
-                'apparentTemperature': 'F',
-                'dewPoint': 'F',
-                'precipAccumulation': 'in',
-                'nearestStormDistance': 'mph',
-                'precipIntensity': 'in/h',
-                'windSpeed': 'mph',
-                'temperature': 'F'
-            },
-            'summary': 'mostly cloudy',
-            'hour_summary': 'Mostly cloudy for the hour.',
-            'apparentTemperature': 38.35,
-            'longitude': 12.49,
-            'location': 'Lyngby-Taarbæk, Hovedstaden',
-            'valid': True,
-            'forecast': {},
-            'windSpeed_and_unit': '12 mph',
-            'humidity': 95,
-            'nearestStormDistance': 99999,
-            'precipIntensity': 0,
-            'windSpeed': 11.77,
-            'temp': 44.32,
-            'icon': 'partly-cloudy-night',
-            'hour_icon': 'partly-cloudy-night',
-            'precipType': 'none',
-            'precipProbability': 0,
-            'alerts': [],
-            'timezone': 'Europe/Copenhagen'
-        }
-        self.wd_ca = {
-            'windBearing': 'SW',
-            'temp_and_unit': '7ºC',
-            'apparentTemperature_and_unit': '3ºC',
-            'latitude': 55.76,
-            'units': {
-                'unit': 'ca',
-                'temperatureMin': 'C',
-                'pressure': 'hPa',
-                'precipIntensityMax': 'mm/h',
-                'temperatureMax': 'C',
-                'visibility': 'km',
-                'apparentTemperature': 'C',
-                'dewPoint': 'C',
-                'precipAccumulation': 'cm',
-                'nearestStormDistance': 'km/h',
-                'precipIntensity': 'mm/h',
-                'windSpeed': 'km/h',
-                'temperature': 'C'
-            },
-            'summary': 'mostly cloudy',
-            'hour_summary': 'Mostly cloudy for the hour.',
-            'apparentTemperature': 3.46,
-            'longitude': 12.49,
-            'location': 'Lyngby-Taarbæk, Hovedstaden',
-            'valid': True,
-            'forecast': {},
-            'windSpeed_and_unit': '19 km/h',
-            'humidity': 95,
-            'nearestStormDistance': 99999,
-            'precipIntensity': 0,
-            'windSpeed': 18.94,
-            'temp': 6.78,
-            'icon': 'partly-cloudy-night',
-            'hour_icon': 'partly-cloudy-night',
-            'precipType': 'none',
-            'precipProbability': 0,
-            'alerts': [],
-            'timezone': 'Europe/Copenhagen'
-        }
-        self.wd_uk2 = {
-            'windBearing': 'SW',
-            'temp_and_unit': '7ºC',
-            'apparentTemperature_and_unit': '3ºC',
-            'latitude': 55.76,
-            'units': {
-                'unit': 'uk2',
-                'temperatureMin': 'C',
-                'pressure': 'hPa',
-                'precipIntensityMax': 'mm/h',
-                'temperatureMax': 'C',
-                'visibility': 'mi',
-                'apparentTemperature': 'C',
-                'dewPoint': 'C',
-                'precipAccumulation': 'cm',
-                'nearestStormDistance': 'mi',
-                'precipIntensity': 'mm/h',
-                'windSpeed': 'mph',
-                'temperature': 'C'
-            },
-            'summary': 'mostly cloudy',
-            'hour_summary': 'Mostly cloudy for the hour.',
-            'apparentTemperature': 3.43,
-            'longitude': 12.49,
-            'location': 'Lyngby-Taarbæk, Hovedstaden',
-            'valid': True,
-            'forecast': {},
-            'windSpeed_and_unit': '12 mph',
-            'humidity': 95,
-            'nearestStormDistance': 99999,
-            'precipIntensity': 0,
-            'windSpeed': 11.77,
-            'temp': 6.76,
-            'icon': 'partly-cloudy-night',
-            'hour_icon': 'partly-cloudy-night',
-            'precipType': 'none',
-            'precipProbability': 0,
-            'alerts': [],
-            'timezone': 'Europe/Copenhagen'
-        }
-        self.wd_si = {
-            'windBearing': 'SW',
-            'temp_and_unit': '7ºC',
-            'apparentTemperature_and_unit': '3ºC',
-            'latitude': 55.76,
-            'units': {
-                'unit': 'si',
-                'temperatureMin': 'C',
-                'pressure': 'hPa',
-                'precipIntensityMax': 'mm/h',
-                'temperatureMax': 'C',
-                'visibility': 'km',
-                'apparentTemperature': 'C',
-                'dewPoint': 'C',
-                'precipAccumulation': 'cm',
-                'nearestStormDistance': 'km/h',
-                'precipIntensity': 'mm/h',
-                'windSpeed': 'm/s',
-                'temperature': 'C'
-            },
-            'summary': 'mostly cloudy',
-            'hour_summary': 'Mostly cloudy for the hour.',
-            'apparentTemperature': 3.41,
-            'longitude': 12.49,
-            'location': 'Lyngby-Taarbæk, Hovedstaden',
-            'valid': True,
-            'forecast': {},
-            'windSpeed_and_unit': '5 m/s',
-            'humidity': 94,
-            'nearestStormDistance': 99999,
-            'precipIntensity': 0,
-            'windSpeed': 5.26,
-            'temp': 6.74,
-            'icon': 'partly-cloudy-night',
-            'hour_icon': 'partly-cloudy-night',
-            'precipType': 'none',
-            'precipProbability': 0,
-            'alerts': [],
-            'timezone': 'Europe/Copenhagen'
-        }
+        self.location = models.WeatherLocation(55.76, 12.49, 'Lyngby-Taarbæk, Hovedstaden')
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_forecast(self, mock_get):
+        """Testing that forecasts are formatted correctly"""
         forecast = forecastio.manual('fixtures/us.json')
-        wd = weatherBot.get_weather_variables(forecast, self.location)
+        wd = models.WeatherData(forecast, self.location)
         wbs = models.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
         wbs.forecast_endings = []
@@ -477,8 +331,9 @@ class WeatherBotString(unittest.TestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_normal(self, mock_get):
+        """Testing that normal events are formatted"""
         forecast = forecastio.manual('fixtures/us.json')
-        wd = weatherBot.get_weather_variables(forecast, self.location)
+        wd = models.WeatherData(forecast, self.location)
         wbs = models.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
         normal_string = wbs.normal()
@@ -491,170 +346,173 @@ class WeatherBotString(unittest.TestCase):
         forecast_us = forecastio.manual('fixtures/us.json')
         forecast_ca = forecastio.manual('fixtures/ca.json')
         forecast_uk2 = forecastio.manual('fixtures/uk2.json')
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
+        wd = models.WeatherData(forecast_si, self.location)
         wbs = models.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
         self.assertEqual('normal', wbs.special().type)
         self.assertEqual('', wbs.special().text)
         """Testing if wind-chill type is triggered"""
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
-        wd['apparentTemperature'] = -34
+        wd = models.WeatherData(forecast_si, self.location)
+        wd.apparentTemperature = -34
         wbs = models.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
         self.assertEqual('wind-chill', wbs.special().type)
         self.assertIn(wbs.special().text, wbs.special_conditions[wbs.special().type])
-        wd = weatherBot.get_weather_variables(forecast_us, self.location)
-        wd['apparentTemperature'] = -30
+        wd = models.WeatherData(forecast_us, self.location)
+        wd.apparentTemperature = -30
         wbs = models.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
         self.assertEqual('wind-chill', wbs.special().type)
         self.assertIn(wbs.special().text, wbs.special_conditions[wbs.special().type])
         """Testing if precip type is triggered"""
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
-        wd['precipProbability'] = 0.9
-        wd['precipType'] = 'rain'
-        wd['precipIntensity'] = 10.0
+        wd = models.WeatherData(forecast_si, self.location)
+        wd.precipProbability = 0.9
+        wd.precipType = 'rain'
+        wd.precipIntensity = 10.0
         wbs.set_weather(wd)
         self.assertEqual('heavy-rain', wbs.special().type)
         self.assertIn(wbs.special().text, wbs.precipitations['rain']['heavy'])
-        wd = weatherBot.get_weather_variables(forecast_us, self.location)
-        wd['precipProbability'] = 0.9
-        wd['precipType'] = 'rain'
-        wd['precipIntensity'] = 1.0
+        wd = models.WeatherData(forecast_us, self.location)
+        wd.precipProbability = 0.9
+        wd.precipType = 'rain'
+        wd.precipIntensity = 1.0
         wbs.set_weather(wd)
         self.assertEqual('heavy-rain', wbs.special().type)
         self.assertIn(wbs.special().text, wbs.precipitations['rain']['heavy'])
-        wd = weatherBot.get_weather_variables(forecast_us, self.location)
-        wd['precipProbability'] = 0.9
-        wd['precipType'] = 'none'
-        wd['precipIntensity'] = 1.0
+        wd = models.WeatherData(forecast_us, self.location)
+        wd.precipProbability = 0.9
+        wd.precipType = 'none'
+        wd.precipIntensity = 1.0
         wbs.set_weather(wd)
         self.assertEqual('normal', wbs.special().type)
         self.assertEqual('', wbs.special().text)
         """Testing if medium-wind type is triggered"""
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
-        wd['icon'] = 'medium-wind'
+        wd = models.WeatherData(forecast_si, self.location)
+        wd.icon = 'medium-wind'
         wbs.set_weather(wd)
         self.assertEqual('medium-wind', wbs.special().type)
         """Testing if heavy-wind type is triggered"""
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
-        wd['icon'] = 'heavy-wind'
+        wd = models.WeatherData(forecast_si, self.location)
+        wd.icon = 'heavy-wind'
         wbs.set_weather(wd)
         self.assertEqual('heavy-wind', wbs.special().type)
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
-        wd['windSpeed'] = 15.0
+        wd = models.WeatherData(forecast_si, self.location)
+        wd.windSpeed = 15.0
         wbs.set_weather(wd)
         self.assertEqual('heavy-wind', wbs.special().type)
-        wd = weatherBot.get_weather_variables(forecast_ca, self.location)
-        wd['windSpeed'] = 56.0
+        wd = models.WeatherData(forecast_ca, self.location)
+        wd.windSpeed = 56.0
         wbs.set_weather(wd)
         self.assertEqual('heavy-wind', wbs.special().type)
-        wd = weatherBot.get_weather_variables(forecast_us, self.location)
-        wd['windSpeed'] = 35.0
+        wd = models.WeatherData(forecast_us, self.location)
+        wd.windSpeed = 35.0
         wbs.set_weather(wd)
         self.assertEqual('heavy-wind', wbs.special().type)
-        wd = weatherBot.get_weather_variables(forecast_uk2, self.location)
-        wd['windSpeed'] = 35.0
+        wd = models.WeatherData(forecast_uk2, self.location)
+        wd.windSpeed = 35.0
         wbs.set_weather(wd)
         self.assertEqual('heavy-wind', wbs.special().type)
         """Testing if fog type is triggered"""
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
-        wd['icon'] = 'fog'
+        wd = models.WeatherData(forecast_si, self.location)
+        wd.icon = 'fog'
         wbs.set_weather(wd)
         self.assertEqual('fog', wbs.special().type)
         """Testing if cold type is triggered"""
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
-        wd['temp'] = -28.0
+        wd = models.WeatherData(forecast_si, self.location)
+        wd.temp = -28.0
         wbs.set_weather(wd)
         self.assertEqual('cold', wbs.special().type)
-        wd = weatherBot.get_weather_variables(forecast_us, self.location)
-        wd['temp'] = -20.0
+        wd = models.WeatherData(forecast_us, self.location)
+        wd.temp = -20.0
         wbs.set_weather(wd)
         self.assertEqual('cold', wbs.special().type)
         """Testing if super-hot type is triggered"""
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
-        wd['temp'] = 43.0
+        wd = models.WeatherData(forecast_si, self.location)
+        wd.temp = 43.0
         wbs.set_weather(wd)
         self.assertEqual('super-hot', wbs.special().type)
-        wd = weatherBot.get_weather_variables(forecast_us, self.location)
-        wd['temp'] = 110.0
+        wd = models.WeatherData(forecast_us, self.location)
+        wd.temp = 110.0
         wbs.set_weather(wd)
         self.assertEqual('super-hot', wbs.special().type)
         """Testing if hot type is triggered"""
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
-        wd['temp'] = 37.0
+        wd = models.WeatherData(forecast_si, self.location)
+        wd.temp = 37.0
         wbs.set_weather(wd)
         self.assertEqual('hot', wbs.special().type)
-        wd = weatherBot.get_weather_variables(forecast_us, self.location)
-        wd['temp'] = 100.0
+        wd = models.WeatherData(forecast_us, self.location)
+        wd.temp = 100.0
         wbs.set_weather(wd)
         self.assertEqual('hot', wbs.special().type)
         """Testing if dry type is triggered"""
-        wd = weatherBot.get_weather_variables(forecast_si, self.location)
-        wd['humidity'] = 30.0
+        wd = models.WeatherData(forecast_si, self.location)
+        wd.humidity = 30.0
         wbs.set_weather(wd)
         self.assertEqual('dry', wbs.special().type)
 
     def test_alert(self):
+        """Testing that alerts are formatted"""
         wbs = models.WeatherBotString(self.weatherbot_strings)
         dt = datetime.datetime.utcfromtimestamp(1475129665)  # datetime.datetime(2016, 9, 29, 6, 14, 25)
         alert = wbs.alert(title='title', expires=pytz.utc.localize(dt), uri='test.uri')
         self.assertIn('Thu, Sep 29 at 06:14:25 UTC', alert)
+        self.assertIn('title', alert)
+        self.assertIn('test.uri', alert)
         self.assertNotIn(alert, wbs.alerts)
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_precipitation(self, mock_get):
-        """Testing if a precipitation condition is met"""
+        """Testing that precipitation conditions are met"""
         wbs = models.WeatherBotString(self.weatherbot_strings)
         forecast_us = forecastio.manual('fixtures/us.json')
-        wd = weatherBot.get_weather_variables(forecast_us, self.location)
+        wd = models.WeatherData(forecast_us, self.location)
         wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), models.Condition(type='none', text=''))
-        wd['precipIntensity'] = 0.3
-        wd['precipProbability'] = 0.5
-        wd['precipType'] = 'rain'
+        wd.precipIntensity = 0.3
+        wd.precipProbability = 0.5
+        wd.precipType = 'rain'
         wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), models.Condition(type='none', text=''))
-        wd['precipIntensity'] = 0.3
-        wd['precipProbability'] = 1
-        wd['precipType'] = 'none'
+        wd.precipIntensity = 0.3
+        wd.precipProbability = 1
+        wd.precipType = 'none'
         wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), models.Condition(type='none', text=''))
-        wd['precipIntensity'] = 0
-        wd['precipProbability'] = 1
-        wd['precipType'] = 'rain'
+        wd.precipIntensity = 0
+        wd.precipProbability = 1
+        wd.precipType = 'rain'
         wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), models.Condition(type='none', text=''))
-        wd['precipIntensity'] = 0
-        wd['precipProbability'] = 1
-        wd['precipType'] = 'none'
+        wd.precipIntensity = 0
+        wd.precipProbability = 1
+        wd.precipType = 'none'
         wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), models.Condition(type='none', text=''))
         # testing with a few possible conditions
-        wd['precipIntensity'] = 0.3
-        wd['precipProbability'] = 1
-        wd['precipType'] = 'rain'
+        wd.precipIntensity = 0.3
+        wd.precipProbability = 1
+        wd.precipType = 'rain'
         wbs.set_weather(wd)
         precip = wbs.precipitation()
         self.assertEqual(precip.type, 'moderate-rain')
         self.assertIn(precip.text, wbs.precipitations['rain']['moderate'])
-        wd['precipIntensity'] = 0.4
-        wd['precipProbability'] = 0.85
-        wd['precipType'] = 'snow'
+        wd.precipIntensity = 0.4
+        wd.precipProbability = 0.85
+        wd.precipType = 'snow'
         wbs.set_weather(wd)
         precip = wbs.precipitation()
         self.assertEqual(precip.type, 'heavy-snow')
         self.assertIn(precip.text, wbs.precipitations['snow']['heavy'])
-        wd['precipIntensity'] = 0.06
-        wd['precipProbability'] = 1
-        wd['precipType'] = 'sleet'
+        wd.precipIntensity = 0.06
+        wd.precipProbability = 1
+        wd.precipType = 'sleet'
         wbs.set_weather(wd)
         precip = wbs.precipitation()
         self.assertEqual(precip.type, 'light-sleet')
         self.assertIn(precip.text, wbs.precipitations['sleet']['light'])
-        wd['precipIntensity'] = 0.005
-        wd['precipProbability'] = 1
-        wd['precipType'] = 'rain'
+        wd.precipIntensity = 0.005
+        wd.precipProbability = 1
+        wd.precipType = 'rain'
         wbs.set_weather(wd)
         precip = wbs.precipitation()
         self.assertEqual(precip.type, 'very-light-rain')
@@ -663,7 +521,7 @@ class WeatherBotString(unittest.TestCase):
 
 class TestWB(unittest.TestCase):
     def setUp(self):
-        self.location = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
+        self.location = models.WeatherLocation(55.76, 12.49, 'Lyngby-Taarbæk, Hovedstaden')
 
     def test_config(self):
         """Testing config file handling"""
@@ -684,11 +542,7 @@ class TestWB(unittest.TestCase):
                                Time(hour=18, minute=0),
                                Time(hour=22, minute=0)]
             },
-            'default_location': {
-                'lat': -79,
-                'lng': 12,
-                'name': 'Just a Test'
-            },
+            'default_location': models.WeatherLocation(-79, 12, 'Just a Test'),
             'variable_location': {
                 'enabled': True,
                 'user': 'test_user'
@@ -803,16 +657,16 @@ class TestWB(unittest.TestCase):
 
     def test_get_location_from_user_timeline(self):
         """Testing getting a location from twitter account's recent tweets"""
-        fallback = {'lat': 55.76, 'lng': 12.49, 'name': 'Lyngby-Taarbæk, Hovedstaden'}
-        morris = {'lat': 45.58605, 'lng': -95.91405, 'name': 'Morris, MN'}
+        fallback = models.WeatherLocation(55.76, 12.49, 'Lyngby-Taarbæk, Hovedstaden')
+        morris = models.WeatherLocation(45.58605, -95.91405, 'Morris, MN')
         loc = weatherBot.get_location_from_user_timeline('MorrisMNWeather', fallback)
-        self.assertTrue(type(loc) is dict)
+        self.assertTrue(type(loc) is models.WeatherLocation)
         self.assertEqual(loc, morris)
         self.assertEqual(weatherBot.get_location_from_user_timeline('twitter', fallback), fallback)
 
     def test_get_forecast_object(self):
         """Testing getting the forecastio object"""
-        forecast = weatherBot.get_forecast_object(self.location['lat'], self.location['lng'], units='us', lang='de')
+        forecast = weatherBot.get_forecast_object(self.location.lat, self.location.lng, units='us', lang='de')
         self.assertEqual(forecast.response.status_code, 200)
         self.assertEqual(forecast.json['flags']['units'], 'us')
         bad_forecast = weatherBot.get_forecast_object(345.5, 123.45)
@@ -826,49 +680,9 @@ class TestWB(unittest.TestCase):
         """Testing tweeting a test tweet using keys from env variables"""
         tweet_location = False
         variable_location = False
-        wd_si = {
-            'windBearing': 'SW',
-            'temp_and_unit': '7ºC',
-            'apparentTemperature_and_unit': '3ºC',
-            'latitude': 55.76,
-            'units': {
-                'unit': 'si',
-                'temperatureMin': 'C',
-                'pressure': 'hPa',
-                'precipIntensityMax': 'mm/h',
-                'temperatureMax': 'C',
-                'visibility': 'km',
-                'apparentTemperature': 'C',
-                'dewPoint': 'C',
-                'precipAccumulation': 'cm',
-                'nearestStormDistance': 'km/h',
-                'precipIntensity': 'mm/h',
-                'windSpeed': 'm/s',
-                'temperature': 'C'
-            },
-            'summary': 'mostly cloudy',
-            'hour_summary': 'Mostly cloudy for the hour.',
-            'apparentTemperature': 3.41,
-            'longitude': 12.49,
-            'location': 'Lyngby-Taarbæk, Hovedstaden',
-            'valid': True,
-            'forecast': {},
-            'windSpeed_and_unit': '5 m/s',
-            'humidity': 94,
-            'nearestStormDistance': 99999,
-            'precipIntensity': 0,
-            'windSpeed': 5.26,
-            'temp': 6.74,
-            'icon': 'partly-cloudy-night',
-            'hour_icon': 'partly-cloudy-night',
-            'precipType': 'none',
-            'precipProbability': 0,
-            'alerts': [],
-            'timezone': 'Europe/Copenhagen'
-        }
         content = 'Just running unit tests, this should disappear... {0}'.format(random.randint(0, 9999))
         tweet_content = content + weatherBot.CONFIG['basic']['hashtag']
-        status = weatherBot.do_tweet(content, wd_si, tweet_location, variable_location)
+        status = weatherBot.do_tweet(content, self.location, tweet_location, variable_location)
         self.assertEqual(status.text, tweet_content)
         # test destroy
         api = weatherBot.get_tweepy_api()
@@ -879,49 +693,9 @@ class TestWB(unittest.TestCase):
         """Testing tweeting a test tweet with location and variable location using keys from env variables"""
         tweet_location = True
         variable_location = True
-        wd_si = {
-            'windBearing': 'SW',
-            'temp_and_unit': '7ºC',
-            'apparentTemperature_and_unit': '3ºC',
-            'latitude': 55.76,
-            'units': {
-                'unit': 'si',
-                'temperatureMin': 'C',
-                'pressure': 'hPa',
-                'precipIntensityMax': 'mm/h',
-                'temperatureMax': 'C',
-                'visibility': 'km',
-                'apparentTemperature': 'C',
-                'dewPoint': 'C',
-                'precipAccumulation': 'cm',
-                'nearestStormDistance': 'km/h',
-                'precipIntensity': 'mm/h',
-                'windSpeed': 'm/s',
-                'temperature': 'C'
-            },
-            'summary': 'mostly cloudy',
-            'hour_summary': 'Mostly cloudy for the hour.',
-            'apparentTemperature': 3.41,
-            'longitude': 12.49,
-            'location': 'Lyngby-Taarbæk, Hovedstaden',
-            'valid': True,
-            'forecast': {},
-            'windSpeed_and_unit': '5 m/s',
-            'humidity': 94,
-            'nearestStormDistance': 99999,
-            'precipIntensity': 0,
-            'windSpeed': 5.26,
-            'temp': 6.74,
-            'icon': 'partly-cloudy-night',
-            'hour_icon': 'partly-cloudy-night',
-            'precipType': 'none',
-            'precipProbability': 0,
-            'alerts': [],
-            'timezone': 'Europe/Copenhagen'
-        }
         content = 'Just running unit tests, this should disappear... {0}'.format(random.randint(0, 9999))
-        tweet_content = wd_si['location'] + ': ' + content + weatherBot.CONFIG['basic']['hashtag']
-        status = weatherBot.do_tweet(content, wd_si, tweet_location, variable_location)
+        tweet_content = self.location.name + ': ' + content + weatherBot.CONFIG['basic']['hashtag']
+        status = weatherBot.do_tweet(content, self.location, tweet_location, variable_location)
         self.assertEqual(status.text, tweet_content)
         # test destroy
         api = weatherBot.get_tweepy_api()
@@ -932,56 +706,17 @@ class TestWB(unittest.TestCase):
         """Testing tweeting a test tweet that should throw and error using keys from env variables"""
         tweet_location = False
         variable_location = False
-        wd_si = {
-            'windBearing': 'SW',
-            'temp_and_unit': '7ºC',
-            'apparentTemperature_and_unit': '3ºC',
-            'latitude': 55.76,
-            'units': {
-                'unit': 'si',
-                'temperatureMin': 'C',
-                'pressure': 'hPa',
-                'precipIntensityMax': 'mm/h',
-                'temperatureMax': 'C',
-                'visibility': 'km',
-                'apparentTemperature': 'C',
-                'dewPoint': 'C',
-                'precipAccumulation': 'cm',
-                'nearestStormDistance': 'km/h',
-                'precipIntensity': 'mm/h',
-                'windSpeed': 'm/s',
-                'temperature': 'C'
-            },
-            'summary': 'mostly cloudy',
-            'hour_summary': 'Mostly cloudy for the hour.',
-            'apparentTemperature': 3.41,
-            'longitude': 12.49,
-            'location': 'Lyngby-Taarbæk, Hovedstaden',
-            'valid': True,
-            'forecast': {},
-            'windSpeed_and_unit': '5 m/s',
-            'humidity': 94,
-            'nearestStormDistance': 99999,
-            'precipIntensity': 0,
-            'windSpeed': 5.26,
-            'temp': 6.74,
-            'icon': 'partly-cloudy-night',
-            'hour_icon': 'partly-cloudy-night',
-            'precipType': 'none',
-            'precipProbability': 0,
-            'alerts': [],
-            'timezone': 'Europe/Copenhagen'
-        }
         content = 'This tweet is over 140 characters.\n' \
                   'This tweet is over 140 characters.\n' \
                   'This tweet is over 140 characters.\n' \
                   'This tweet is over 140 characters.\n' \
                   'This tweet is over 140 characters.\n' \
                   '{0}'.format(random.randint(0, 9999))
-        status = weatherBot.do_tweet(content, wd_si, tweet_location, variable_location)
+        status = weatherBot.do_tweet(content, self.location, tweet_location, variable_location)
         self.assertEqual(None, status)
 
     def test_cleanse_throttles(self):
+        """Testing that an expired, non-default key will be removed from a dict"""
         now = pytz.utc.localize(datetime.datetime(2016, 10, 14, hour=14, minute=42)).astimezone(pytz.utc)
         base = {'default': now - datetime.timedelta(hours=2)}
         a = base

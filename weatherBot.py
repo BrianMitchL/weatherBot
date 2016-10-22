@@ -5,7 +5,6 @@
 # See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 
 import configparser
-import hashlib
 import logging
 import os
 import random
@@ -31,12 +30,9 @@ throttle_times = {'default': pytz.utc.localize(datetime.utcnow()).astimezone(pyt
 CONFIG = {}
 
 
-class BadForecastDataError(Exception):
-    pass
-
-
 def load_config(path):
     """
+    :type path: str
     :param path: path to the conf file
     """
     global CONFIG
@@ -56,11 +52,9 @@ def load_config(path):
             'conditions': utils.get_times(conf['scheduled times'].get('conditions',
                                                                       '7:00\n12:00\n15:00\n18:00\n22:00'))
         },
-        'default_location': {
-            'lat': conf['default location'].getfloat('lat', 45.585),
-            'lng': conf['default location'].getfloat('lng', -95.91),
-            'name': conf['default location'].get('name', 'Morris, MN')
-        },
+        'default_location': models.WeatherLocation(lat=conf['default location'].getfloat('lat', 45.585),
+                                                   lng=conf['default location'].getfloat('lng', -95.91),
+                                                   name=conf['default location'].get('name', 'Morris, MN')),
         'variable_location': {
             'enabled': conf['variable location'].getboolean('enabled', False),
             'user': conf['variable location'].get('user', 'bman4789')
@@ -100,8 +94,10 @@ def load_config(path):
 
 def initialize_logger(log_enabled, log_pathname):
     """
-    :param log_enabled: boolean determining whether or not to write a log file
-    :param log_pathname: string containing the full path of where to write the log
+    :type log_enabled: bool
+    :param log_enabled: whether or not to write a log file
+    :type log_pathname: str
+    :param log_pathname: full path of where to write the log
     """
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)  # global level of debug, so debug or anything less can be used
@@ -131,10 +127,14 @@ def get_tweepy_api():
 
 def get_forecast_object(lat, lng, units='us', lang='en'):
     """
-    :param lat: float containing latitude
-    :param lng: float containing longitude
-    :param units: string containing the units standard, ex 'us', 'ca', 'uk2', 'si', 'auto'
-    :param lang: string containing the language, ex: 'en', 'de'. See https://darksky.net/dev/docs/forecast for more
+    :type lat: float
+    :param lat: latitude
+    :type lng: float
+    :param lng: longitude
+    :type units: str
+    :param units: units standard, ex 'us', 'ca', 'uk2', 'si', 'auto'
+    :type lang: str
+    :param lang: language, ex: 'en', 'de'. See https://darksky.net/dev/docs/forecast for more
     :return: Forecast object or None if HTTPError or ConnectionError
     """
     try:
@@ -149,10 +149,11 @@ def get_forecast_object(lat, lng, units='us', lang='en'):
 
 def get_location_from_user_timeline(username, fallback):
     """
-    :param username: the string of the twitter username to follow
-    :param fallback: a dict in the form of {'lat': 45.585, 'lng': -95.91, 'name': 'Morris, MN'}
-                     containing a fallback in case no location can be found
-    :return: a location dict in the form of {'lat': 45.585, 'lng': -95.91, 'name': 'Morris, MN'}
+    :type username: str
+    :param username: twitter username to follow
+    :type fallback: models.WeatherLocation
+    :param fallback: a fallback in case no location can be found
+    :return: models.WeatherLocation
     """
     api = get_tweepy_api()
     # gets the 20 most recent tweets from the given profile
@@ -161,24 +162,20 @@ def get_location_from_user_timeline(username, fallback):
         for tweet in timeline:
             # if tweet has coordinates (from a smartphone)
             if tweet.coordinates is not None:
-                loc = {
-                    'lat': tweet.coordinates['coordinates'][1],
-                    'lng': tweet.coordinates['coordinates'][0],
-                    'name': tweet.place.full_name
-                }
-                logging.debug('Found {0}: {1}, {2}'.format(loc['name'], loc['lat'], loc['lng']))
-                return loc
+                lat = tweet.coordinates['coordinates'][1]
+                lng = tweet.coordinates['coordinates'][0]
+                name = tweet.place.full_name
+                logging.debug('Found {name}: {lat}, {lng}'.format(name=name, lat=lat, lng=lng))
+                return models.WeatherLocation(lat=lat, lng=lng, name=name)
             # if the location is a place, not coordinates
             elif tweet.place is not None:
                 point = utils.centerpoint(tweet.place.bounding_box.coordinates[0])
-                loc = {
-                    'lat': point[0],
-                    'lng': point[1],
-                    'name': tweet.place.full_name
-                }
-                logging.debug('Found the center of bounding box at {0}: {1}, {2}'
-                              .format(loc['name'], loc['lat'], loc['lng']))
-                return loc
+                lat = point[0]
+                lng = point[1]
+                name = tweet.place.full_name
+                logging.debug('Found the center of bounding box at '
+                              '{name}: {lat}, {lng}'.format(name=name, lat=lat, lng=lng))
+                return models.WeatherLocation(lat=lat, lng=lng, name=name)
         # fallback to hardcoded location if there is no valid data
         logging.warning('Could not find tweet with location, falling back to hardcoded location')
         return fallback
@@ -188,71 +185,16 @@ def get_location_from_user_timeline(username, fallback):
         return fallback
 
 
-def get_weather_variables(forecast, location):
+def do_tweet(text, weather_location, tweet_location, variable_location):
     """
-    :param forecast: forecastio object
-    :param location: location dict with 'lat', 'lng', and 'name' keys
-    :return: weather_data dict containing weather information
-    """
-    try:
-        weather_data = dict()
-        if 'darksky-unavailable' in forecast.json['flags']:
-            raise BadForecastDataError('Darksky unavailable')
-        if not forecast.currently().temperature:
-            raise BadForecastDataError('Temp is None')
-        if not forecast.currently().summary:
-            raise BadForecastDataError('Summary is None')
-        weather_data['units'] = utils.get_units(forecast.json['flags']['units'])
-        # Dark Sky doesn't always include 'windBearing' or 'nearestStormDistance'
-        if hasattr(forecast.currently(), 'windBearing'):
-            weather_data['windBearing'] = utils.get_wind_direction(forecast.currently().windBearing)
-        else:
-            weather_data['windBearing'] = 'unknown direction'
-        if hasattr(forecast.currently(), 'nearestStormDistance'):
-            weather_data['nearestStormDistance'] = forecast.currently().nearestStormDistance
-        else:
-            weather_data['nearestStormDistance'] = 99999
-        weather_data['windSpeed'] = forecast.currently().windSpeed
-        weather_data['windSpeed_and_unit'] = str(round(forecast.currently().windSpeed)) + ' ' + \
-            weather_data['units']['windSpeed']
-        weather_data['apparentTemperature'] = forecast.currently().apparentTemperature
-        weather_data['apparentTemperature_and_unit'] = str(round(forecast.currently().apparentTemperature)) + 'º' \
-            + weather_data['units']['apparentTemperature']
-        weather_data['temp'] = forecast.currently().temperature
-        weather_data['temp_and_unit'] = str(round(forecast.currently().temperature)) + 'º' + \
-            weather_data['units']['temperature']
-        weather_data['humidity'] = round(forecast.currently().humidity * 100)
-        weather_data['precipIntensity'] = forecast.currently().precipIntensity
-        weather_data['precipProbability'] = forecast.currently().precipProbability
-        if hasattr(forecast.currently(), 'precipType'):
-            weather_data['precipType'] = forecast.currently().precipType
-        else:
-            weather_data['precipType'] = 'none'
-        weather_data['summary'] = forecast.currently().summary.lower()
-        weather_data['icon'] = forecast.currently().icon
-        weather_data['location'] = location['name']
-        weather_data['latitude'] = location['lat']
-        weather_data['longitude'] = location['lng']
-        weather_data['timezone'] = forecast.json['timezone']
-        weather_data['forecast'] = forecast.daily().data[0]
-        weather_data['hour_icon'] = forecast.minutely().icon
-        weather_data['hour_summary'] = forecast.minutely().summary
-        weather_data['alerts'] = forecast.alerts()
-        weather_data['valid'] = True
-        logging.debug('Weather data: {0}'.format(weather_data))
-        return weather_data
-    except (KeyError, TypeError, BadForecastDataError) as err:
-        logging.error('Found an error in get_weather_variables')
-        logging.error(err)
-        return {'valid': False}
-
-
-def do_tweet(text, weather_data, tweet_location, variable_location):
-    """
+    :type text: str
     :param text: text for the tweet
-    :param weather_data: dict containing weather information
-    :param tweet_location: boolean that determines whether or not to include Twitter location
-    :param variable_location: boolean that determines whether or not to prefix the tweet with the location
+    :type weather_location: models.WeatherLocation
+    :param weather_location: location information used for the tweet location and inline location name
+    :type tweet_location: bool
+    :param tweet_location: determines whether or not to include Twitter location
+    :type variable_location: bool
+    :param variable_location: determines whether or not to prefix the tweet with the location
     :return: a tweepy status object
     """
     api = get_tweepy_api()
@@ -260,10 +202,10 @@ def do_tweet(text, weather_data, tweet_location, variable_location):
         text += ' ' + CONFIG['basic']['hashtag']
     logging.debug('Trying to tweet: {0}'.format(text))
     if variable_location:
-        text = weather_data['location'] + ': ' + text
+        text = weather_location.name + ': ' + text
     try:
         if tweet_location:
-            status = api.update_status(status=text, lat=weather_data['latitude'], long=weather_data['longitude'])
+            status = api.update_status(status=text, lat=weather_location.lat, long=weather_location.lng)
         else:
             status = api.update_status(status=text)
         logging.info('Tweet success: {0}'.format(text))
@@ -274,61 +216,72 @@ def do_tweet(text, weather_data, tweet_location, variable_location):
         return None
 
 
-def alert_logic(weather_data, wb_string, timezone_id, now_utc):
+def timed_tweet(tweet_at, now, content, weather_location):
     """
-    :param weather_data: dict containing weather information
-    :param wb_string: WeatherBotString object
-    :param timezone_id: string containing a datetime timezone id
-    :param now_utc: datetime.datetime in utc timezone
-    :return: list of text to use for alert tweets, can be an empty list
+    :type tweet_at: datetime.datetime
+    :param tweet_at: when a tweet is supposed to be tweeted in UTC
+    :type now: datetime.datetime
+    :param now: current time in UTC
+    :type content: str
+    :param content: text for tweet
+    :type weather_location: models.WeatherLocation
     """
-    global throttle_times
-    alerts = weather_data['alerts']
-    tweets = list()
-    if alerts:
-        for alert in alerts:
-            full_alert = alert.title + str(alert.expires)
-            sha256 = hashlib.sha256(full_alert.encode()).hexdigest()  # a (hopefully) unique id on each alert
-            # if the alert has not been tweeted, and the expiration is older than the current time
-            expires = datetime.utcfromtimestamp(alert.expires)
-            if sha256 not in throttle_times and pytz.utc.localize(expires) > now_utc:
-                local_expires_time = utils.get_local_datetime(timezone_id, expires)
-                throttle_times[sha256] = pytz.utc.localize(expires)
-                tweets.append(wb_string.alert(alert.title, local_expires_time, alert.uri))
-    return tweets
+    if tweet_at <= now < tweet_at + timedelta(minutes=CONFIG['basic']['refresh']):
+        logging.debug('Timed tweet or forecast')
+        do_tweet(content, weather_location, CONFIG['basic']['tweet_location'], CONFIG['variable_location']['enabled'])
+
+
+def cleanse_throttles(throttles, now):
+    """
+    :type throttles: dict
+    :param throttles: throttles, throttle type as the key, datetime as the value
+    :type now: datetime.datetime
+    :param now: the current time to check against a throttle expirey time
+    :return: throttles dictionary with expired keys deleted
+    """
+    to_delete = [key for key, expires in throttles.items() if expires <= now]
+    for key in to_delete:
+        if key != 'default':
+            del throttles[key]
+    return throttles
 
 
 def tweet_logic(weather_data, wb_string):
     """
-    :param weather_data: dict containing weather information
-    :param wb_string: WeatherBotString object
+    :type weather_data: models.WeatherData
+    :type wb_string: models.WeatherBotString
     """
     global throttle_times
     wb_string.set_weather(weather_data)
     special = wb_string.special()
     normal_text = wb_string.normal()
 
-    timezone_id = weather_data['timezone']
     now = datetime.utcnow()
     now_utc = utils.get_utc_datetime('UTC', now)
-    now_local = utils.get_local_datetime(timezone_id, now)
+    now_local = utils.get_local_datetime(weather_data.timezone, now)
 
     # weather alerts
-    for alert in alert_logic(weather_data, wb_string, timezone_id, now_utc):
-        do_tweet(alert, weather_data, CONFIG['basic']['tweet_location'], CONFIG['variable_location']['enabled'])
+    for alert in weather_data.alerts:
+        if alert.sha() not in throttle_times and not alert.expired(now_utc):
+            local_expires_time = utils.get_local_datetime(weather_data.timezone, alert.expires)
+            throttle_times[alert.sha()] = pytz.utc.localize(alert.expires)
+            do_tweet(wb_string.alert(alert.title, local_expires_time, alert.uri),
+                     weather_data.location,
+                     CONFIG['basic']['tweet_location'],
+                     CONFIG['variable_location']['enabled'])
 
     # forecast
     forecast_dt = now_local.replace(hour=CONFIG['scheduled_times']['forecast'].hour,
                                     minute=CONFIG['scheduled_times']['forecast'].minute,
                                     second=0, microsecond=0).astimezone(pytz.utc)
-    forecast_tweet(forecast_dt, now_utc, weather_data, wb_string)
+    timed_tweet(forecast_dt, now_utc, wb_string.forecast(), weather_data.location)
 
     # scheduled tweet
     for t in CONFIG['scheduled_times']['conditions']:
         dt = now_local.replace(hour=t.hour,
                                minute=t.minute,
                                second=0, microsecond=0).astimezone(pytz.utc)
-        timed_tweet(dt, now_utc, normal_text, weather_data)
+        timed_tweet(dt, now_utc, normal_text, weather_data.location)
 
     # special condition
     if special.type != 'normal':
@@ -343,52 +296,17 @@ def tweet_logic(weather_data, wb_string):
                 minutes = CONFIG['throttles'][special.type]
             except KeyError:
                 minutes = CONFIG['throttles']['default']
-            do_tweet(special.text, weather_data, CONFIG['basic']['tweet_location'],
+            do_tweet(special.text, weather_data.location, CONFIG['basic']['tweet_location'],
                      CONFIG['variable_location']['enabled'])
             throttle_times[special.type] = now_utc + timedelta(minutes=minutes)
         logging.debug(throttle_times)
 
 
-def timed_tweet(tweet_at, now, content, weather_data):
-    """
-    :param tweet_at: datetime.datetime for when a tweet is supposed to be tweeted
-    :param now: datetime.datetime that is the current time
-    :param content: text for tweet
-    :param weather_data: dict containing weather information, used for location lat/lng and name
-    """
-    if tweet_at <= now < tweet_at + timedelta(minutes=CONFIG['basic']['refresh']):
-        logging.debug('Timed tweet or forecast')
-        do_tweet(content, weather_data, CONFIG['basic']['tweet_location'], CONFIG['variable_location']['enabled'])
-
-
-def forecast_tweet(tweet_at, now, weather_data, wb_string):
-    """
-    :param tweet_at: datetime.datetime for when a tweet is supposed to be tweeted
-    :param now: datetime.datetime that is the current time
-    :param weather_data: dict containing weather information, used for location lat/lng and name
-    :param wb_string: WeatherBotString object
-    :return:
-    """
-    if tweet_at <= now < tweet_at + timedelta(minutes=CONFIG['basic']['refresh']):
-        logging.debug('Scheduled forecast')
-        do_tweet(wb_string.forecast(), weather_data, CONFIG['basic']['tweet_location'],
-                 CONFIG['variable_location']['enabled'])
-
-
-def cleanse_throttles(throttles, now):
-    """
-    :param throttles: throttles dictionary
-    :param now: datetime.datetime representing the current time to check against a throttle expirey time
-    :return: throttles dictionary with expired keys deleted
-    """
-    to_delete = [key for key, expires in throttles.items() if expires <= now]
-    for key in to_delete:
-        if key != 'default':
-            del throttles[key]
-    return throttles
-
-
 def main(path):
+    """
+    :type path: str
+    :param path: path to configuration file
+    """
     global throttle_times
     load_config(os.path.abspath(path))
     initialize_logger(CONFIG['log']['enabled'], CONFIG['log']['log_path'])
@@ -414,11 +332,11 @@ def main(path):
             if CONFIG['variable_location']['enabled'] and updated_time + timedelta(minutes=30) < now_utc:
                 location = get_location_from_user_timeline(CONFIG['variable_location']['user'], location)
                 updated_time = now_utc
-            forecast = get_forecast_object(location['lat'], location['lng'], CONFIG['basic']['units'],
+            forecast = get_forecast_object(location.lat, location.lng, CONFIG['basic']['units'],
                                            wb_string.language)
             if forecast is not None:
-                weather_data = get_weather_variables(forecast, location)
-                if weather_data['valid'] is True:
+                weather_data = models.WeatherData(forecast, location)
+                if weather_data.valid:
                     tweet_logic(weather_data, wb_string)
                 throttle_times = cleanse_throttles(throttle_times, now_utc)
                 time.sleep(CONFIG['basic']['refresh'] * 60)
