@@ -15,6 +15,7 @@ import unittest
 from unittest import mock
 
 import forecastio
+import pickle
 import pytz
 import yaml
 from testfixtures import LogCapture
@@ -726,6 +727,24 @@ class TestWB(unittest.TestCase):
         b['dummy'] = now - datetime.timedelta(hours=3)
         self.assertDictEqual(base, weatherBot.cleanse_throttles(b, now))
         self.assertDictEqual({}, weatherBot.cleanse_throttles({}, now))
+
+    def test_set_cache(self):
+        """Testing that set_cache properly saves a dict"""
+        a = {'test': 123, 'more testing': 'look, a string!'}
+        weatherBot.set_cache(a, file='testsetcache.p')
+        with open('testsetcache.p', 'rb') as handle:
+            self.assertEqual(pickle.load(handle), a)
+            os.remove('testsetcache.p')
+
+    def test_get_cache(self):
+        """Testing that get_cache properly gets a cache,
+        or returns the weatherBot.cache global variable if no cahe file exists"""
+        a = {'test': 123, 'more testing': 'look, a string!'}
+        self.assertEqual(weatherBot.get_cache('testgetcache.p'), weatherBot.cache)
+        with open('testgetcache.p', 'wb') as handle:
+            pickle.dump(a, handle)
+        self.assertEqual(weatherBot.get_cache('testgetcache.p'), a)
+        os.remove('testgetcache.p')
 
 if __name__ == '__main__':
     keys.set_twitter_env_vars()

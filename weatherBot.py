@@ -15,6 +15,7 @@ from datetime import datetime
 from datetime import timedelta
 
 import forecastio
+import pickle
 import pytz
 import tweepy
 import yaml
@@ -26,7 +27,7 @@ import models
 import utils
 
 # Global variables
-throttle_times = {'default': pytz.utc.localize(datetime.utcnow()).astimezone(pytz.utc)}  # TODO store as a file (pickle)
+cache = {'throttles': {}}
 CONFIG = {}
 
 
@@ -246,12 +247,36 @@ def cleanse_throttles(throttles, now):
     return throttles
 
 
+def set_cache(new_cache, file='.wbcache.p'):
+    """
+    :type new_cache: object
+    :param new_cache: object to save as a cache
+    :type file: str
+    :param file: path to file to write cache to
+    """
+    with open(file, 'wb') as handle:
+        pickle.dump(new_cache, handle)
+
+
+def get_cache(file='.wbcache.p'):
+    """
+    This will return the object at the given path, or if the file does not exist, return the cache global variable
+    :type file: str
+    :param file: path to file to access for loading a cache
+    """
+    if os.path.isfile(file):
+        with open(file, 'rb') as handle:
+            return pickle.load(handle)
+    else:
+        return cache
+
+
 def tweet_logic(weather_data, wb_string):
     """
     :type weather_data: models.WeatherData
     :type wb_string: models.WeatherBotString
     """
-    global throttle_times
+    global cache
     wb_string.set_weather(weather_data)
     special = wb_string.special()
     normal_text = wb_string.normal()
@@ -262,9 +287,9 @@ def tweet_logic(weather_data, wb_string):
 
     # weather alerts
     for alert in weather_data.alerts:
-        if alert.sha() not in throttle_times and not alert.expired(now_utc):
+        if alert.sha() not in cache['throttles'] and not alert.expired(now_utc):
             local_expires_time = utils.get_local_datetime(weather_data.timezone, alert.expires)
-            throttle_times[alert.sha()] = pytz.utc.localize(alert.expires)
+            cache['throttles'][alert.sha()] = pytz.utc.localize(alert.expires)
             do_tweet(wb_string.alert(alert.title, local_expires_time, alert.uri),
                      weather_data.location,
                      CONFIG['basic']['tweet_location'],
@@ -287,9 +312,9 @@ def tweet_logic(weather_data, wb_string):
     if special.type != 'normal':
         logging.debug('Special event')
         try:
-            next_allowed = throttle_times[special.type]
+            next_allowed = cache['throttles'][special.type]
         except KeyError:
-            next_allowed = throttle_times['default']
+            next_allowed = cache['throttles']['default']
 
         if now_utc >= next_allowed:
             try:
@@ -298,8 +323,8 @@ def tweet_logic(weather_data, wb_string):
                 minutes = CONFIG['throttles']['default']
             do_tweet(special.text, weather_data.location, CONFIG['basic']['tweet_location'],
                      CONFIG['variable_location']['enabled'])
-            throttle_times[special.type] = now_utc + timedelta(minutes=minutes)
-        logging.debug(throttle_times)
+            cache['throttles'][special.type] = now_utc + timedelta(minutes=minutes)
+        logging.debug(cache)
 
 
 def main(path):
@@ -307,12 +332,13 @@ def main(path):
     :type path: str
     :param path: path to configuration file
     """
-    global throttle_times
+    global cache
     load_config(os.path.abspath(path))
     initialize_logger(CONFIG['log']['enabled'], CONFIG['log']['log_path'])
     logging.debug(CONFIG)
     keys.set_twitter_env_vars()
     keys.set_darksky_env_vars()
+    cache['throttles']['default'] = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.utc)
     with open(CONFIG['basic']['strings'], 'r') as file_stream:
         try:
             weatherbot_strings = yaml.safe_load(file_stream)
@@ -337,8 +363,10 @@ def main(path):
             if forecast is not None:
                 weather_data = models.WeatherData(forecast, location)
                 if weather_data.valid:
+                    cache = get_cache()
                     tweet_logic(weather_data, wb_string)
-                throttle_times = cleanse_throttles(throttle_times, now_utc)
+                cache['throttles'] = cleanse_throttles(cache['throttles'], now_utc)
+                set_cache(cache)
                 time.sleep(CONFIG['basic']['refresh'] * 60)
             else:
                 time.sleep(60)
