@@ -16,6 +16,13 @@ import utils
 
 Condition = namedtuple('Condition', ['type', 'text'])
 
+Time = namedtuple('Time', ['hour', 'minute'])
+
+
+class InvalidTimeError(Exception):
+    """Designed to be thrown when parsing a bad str for creating a Time namedtuple"""
+    pass
+
 
 class BadForecastDataError(Exception):
     """

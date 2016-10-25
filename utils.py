@@ -5,16 +5,9 @@ Copyright 2015-2016 Brian Mitchell under the MIT license
 See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 """
 
-from collections import namedtuple
-
 import pytz
 
-Time = namedtuple('Time', ['hour', 'minute'])
-
-
-class InvalidTimeError(Exception):
-    """Designed to be thrown when parsing a bad str for creating a Time namedtuple"""
-    pass
+from models import InvalidTimeError
 
 
 def get_units(unit):
@@ -93,7 +86,7 @@ def get_units(unit):
 def get_wind_direction(degrees):
     """
     Return the shorthand direction based on the given degrees.
-    :type degrees: str
+    :type degrees: str, float
     :param degrees: integer for degrees of wind
     :type: str
     :return: wind direction in shorthand form
@@ -143,9 +136,9 @@ def get_local_datetime(timezone_id, dt):
     inputted timezone_id.
     :type timezone_id: str
     :param timezone_id: timezone id, ex: 'Europe/Copenhagen'
-    :type dt: datetime
+    :type dt: datetime.datetime
     :param dt: timezone unaware datetime object but in UTC time
-    :return: datetime
+    :return: datetime.datetime
     """
     utc_dt = pytz.utc.localize(dt)
     return utc_dt.astimezone(pytz.timezone(timezone_id))
@@ -157,9 +150,9 @@ def get_utc_datetime(timezone_id, dt):
     to a timezone aware datetime object in the UTC timezone.
     :type timezone_id: str
     :param timezone_id: timezone id, ex: 'Europe/Copenhagen'
-    :type dt: datetime
+    :type dt: datetime.datetime
     :param dt: timezone unaware datetime
-    :return: datetime in utc timezone
+    :return: datetime.datetime in utc timezone
     """
     tz = pytz.timezone(timezone_id)
     local_dt = tz.localize(dt)
