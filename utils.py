@@ -7,7 +7,7 @@ See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 
 import pytz
 
-from models import InvalidTimeError
+import models
 
 
 def get_units(unit):
@@ -206,21 +206,21 @@ def parse_time_string(raw_string):
     """
     tmp_time = raw_string.split(':')
     if len(tmp_time) != 2:
-        raise InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string))
+        raise models.InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string))
     if tmp_time[0] == '' or tmp_time[1] == '':
-        raise InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string))
+        raise models.InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string))
     try:
-        time_tuple = Time(hour=int(tmp_time[0]), minute=int(tmp_time[1]))
+        time_tuple = models.Time(hour=int(tmp_time[0]), minute=int(tmp_time[1]))
     except ValueError as err:
-        raise InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string)) from err
+        raise models.InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string)) from err
     if time_tuple.hour < 0:
-        raise InvalidTimeError('hour field ({0}) is negative'.format(time_tuple.hour))
+        raise models.InvalidTimeError('hour field ({0}) is negative'.format(time_tuple.hour))
     if time_tuple.hour > 23:
-        raise InvalidTimeError('hour field ({0}) is larger than 23'.format(time_tuple.hour))
+        raise models.InvalidTimeError('hour field ({0}) is larger than 23'.format(time_tuple.hour))
     if time_tuple.minute < 0:
-        raise InvalidTimeError('minute field ({0}) is negative'.format(time_tuple.minute))
+        raise models.InvalidTimeError('minute field ({0}) is negative'.format(time_tuple.minute))
     if time_tuple.minute > 59:
-        raise InvalidTimeError('minute field ({0}) is larger than 59'.format(time_tuple.minute))
+        raise models.InvalidTimeError('minute field ({0}) is larger than 59'.format(time_tuple.minute))
     return time_tuple
 
 
