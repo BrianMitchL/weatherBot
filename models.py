@@ -1,6 +1,9 @@
-# weatherBot models
-# Copyright 2015-2016 Brian Mitchell under the MIT license
-# See the GitHub repository: https://github.com/BrianMitchL/weatherBot
+"""
+weatherBot models
+
+Copyright 2015-2016 Brian Mitchell under the MIT license
+See the GitHub repository: https://github.com/BrianMitchL/weatherBot
+"""
 
 import random
 from collections import namedtuple
@@ -15,10 +18,16 @@ Condition = namedtuple('Condition', ['type', 'text'])
 
 
 class BadForecastDataError(Exception):
+    """
+    Designed to be thrown when a Forecast object contains issues that would render the weather data unusable
+    """
     pass
 
 
 class WeatherLocation:
+    """
+    This is for storing a weather location. The intended use is for quickly accessing the lat, lng, and name.
+    """
     def __init__(self, lat, lng, name):
         """
         :type lat: float
@@ -41,6 +50,9 @@ class WeatherLocation:
 
 
 class WeatherAlert:
+    """
+    This is for storing weather alerts. The fields are very similar to a ForecastAlert, with the addition of
+    """
     def __init__(self, alert):
         """
         :type alert: forecastio.models.Alert
@@ -69,6 +81,9 @@ class WeatherAlert:
 
 
 class WeatherData:
+    """
+    This is for storing weather data as returned by the Dark Sky API via the python-forecastio library.
+    """
     def __init__(self, forecast, location):
         """
         :type location: WeatherLocation
@@ -129,6 +144,10 @@ class WeatherData:
 
 
 class WeatherBotString:
+    """
+    This is for storing and building strings based on a YAML file. The set_weather method must be used after creating
+    a WeatherBotString object in order to set weather information to build alert, condition, and forecast strings.
+    """
     def __init__(self, __strings):
         """
         :param __strings: dict containing fields from strings.yml file or similar

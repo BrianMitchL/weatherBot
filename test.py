@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-# weatherBot tests
-# Copyright 2015-2016 Brian Mitchell under the MIT license
-# See the GitHub repository: https://github.com/BrianMitchL/weatherBot
+"""
+weatherBot tests
+
+Copyright 2015-2016 Brian Mitchell under the MIT license
+See the GitHub repository: https://github.com/BrianMitchL/weatherBot
+"""
 
 import configparser
 import datetime
@@ -24,23 +27,36 @@ import keys
 import models
 import utils
 import weatherBot
-from models import Condition
 from utils import Time
 
 
 # TODO write tests
 
 def mocked_requests_get(*args, **kwargs):
+    """
+    Mocked requests.get
+    :return: MockResponse
+    """
+
     class MockResponse:
+        """
+        Class mocking the response of calling request.get in the python-forecastio library
+        """
         def __init__(self, json_data, status_code):
             self.json_data = json_data
             self.status_code = status_code
             self.headers = None
 
         def raise_for_status(self):
+            """
+            This method is used to check for errors, but none will (should) exist in a mocked response
+            """
             pass
 
         def json(self):
+            """
+            :return: dict
+            """
             return self.json_data
 
     with open(args[0], 'r', encoding='utf-8') as file_stream:
@@ -237,6 +253,7 @@ class WeatherLocation(unittest.TestCase):
 class WeatherBotAlert(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_init(self, mock_get):
+        """Test that a WeatherAlert is loaded correctly"""
         forecast = forecastio.manual('fixtures/us_alert.json')
         alert = models.WeatherAlert(forecast.alerts()[0])
         self.assertEqual(alert.title, 'Wind Advisory for Los Angeles, CA')
@@ -249,6 +266,7 @@ class WeatherBotAlert(unittest.TestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_expired(self, mock_get):
+        """Test that an alert is expired or active"""
         forecast = forecastio.manual('fixtures/us_alert.json')
         alert = models.WeatherAlert(forecast.alerts()[0])
         self.assertTrue(alert.expired(pytz.utc.localize(datetime.datetime(2017, 10, 18, 4, 4))))

@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-# weatherBot
-# Copyright 2015-2016 Brian Mitchell under the MIT license
-# See the GitHub repository: https://github.com/BrianMitchL/weatherBot
+"""
+weatherBot
+
+Copyright 2015-2016 Brian Mitchell under the MIT license
+See the GitHub repository: https://github.com/BrianMitchL/weatherBot
+"""
 
 import configparser
 import logging
@@ -33,6 +36,8 @@ CONFIG = {}
 
 def load_config(path):
     """
+    Load the configuration file from path and set defaults if not given.
+    The configuration is set to the CONFIG global variable.
     :type path: str
     :param path: path to the conf file
     """
@@ -95,6 +100,7 @@ def load_config(path):
 
 def initialize_logger(log_enabled, log_pathname):
     """
+    Initialize and start the logger. Logs to console, and if enabled, to a file at the given path.
     :type log_enabled: bool
     :param log_enabled: whether or not to write a log file
     :type log_pathname: str
@@ -119,6 +125,7 @@ def initialize_logger(log_enabled, log_pathname):
 
 def get_tweepy_api():
     """
+    Return a tweepy.API object using environmental variables for keys/tokens/secrets
     :return: tweepy api object
     """
     auth = tweepy.OAuthHandler(os.getenv('WEATHERBOT_CONSUMER_KEY'), os.getenv('WEATHERBOT_CONSUMER_SECRET'))
@@ -128,6 +135,8 @@ def get_tweepy_api():
 
 def get_forecast_object(lat, lng, units='us', lang='en'):
     """
+    Using the 'WEATHERBOT_DARKSKY_KEY' environmental variable, get the weather from Dark Sky at the given location.
+    If there is an error, log it and return None.
     :type lat: float
     :param lat: latitude
     :type lng: float
@@ -150,6 +159,9 @@ def get_forecast_object(lat, lng, units='us', lang='en'):
 
 def get_location_from_user_timeline(username, fallback):
     """
+    Load the 20 most recent tweets of a given twitter handle and return a models.WeatherLocation object of the most
+    recent location. This function will find a tweet with coordinates or a place, preferring coordinates. If a location
+    is not found in the most recent 20 tweets, the given fallback location will be returned.
     :type username: str
     :param username: twitter username to follow
     :type fallback: models.WeatherLocation
@@ -188,6 +200,11 @@ def get_location_from_user_timeline(username, fallback):
 
 def do_tweet(text, weather_location, tweet_location, variable_location):
     """
+    Post a tweet.
+    If set in the config, a hashtag will be applied to the end of the tweet.
+    If variable_location is True, prepend the tweet with the location name.
+    If tweet_location is True, the coordinates of the the location will be embedded in the tweet.
+    If successful, the status id is returned, otherwise None.
     :type text: str
     :param text: text for the tweet
     :type weather_location: models.WeatherLocation
@@ -219,6 +236,8 @@ def do_tweet(text, weather_location, tweet_location, variable_location):
 
 def timed_tweet(tweet_at, now, content, weather_location):
     """
+    If the current time falls within the given time and given time plus the refresh rate, post a tweet using the
+    do_tweet function.
     :type tweet_at: datetime.datetime
     :param tweet_at: when a tweet is supposed to be tweeted in UTC
     :type now: datetime.datetime
@@ -234,6 +253,7 @@ def timed_tweet(tweet_at, now, content, weather_location):
 
 def cleanse_throttles(throttles, now):
     """
+    If the expiration time of a throttle has passed, remove it from the throttles dict, then return the throttles dict.
     :type throttles: dict
     :param throttles: throttles, throttle type as the key, datetime as the value
     :type now: datetime.datetime
@@ -249,6 +269,7 @@ def cleanse_throttles(throttles, now):
 
 def set_cache(new_cache, file='.wbcache.p'):
     """
+    This will write new_cache to the given file using pickle.
     :type new_cache: object
     :param new_cache: object to save as a cache
     :type file: str
@@ -273,6 +294,7 @@ def get_cache(file='.wbcache.p'):
 
 def tweet_logic(weather_data, wb_string):
     """
+    Core logic for tweets once initialization and configuration has been set and weather data fetched.
     :type weather_data: models.WeatherData
     :type wb_string: models.WeatherBotString
     """
@@ -329,6 +351,7 @@ def tweet_logic(weather_data, wb_string):
 
 def main(path):
     """
+    Main function called when starting weatherBot. The path is to the configuration file.
     :type path: str
     :param path: path to configuration file
     """
