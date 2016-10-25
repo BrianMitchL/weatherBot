@@ -304,13 +304,13 @@ def tweet_logic(weather_data, wb_string):
     normal_text = wb_string.normal()
 
     now = datetime.utcnow()
-    now_utc = utils.get_utc_datetime('UTC', now)
-    now_local = utils.get_local_datetime(weather_data.timezone, now)
+    now_utc = utils.datetime_to_utc('UTC', now)
+    now_local = utils.localize_utc_datetime(weather_data.timezone, now)
 
     # weather alerts
     for alert in weather_data.alerts:
         if alert.sha() not in cache['throttles'] and not alert.expired(now_utc):
-            local_expires_time = utils.get_local_datetime(weather_data.timezone, alert.expires)
+            local_expires_time = utils.localize_utc_datetime(weather_data.timezone, alert.expires)
             cache['throttles'][alert.sha()] = pytz.utc.localize(alert.expires)
             do_tweet(wb_string.alert(alert.title, local_expires_time, alert.uri),
                      weather_data.location,
@@ -373,11 +373,11 @@ def main(path):
             exit()
 
     location = CONFIG['default_location']
-    updated_time = utils.get_utc_datetime('UTC', datetime.utcnow()) - timedelta(minutes=30)
+    updated_time = utils.datetime_to_utc('UTC', datetime.utcnow()) - timedelta(minutes=30)
     try:
         while True:
             # check for new location every 30 minutes
-            now_utc = utils.get_utc_datetime('UTC', datetime.utcnow())
+            now_utc = utils.datetime_to_utc('UTC', datetime.utcnow())
             if CONFIG['variable_location']['enabled'] and updated_time + timedelta(minutes=30) < now_utc:
                 location = get_location_from_user_timeline(CONFIG['variable_location']['user'], location)
                 updated_time = now_utc

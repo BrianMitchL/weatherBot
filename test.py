@@ -153,19 +153,19 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utils.precipitation_intensity(2.540, 'mm/h'), 'moderate')
         self.assertEqual(utils.precipitation_intensity(5.08, 'mm/h'), 'heavy')
 
-    def test_get_local_datetime(self):
+    def test_localize_utc_datetime(self):
         """Testing localizing a plain datetime object to a pytz timezone aware object"""
         dt = datetime.datetime.fromtimestamp(1461731335)  # datetime.datetime(2016, 4, 26, 23, 28, 55)
         timezone_id = 'Europe/Copenhagen'
-        localized_dt = utils.get_local_datetime(timezone_id, dt)
+        localized_dt = utils.localize_utc_datetime(timezone_id, dt)
         correct_dt = datetime.datetime.fromtimestamp(1461738535)  # datetime.datetime(2016, 4, 27, 1, 28, 55)
         self.assertEqual(localized_dt, pytz.timezone('Europe/Copenhagen').localize(correct_dt))
 
-    def test_get_utc_datetime(self):
+    def test_datetime_to_utc(self):
         """Testing localize a normal datetime object to timezone id, then convert to UTC"""
         dt = datetime.datetime.fromtimestamp(1461738535)  # datetime.datetime(2016, 4, 27, 1, 28, 55)
         timezone_id = 'Europe/Copenhagen'
-        utc_dt = utils.get_utc_datetime(timezone_id, dt)
+        utc_dt = utils.datetime_to_utc(timezone_id, dt)
         correct_dt = pytz.timezone('Europe/Copenhagen').localize(dt).astimezone(pytz.utc)
         self.assertEqual(utc_dt, correct_dt)
 

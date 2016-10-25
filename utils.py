@@ -130,7 +130,7 @@ def centerpoint(geolocations):
     return [avg_lat, avg_lng]
 
 
-def get_local_datetime(timezone_id, dt):
+def localize_utc_datetime(timezone_id, dt):
     """
     Convert a timezone unaware datetime object in the UTC timezone to a timezone aware datetime object based on the
     inputted timezone_id.
@@ -144,7 +144,7 @@ def get_local_datetime(timezone_id, dt):
     return utc_dt.astimezone(pytz.timezone(timezone_id))
 
 
-def get_utc_datetime(timezone_id, dt):
+def datetime_to_utc(timezone_id, dt):
     """
     Convert a timezone unaware datetime object at the timezone_id timezone
     to a timezone aware datetime object in the UTC timezone.
