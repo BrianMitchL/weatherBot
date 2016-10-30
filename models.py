@@ -141,14 +141,6 @@ class WeatherData:
                                                                      lng=self.location.lng,
                                                                      time=time)
 
-    def precipitation_in_hour(self):
-        """
-        This will return a boolean indicating if precipitation is expected during the current hour
-        :return: boolean
-        """
-        # if this is found to not be very accurate, using precipProbability would be an alternative
-        return True if self.__forecast.minutely().icon in ['rain', 'snow', 'sleet'] else False
-
 
 class WeatherBotString:
     """

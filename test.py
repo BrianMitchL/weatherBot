@@ -312,17 +312,6 @@ class WeatherBotData(unittest.TestCase):
         self.assertEqual(wd.alerts[1].title, 'Beach Hazards Statement for Los Angeles, CA')
         self.assertEqual(wd.alerts[2].title, 'Red Flag Warning for Los Angeles, CA')
 
-    @mock.patch('requests.get', side_effect=mocked_requests_get)
-    def test_precipitation_in_hour(self, mock_get):
-        """Testing if precipitation is expected in the hour"""
-        location = models.WeatherLocation(34.2, -118.36, 'Los Angeles, CA')
-        forecast = forecastio.manual('fixtures/us_cincinnati.json')
-        wd = models.WeatherData(forecast, location)
-        self.assertTrue(wd.precipitation_in_hour())
-        forecast = forecastio.manual('fixtures/us.json')
-        wd = models.WeatherData(forecast, self.location)
-        self.assertFalse(wd.precipitation_in_hour())
-
 
 class WeatherBotString(unittest.TestCase):
     def setUp(self):
