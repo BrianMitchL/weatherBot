@@ -312,6 +312,27 @@ class WeatherBotData(unittest.TestCase):
         self.assertEqual(wd.alerts[1].title, 'Beach Hazards Statement for Los Angeles, CA')
         self.assertEqual(wd.alerts[2].title, 'Red Flag Warning for Los Angeles, CA')
 
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_bad_data(self, mock_get):
+        """Testing that bad data will gracefully fail"""
+        forecast = forecastio.manual('fixtures/bad_data_unavailable.json')
+        wd = models.WeatherData(forecast, self.location)
+        self.assertFalse(wd.valid)
+        forecast = forecastio.manual('fixtures/bad_data_temperature.json')
+        wd = models.WeatherData(forecast, self.location)
+        self.assertFalse(wd.valid)
+        forecast = forecastio.manual('fixtures/bad_data_summary.json')
+        wd = models.WeatherData(forecast, self.location)
+        self.assertFalse(wd.valid)
+
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_optional_fields(self, mock_get):
+        """Testing that bad data will gracefully fail"""
+        forecast = forecastio.manual('fixtures/optional_fields.json')
+        wd = models.WeatherData(forecast, self.location)
+        self.assertEqual(wd.precipType, 'rain')
+        self.assertEqual(wd.windBearing, 'unknown direction')
+
 
 class WeatherBotString(unittest.TestCase):
     def setUp(self):

@@ -11,6 +11,7 @@ from datetime import datetime
 from hashlib import sha256
 
 import pytz
+from forecastio.utils import PropertyUnavailable
 
 import utils
 
@@ -101,10 +102,6 @@ class WeatherData:
         try:
             if 'darksky-unavailable' in forecast.json['flags']:
                 raise BadForecastDataError('Darksky unavailable')
-            if not forecast.currently().temperature:
-                raise BadForecastDataError('Temp is None')
-            if not forecast.currently().summary:
-                raise BadForecastDataError('Summary is None')
             self.units = utils.get_units(forecast.json['flags']['units'])
             # Dark Sky doesn't always include 'windBearing' or 'nearestStormDistance'
             if hasattr(forecast.currently(), 'windBearing'):
@@ -131,7 +128,7 @@ class WeatherData:
             for alert in forecast.alerts():
                 self.alerts.append(WeatherAlert(alert))
             self.valid = True
-        except (KeyError, TypeError, BadForecastDataError):
+        except (KeyError, TypeError, BadForecastDataError, PropertyUnavailable):
             self.valid = False
 
     def __str__(self):
