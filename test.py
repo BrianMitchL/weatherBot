@@ -701,7 +701,8 @@ class TestWB(unittest.TestCase):
         tweet_location = True
         variable_location = True
         content = 'Just running unit tests, this should disappear... {0}'.format(random.randint(0, 9999))
-        tweet_content = self.location.name + ': ' + content + weatherBot.CONFIG['basic']['hashtag']
+        weatherBot.CONFIG['basic']['hashtag'] = ''
+        tweet_content = self.location.name + ': ' + content
         status = weatherBot.do_tweet(content, self.location, tweet_location, variable_location)
         self.assertEqual(status.text, tweet_content)
         # test destroy
