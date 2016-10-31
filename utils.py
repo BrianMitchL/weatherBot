@@ -5,9 +5,16 @@ Copyright 2015-2016 Brian Mitchell under the MIT license
 See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 """
 
+from collections import namedtuple
+
 import pytz
 
-import models
+Time = namedtuple('Time', ['hour', 'minute'])
+
+
+class InvalidTimeError(Exception):
+    """Designed to be thrown when parsing a bad str for creating a Time namedtuple"""
+    pass
 
 
 def get_units(unit):
@@ -95,22 +102,24 @@ def get_wind_direction(degrees):
         degrees = int(degrees)
     except ValueError:
         return ''
+    direction = ''
     if degrees < 23 or degrees >= 338:
-        return 'N'
+        direction = 'N'
     elif degrees < 68:
-        return 'NE'
+        direction = 'NE'
     elif degrees < 113:
-        return 'E'
+        direction = 'E'
     elif degrees < 158:
-        return 'SE'
+        direction = 'SE'
     elif degrees < 203:
-        return 'S'
+        direction = 'S'
     elif degrees < 248:
-        return 'SW'
+        direction = 'SW'
     elif degrees < 293:
-        return 'W'
+        direction = 'W'
     elif degrees < 338:
-        return 'NW'
+        direction = 'NW'
+    return direction
 
 
 def centerpoint(geolocations):
@@ -130,32 +139,32 @@ def centerpoint(geolocations):
     return [avg_lat, avg_lng]
 
 
-def localize_utc_datetime(timezone_id, dt):
+def localize_utc_datetime(timezone_id, raw_dt):
     """
     Convert a timezone unaware datetime object in the UTC timezone to a timezone aware datetime object based on the
     inputted timezone_id.
     :type timezone_id: str
     :param timezone_id: timezone id, ex: 'Europe/Copenhagen'
-    :type dt: datetime.datetime
-    :param dt: timezone unaware datetime object but in UTC time
+    :type raw_dt: datetime.datetime
+    :param raw_dt: timezone unaware datetime object but in UTC time
     :return: datetime.datetime
     """
-    utc_dt = pytz.utc.localize(dt)
+    utc_dt = pytz.utc.localize(raw_dt)
     return utc_dt.astimezone(pytz.timezone(timezone_id))
 
 
-def datetime_to_utc(timezone_id, dt):
+def datetime_to_utc(timezone_id, raw_dt):
     """
     Convert a timezone unaware datetime object at the timezone_id timezone
     to a timezone aware datetime object in the UTC timezone.
     :type timezone_id: str
     :param timezone_id: timezone id, ex: 'Europe/Copenhagen'
-    :type dt: datetime.datetime
-    :param dt: timezone unaware datetime
+    :type raw_dt: datetime.datetime
+    :param raw_dt: timezone unaware datetime
     :return: datetime.datetime in utc timezone
     """
-    tz = pytz.timezone(timezone_id)
-    local_dt = tz.localize(dt)
+    timezone = pytz.timezone(timezone_id)
+    local_dt = timezone.localize(raw_dt)
     return local_dt.astimezone(pytz.utc)
 
 
@@ -206,21 +215,21 @@ def parse_time_string(raw_string):
     """
     tmp_time = raw_string.split(':')
     if len(tmp_time) != 2:
-        raise models.InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string))
+        raise InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string))
     if tmp_time[0] == '' or tmp_time[1] == '':
-        raise models.InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string))
+        raise InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string))
     try:
-        time_tuple = models.Time(hour=int(tmp_time[0]), minute=int(tmp_time[1]))
+        time_tuple = Time(hour=int(tmp_time[0]), minute=int(tmp_time[1]))
     except ValueError as err:
-        raise models.InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string)) from err
+        raise InvalidTimeError('time ({0}) is not formatted as \'int:int\''.format(raw_string)) from err
     if time_tuple.hour < 0:
-        raise models.InvalidTimeError('hour field ({0}) is negative'.format(time_tuple.hour))
+        raise InvalidTimeError('hour field ({0}) is negative'.format(time_tuple.hour))
     if time_tuple.hour > 23:
-        raise models.InvalidTimeError('hour field ({0}) is larger than 23'.format(time_tuple.hour))
+        raise InvalidTimeError('hour field ({0}) is larger than 23'.format(time_tuple.hour))
     if time_tuple.minute < 0:
-        raise models.InvalidTimeError('minute field ({0}) is negative'.format(time_tuple.minute))
+        raise InvalidTimeError('minute field ({0}) is negative'.format(time_tuple.minute))
     if time_tuple.minute > 59:
-        raise models.InvalidTimeError('minute field ({0}) is larger than 59'.format(time_tuple.minute))
+        raise InvalidTimeError('minute field ({0}) is larger than 59'.format(time_tuple.minute))
     return time_tuple
 
 

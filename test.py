@@ -29,8 +29,6 @@ import utils
 import weatherBot
 
 
-# TODO write tests
-
 def mocked_requests_get(*args, **kwargs):
     """
     Mocked requests.get
@@ -171,55 +169,55 @@ class TestUtils(unittest.TestCase):
 
     def test_parse_time_string(self):
         """Testing parsing string representing time to a Time namedtuple"""
-        self.assertEqual(utils.parse_time_string('7:00'), models.Time(hour=7, minute=0))
-        self.assertEqual(utils.parse_time_string('0:0'), models.Time(hour=0, minute=0))
-        self.assertEqual(utils.parse_time_string('000000001:00000'), models.Time(hour=1, minute=0))
-        self.assertEqual(utils.parse_time_string('18:00000001'), models.Time(hour=18, minute=1))
-        self.assertEqual(utils.parse_time_string('22:59'), models.Time(hour=22, minute=59))
-        self.assertEqual(utils.parse_time_string('1:45'), models.Time(hour=1, minute=45))
-        self.assertEqual(utils.parse_time_string('0000002:000003'), models.Time(hour=2, minute=3))
-        with self.assertRaises(models.InvalidTimeError):
+        self.assertEqual(utils.parse_time_string('7:00'), utils.Time(hour=7, minute=0))
+        self.assertEqual(utils.parse_time_string('0:0'), utils.Time(hour=0, minute=0))
+        self.assertEqual(utils.parse_time_string('000000001:00000'), utils.Time(hour=1, minute=0))
+        self.assertEqual(utils.parse_time_string('18:00000001'), utils.Time(hour=18, minute=1))
+        self.assertEqual(utils.parse_time_string('22:59'), utils.Time(hour=22, minute=59))
+        self.assertEqual(utils.parse_time_string('1:45'), utils.Time(hour=1, minute=45))
+        self.assertEqual(utils.parse_time_string('0000002:000003'), utils.Time(hour=2, minute=3))
+        with self.assertRaises(utils.InvalidTimeError):
             utils.parse_time_string('12')
-        with self.assertRaises(models.InvalidTimeError):
+        with self.assertRaises(utils.InvalidTimeError):
             utils.parse_time_string('1:2:3;4')
-        with self.assertRaises(models.InvalidTimeError):
+        with self.assertRaises(utils.InvalidTimeError):
             utils.parse_time_string('34:')
-        with self.assertRaises(models.InvalidTimeError):
+        with self.assertRaises(utils.InvalidTimeError):
             utils.parse_time_string(':5')
-        with self.assertRaises(models.InvalidTimeError):
+        with self.assertRaises(utils.InvalidTimeError):
             utils.parse_time_string(':')
-        with self.assertRaises(models.InvalidTimeError):
+        with self.assertRaises(utils.InvalidTimeError):
             utils.parse_time_string('not an int:but nice try')
-        with self.assertRaises(models.InvalidTimeError):
+        with self.assertRaises(utils.InvalidTimeError):
             utils.parse_time_string('34:00')
-        with self.assertRaises(models.InvalidTimeError):
+        with self.assertRaises(utils.InvalidTimeError):
             utils.parse_time_string('00:65')
-        with self.assertRaises(models.InvalidTimeError):
+        with self.assertRaises(utils.InvalidTimeError):
             utils.parse_time_string('-46:00')
-        with self.assertRaises(models.InvalidTimeError):
+        with self.assertRaises(utils.InvalidTimeError):
             utils.parse_time_string('00:-34')
 
     def test_get_times(self):
         """Testing converting a string of times into a list of Time namedtuples"""
         raw_simple = '7:00\n12:00\n15:00\n18:00\n22:00'
         raw_complex = '0:0\n00000000001:00000\n18:00000001\n22:59\n23:00\n1:45\n00:00\n23:59\n1:01\n01:00\n01:02\n11:32'
-        list_simple = [models.Time(hour=7, minute=0),
-                       models.Time(hour=12, minute=0),
-                       models.Time(hour=15, minute=0),
-                       models.Time(hour=18, minute=0),
-                       models.Time(hour=22, minute=0)]
-        list_complex = [models.Time(hour=0, minute=0),
-                        models.Time(hour=0, minute=0),
-                        models.Time(hour=1, minute=0),
-                        models.Time(hour=1, minute=0),
-                        models.Time(hour=1, minute=1),
-                        models.Time(hour=1, minute=2),
-                        models.Time(hour=1, minute=45),
-                        models.Time(hour=11, minute=32),
-                        models.Time(hour=18, minute=1),
-                        models.Time(hour=22, minute=59),
-                        models.Time(hour=23, minute=0),
-                        models.Time(hour=23, minute=59)]
+        list_simple = [utils.Time(hour=7, minute=0),
+                       utils.Time(hour=12, minute=0),
+                       utils.Time(hour=15, minute=0),
+                       utils.Time(hour=18, minute=0),
+                       utils.Time(hour=22, minute=0)]
+        list_complex = [utils.Time(hour=0, minute=0),
+                        utils.Time(hour=0, minute=0),
+                        utils.Time(hour=1, minute=0),
+                        utils.Time(hour=1, minute=0),
+                        utils.Time(hour=1, minute=1),
+                        utils.Time(hour=1, minute=2),
+                        utils.Time(hour=1, minute=45),
+                        utils.Time(hour=11, minute=32),
+                        utils.Time(hour=18, minute=1),
+                        utils.Time(hour=22, minute=59),
+                        utils.Time(hour=23, minute=0),
+                        utils.Time(hour=23, minute=59)]
         self.assertEqual(utils.get_times(raw_simple), list_simple)
         self.assertEqual(utils.get_times(raw_complex), list_complex)
 
@@ -563,12 +561,12 @@ class TestWB(unittest.TestCase):
                 'strings': 'fake_path.yml'
             },
             'scheduled_times': {
-                'forecast': models.Time(hour=6, minute=0),
-                'conditions': [models.Time(hour=7, minute=0),
-                               models.Time(hour=12, minute=0),
-                               models.Time(hour=15, minute=0),
-                               models.Time(hour=18, minute=0),
-                               models.Time(hour=22, minute=0)]
+                'forecast': utils.Time(hour=6, minute=0),
+                'conditions': [utils.Time(hour=7, minute=0),
+                               utils.Time(hour=12, minute=0),
+                               utils.Time(hour=15, minute=0),
+                               utils.Time(hour=18, minute=0),
+                               utils.Time(hour=22, minute=0)]
             },
             'default_location': models.WeatherLocation(-79, 12, 'Just a Test'),
             'variable_location': {
@@ -768,7 +766,7 @@ class TestWB(unittest.TestCase):
         """Testing that get_cache properly gets a cache,
         or returns the weatherBot.cache global variable if no cahe file exists"""
         a = {'test': 123, 'more testing': 'look, a string!'}
-        self.assertEqual(weatherBot.get_cache('testgetcache.p'), weatherBot.cache)
+        self.assertEqual(weatherBot.get_cache('testgetcache.p'), weatherBot.CACHE)
         with open('testgetcache.p', 'wb') as handle:
             pickle.dump(a, handle)
         self.assertEqual(weatherBot.get_cache('testgetcache.p'), a)

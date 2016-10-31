@@ -17,13 +17,6 @@ import utils
 
 Condition = namedtuple('Condition', ['type', 'text'])
 
-Time = namedtuple('Time', ['hour', 'minute'])
-
-
-class InvalidTimeError(Exception):
-    """Designed to be thrown when parsing a bad str for creating a Time namedtuple"""
-    pass
-
 
 class BadForecastDataError(Exception):
     """
@@ -36,6 +29,8 @@ class WeatherLocation:
     """
     This is for storing a weather location. The intended use is for quickly accessing the lat, lng, and name.
     """
+
+    # pylint: disable=too-few-public-methods
     def __init__(self, lat, lng, name):
         """
         :type lat: float
@@ -92,6 +87,8 @@ class WeatherData:
     """
     This is for storing weather data as returned by the Dark Sky API via the python-forecastio library.
     """
+
+    # pylint: disable=too-many-instance-attributes,invalid-name,too-few-public-methods
     def __init__(self, forecast, location):
         """
         :type location: WeatherLocation
@@ -235,6 +232,7 @@ class WeatherBotString:
         """
         :return: Condition namedtuple with random special condition string containing the text for a normal tweet
         """
+        # pylint: disable=too-many-boolean-expressions
         precip = self.precipitation()
         units = self.weather_data.units
         apparent_temp = self.weather_data.apparentTemperature
@@ -277,10 +275,10 @@ class WeatherBotString:
         """
         rate = str(self.weather_data.precipIntensity)
         rate += self.weather_data.units['precipIntensity']
-        for precipType in self.precipitations:
-            for precipIntensity in self.precipitations[precipType]:
-                for i, precip in enumerate(self.precipitations[precipType][precipIntensity]):
-                    self.precipitations[precipType][precipIntensity][i] = precip.format(rate=rate)
+        for precip_type in self.precipitations:
+            for precip_intensity in self.precipitations[precip_type]:
+                for i, precip in enumerate(self.precipitations[precip_type][precip_intensity]):
+                    self.precipitations[precip_type][precip_intensity][i] = precip.format(rate=rate)
 
     def precipitation(self):
         """
