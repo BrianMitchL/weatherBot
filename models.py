@@ -135,6 +135,13 @@ class WeatherData:
                                                                      lng=self.location.lng,
                                                                      time=time)
 
+    def json(self):
+        """
+        Raw JSON response from the Dark Sky API
+        :return: dict
+        """
+        return self.__forecast.json
+
 
 class WeatherBotString:
     """

@@ -388,6 +388,7 @@ def main(path):
                                            wb_string.language)
             if forecast is not None:
                 weather_data = models.WeatherData(forecast, location)
+                logging.debug(weather_data.json())
                 if weather_data.valid:
                     CACHE = get_cache()
                     tweet_logic(weather_data, wb_string)
