@@ -7,8 +7,10 @@ install:
 - pip install -r requirements.txt
 - pip install -r requirements-dev.txt
 - pip install coveralls
+before_script:
+- invoke lint && invoke validate_yaml
 script:
-- invoke lint && invoke validate_yaml && invoke test
+- invoke test
 after_success:
 - coveralls
 deploy:
