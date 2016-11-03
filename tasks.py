@@ -48,7 +48,7 @@ def validate_yaml(ctx, yamllintrc='.yamllint', filename='strings.yml'):
     Use yamllint to check for errors and enforce a markup standard for the strings YAML file.
     By default this will use the '.yamllint' config file to validate 'strings.yml'.
     """
-    ctx.run('yamllint --config-file %s %s' % yamllintrc, filename)
+    ctx.run('yamllint --config-file %s %s' % (yamllintrc, filename))
 
 
 @task(help={
