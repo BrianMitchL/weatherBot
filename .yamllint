@@ -1,0 +1,14 @@
+---
+
+rules:
+  indentation:
+    spaces: 2
+    indent-sequences: yes
+    check-multi-line-strings: no
+  line-length:
+    max: 120
+    allow-non-breakable-words: yes
+    allow-non-breakable-inline-mappings: no
+  new-line-at-end-of-file: enable
+  new-lines:
+    type: unix

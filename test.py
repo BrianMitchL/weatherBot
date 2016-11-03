@@ -551,7 +551,7 @@ class WeatherBotString(unittest.TestCase):
         self.assertEqual(precip.type, 'very-light-rain')
         self.assertIn(precip.text, wbs.precipitations['rain']['very-light'])
 
-@unittest.skip
+
 class TestWB(unittest.TestCase):
     def setUp(self):
         self.location = models.WeatherLocation(55.76, 12.49, 'Lyngby-Taarbæk, Hovedstaden')
