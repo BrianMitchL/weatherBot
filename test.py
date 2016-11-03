@@ -779,6 +779,47 @@ class TestWB(unittest.TestCase):
         self.assertEqual(weatherBot.get_cache('testgetcache.p'), a)
         os.remove('testgetcache.p')
 
+
+class TestKeys(unittest.TestCase):
+    def setUp(self):
+        self.WEATHERBOT_CONSUMER_KEY = os.environ['WEATHERBOT_CONSUMER_KEY']
+        self.WEATHERBOT_CONSUMER_SECRET = os.environ['WEATHERBOT_CONSUMER_SECRET']
+        self.WEATHERBOT_ACCESS_TOKEN = os.environ['WEATHERBOT_ACCESS_TOKEN']
+        self.WEATHERBOT_ACCESS_TOKEN_SECRET = os.environ['WEATHERBOT_ACCESS_TOKEN_SECRET']
+        self.WEATHERBOT_DARKSKY_KEY = os.environ['WEATHERBOT_DARKSKY_KEY']
+
+    def tearDown(self):
+        os.environ['WEATHERBOT_CONSUMER_KEY'] = self.WEATHERBOT_CONSUMER_KEY
+        os.environ['WEATHERBOT_CONSUMER_SECRET'] = self.WEATHERBOT_CONSUMER_SECRET
+        os.environ['WEATHERBOT_ACCESS_TOKEN'] = self.WEATHERBOT_ACCESS_TOKEN
+        os.environ['WEATHERBOT_ACCESS_TOKEN_SECRET'] = self.WEATHERBOT_ACCESS_TOKEN_SECRET
+        os.environ['WEATHERBOT_DARKSKY_KEY'] = self.WEATHERBOT_DARKSKY_KEY
+
+    def test_set_twitter_env_vars(self):
+        """Test that Twitter environmental variables are set to values in keys.py"""
+        keys.set_twitter_env_vars()
+        self.assertIsNotNone(os.environ['WEATHERBOT_CONSUMER_KEY'])
+        self.assertIsNotNone(os.environ['WEATHERBOT_CONSUMER_SECRET'])
+        self.assertIsNotNone(os.environ['WEATHERBOT_ACCESS_TOKEN'])
+        self.assertIsNotNone(os.environ['WEATHERBOT_ACCESS_TOKEN_SECRET'])
+        del os.environ['WEATHERBOT_CONSUMER_KEY']
+        del os.environ['WEATHERBOT_CONSUMER_SECRET']
+        del os.environ['WEATHERBOT_ACCESS_TOKEN']
+        del os.environ['WEATHERBOT_ACCESS_TOKEN_SECRET']
+        keys.set_twitter_env_vars()
+        self.assertEqual(os.getenv('WEATHERBOT_CONSUMER_KEY'), 'xxx')
+        self.assertEqual(os.getenv('WEATHERBOT_CONSUMER_SECRET'), 'xxx')
+        self.assertEqual(os.getenv('WEATHERBOT_ACCESS_TOKEN'), 'xxx')
+        self.assertEqual(os.getenv('WEATHERBOT_ACCESS_TOKEN_SECRET'), 'xxx')
+
+    def test_set_darksky_env_vars(self):
+        """Test that the Dark Sky environmental variable is set to value in keys.py"""
+        keys.set_darksky_env_vars()
+        self.assertIsNotNone(os.environ['WEATHERBOT_DARKSKY_KEY'])
+        del os.environ['WEATHERBOT_DARKSKY_KEY']
+        keys.set_darksky_env_vars()
+        self.assertEqual(os.getenv('WEATHERBOT_DARKSKY_KEY'), 'xxx')
+
 if __name__ == '__main__':
     keys.set_twitter_env_vars()
     keys.set_darksky_env_vars()
