@@ -1,0 +1,135 @@
+---
+# this is only used for summary properties
+# you will need to set the units in the conf file
+# a list of supported languages can be found at
+# https://darksky.net/dev/docs/forecast
+language: "en"
+# use 'summary', 'summary_lower', 'high', and 'low'
+forecasts:
+  - "The forecast for today is {summary_lower} {high}/{low}."
+# if empy, no ending will be applied to the forecast
+forecast_endings:
+  - "Exciting!"
+  - "Nice!"
+  - "Sweet!"
+  - "Wow!"
+  - "I can't wait!"
+  - "Nifty!"
+  - "Excellent!"
+  - "What a day!"
+  - "This should be interesting!"
+  - "Aww yeah!"
+  - "Oh happy day!"
+  - "Far out!"
+  - "Groovy!"
+  - "Fantastic!"
+  - "I want to believe."
+  - "Or maybe not, who knows."
+  - "Praise the sun!"
+  - "Jolly good!"
+# use 'temp', 'summary', or 'location'
+normal_conditions:
+  - "{temp} and {summary}. \U0001F937"
+  - "The weather is boring. {temp} and {summary}."
+  - "Whoopie do, it's {temp} and {summary}."
+  - "{temp} and {summary}."
+  - "{temp} and {summary}. What did you expect?"
+  - "Well, would you look at that, it's {temp} and {summary}."
+  - "It's {temp} and {summary}, oh boy!"
+  - "Golly gee wilikers, it's {temp} and {summary}."
+  - "Dang, it's {temp} and {summary}."
+  - "Blimey, it's {temp} and {summary}."
+  - "Holy cow, it's {temp} and {summary}."
+  - "What a doozy, it's {temp} and {summary}."
+  - "Eh, it's {temp} and {summary}."
+  - "Great, it's {summary} and {temp}."
+  - "What a normal day, it's {summary} and {temp}."
+  - "Breaking news: it's {summary} and {temp}."
+  - "We got some {summary} at {temp} going on."
+  - "Great Scott, it's {summary} and {temp}!"
+  - "It is currently {summary} and {temp}."
+  - "Big surprise, it's {summary} and {temp}."
+  - "Look up, it's {summary} and {temp}."
+  - "For Pete's sake, it's {summary} and {temp} again."
+  - "{summary} and {temp}."
+  - "{summary} and {temp}. \U0001f644"
+  - "Welcome to {location}, where it's {summary} and {temp}."
+  - "Only in {location} would it be {temp} and {summary} right now."
+# use 'apparent_temp', 'temp', 'wind_speed', 'wind_bearing', 'humidity',
+# 'summary', or 'location'
+special_conditions:
+  wind-chill:  # wind chill at or below -30F or -34C
+    - "Brr! The windchill is {apparent_temp} and the wind is blowing at
+    {wind_speed} from the {wind_bearing}. Stay safe out there!"
+  medium-wind:
+    - "Looks like we've got some medium wind at {wind_speed} coming from
+    the {wind_bearing}."
+  heavy-wind:  # wind speed equal or above 35mph, 56km/h, or 15m/s
+    - "Hold onto your hats! The wind is blowing at {wind_speed} coming from
+    the {wind_bearing}."
+  fog:
+    - "Do you even fog bro? \U0001f32b"
+    - "The clouds are saying hi, it's foggy right now."
+  cold:  # below -28C or -20F
+    - "It's {temp}. Too cold."
+  super-hot:  # over 110F or 43C
+    - "Wowowowowowowowow, it's {apparent_temp}. I need some A/C ASAP."
+  hot:  # over 100F or 37C
+    - "Holy moly it's {temp}. I could literally (figuratively) melt."
+  dry:  # humidity under 30%
+    - "It's dry as strained pasta. {humidity}% humid right now."
+precipitations:
+  rain:
+    heavy:
+      - "Run for cover and stay dry! Heavy rain!"
+      - "Heavy rain detected, I hope your windows are closed."
+    moderate:
+      - "Alert: there is water falling from the sky."
+      - "It's raining \U0001F327"
+      - "Grab your umbrella, it's raining! \U00002614"
+      - "\U0001F327"
+    light:
+      - "Light rain!"
+    very-light:
+      - "Drizzlin' yo."
+      - "Very light rain detected."
+  snow:
+    heavy:
+      - "Heavy snow, bundle up."
+      - "Heavy snow detected, good luck with that."
+    moderate:
+      - "Alert: there are flakes of crystalline water
+      ice falling from the clouds."
+      - "It's snowing. \u2744\ufe0f"
+      - "It's snowing. \U0001F328"
+      - "\U0001F328"
+      - "\u2744\ufe0f"
+    light:
+      - "Light snow!"
+      - "It's lightly snowing."
+    very-light:
+      - "Flurries"
+      - "Flurries detected."
+  sleet:
+    heavy:
+      - "Heavy sleet."
+    moderate:
+      - "Sleet."
+    light:
+      - "Light sleet."
+    very-light:
+      - "Very light sleet."
+  hail:
+    heavy:
+      - "Heavy hail, run for cover!"
+    moderate:
+      - "Hail, watch out."
+    light:
+      - "Light hail."
+    very-light:
+      - "Very light hail."
+# use 'title', 'expires', and 'uri'
+alerts:
+  - Oh goody, a weather alert! {title} until {expires}. {uri}
+  - 'Weather alert: {title} until {expires}. {uri}'
+  - "It's official now! {title} until {expires}. {uri}"

@@ -1,19 +1,30 @@
-# weatherBot utils
-# Copyright 2015-2016 Brian Mitchell under the MIT license
-# See the GitHub repository: https://github.com/BrianMitchL/weatherBot
+"""
+weatherBot utils
+
+Copyright 2015-2016 Brian Mitchell under the MIT license
+See the GitHub repository: https://github.com/BrianMitchL/weatherBot
+"""
+
+from collections import namedtuple
 
 import pytz
-from collections import namedtuple
 
 Time = namedtuple('Time', ['hour', 'minute'])
 
 
 class InvalidTimeError(Exception):
+    """Designed to be thrown when parsing a bad str for creating a Time namedtuple"""
     pass
 
 
 def get_units(unit):
-    if unit is 'us':
+    """
+    Return a dict of units based on the unit format code.
+    :type unit: str
+    :param unit: unit format
+    :return dict containing units for weather measurements
+    """
+    if unit == 'us':
         return {
             'unit': 'us',
             'nearestStormDistance': 'mph',
@@ -29,7 +40,7 @@ def get_units(unit):
             'pressure': 'mb',
             'visibility': 'mi'
         }
-    elif unit is 'ca':
+    elif unit == 'ca':
         return {
             'unit': 'ca',
             'nearestStormDistance': 'km',
@@ -45,7 +56,7 @@ def get_units(unit):
             'pressure': 'hPa',
             'visibility': 'km'
         }
-    elif unit is 'uk2':
+    elif unit == 'uk2':
         return {
             'unit': 'uk2',
             'nearestStormDistance': 'mi',
@@ -81,35 +92,42 @@ def get_units(unit):
 
 def get_wind_direction(degrees):
     """
+    Return the shorthand direction based on the given degrees.
+    :type degrees: str, float
     :param degrees: integer for degrees of wind
-    :return: string of the wind direction in shorthand form
+    :type: str
+    :return: wind direction in shorthand form
     """
     try:
         degrees = int(degrees)
     except ValueError:
         return ''
+    direction = ''
     if degrees < 23 or degrees >= 338:
-        return 'N'
+        direction = 'N'
     elif degrees < 68:
-        return 'NE'
+        direction = 'NE'
     elif degrees < 113:
-        return 'E'
+        direction = 'E'
     elif degrees < 158:
-        return 'SE'
+        direction = 'SE'
     elif degrees < 203:
-        return 'S'
+        direction = 'S'
     elif degrees < 248:
-        return 'SW'
+        direction = 'SW'
     elif degrees < 293:
-        return 'W'
+        direction = 'W'
     elif degrees < 338:
-        return 'NW'
+        direction = 'NW'
+    return direction
 
 
 def centerpoint(geolocations):
     """
-    :param geolocations: array of arrays in the form of [[longitude, latitude],[longitude,latitude]]
-    :return: average latitude and longitude in the form [latitude, longitude]
+    Find the average centerpoint in a quadrilateral shape. geolocations matches the format used in the Twitter API.
+    :type geolocations: list
+    :param geolocations: list of lists in the form of [[longitude, latitude],[longitude,latitude]]
+    :return: list: average latitude and longitude in the form [latitude, longitude]
     """
     lats = []
     lngs = []
@@ -121,32 +139,44 @@ def centerpoint(geolocations):
     return [avg_lat, avg_lng]
 
 
-def get_local_datetime(timezone_id, dt):
+def localize_utc_datetime(timezone_id, raw_dt):
     """
-    :param timezone_id: string containing the timezone, ex: 'Europe/Copenhagen'
-    :param dt: datetime.datetime
+    Convert a timezone unaware datetime object in the UTC timezone to a timezone aware datetime object based on the
+    inputted timezone_id.
+    :type timezone_id: str
+    :param timezone_id: timezone id, ex: 'Europe/Copenhagen'
+    :type raw_dt: datetime.datetime
+    :param raw_dt: timezone unaware datetime object but in UTC time
     :return: datetime.datetime
     """
-    utc_dt = pytz.utc.localize(dt)
+    utc_dt = pytz.utc.localize(raw_dt)
     return utc_dt.astimezone(pytz.timezone(timezone_id))
 
 
-def get_utc_datetime(timezone_id, dt):
+def datetime_to_utc(timezone_id, raw_dt):
     """
-    :param timezone_id: string containing the timezone, ex: 'Europe/Copenhagen'
-    :param dt: datetime.datetime matching the timezone of timezone_id
+    Convert a timezone unaware datetime object at the timezone_id timezone
+    to a timezone aware datetime object in the UTC timezone.
+    :type timezone_id: str
+    :param timezone_id: timezone id, ex: 'Europe/Copenhagen'
+    :type raw_dt: datetime.datetime
+    :param raw_dt: timezone unaware datetime
     :return: datetime.datetime in utc timezone
     """
-    tz = pytz.timezone(timezone_id)
-    local_dt = tz.localize(dt)
+    timezone = pytz.timezone(timezone_id)
+    local_dt = timezone.localize(raw_dt)
     return local_dt.astimezone(pytz.utc)
 
 
 def precipitation_intensity(precip_intensity, unit):
     """
-    :param precip_intensity: float containing the currently precipIntensity
-    :param unit: string of unit for precipitation rate ('in/h' or 'mm/h')
-    :return: string of precipitation rate. Note: this is appended to and used in special event times
+    Return the precipitation intensity str based on the unit of precipIntensity and precip_intensity.
+    If no rate is found, return 'none'
+    :type precip_intensity: float
+    :param precip_intensity: currently precipIntensity
+    :type unit: str
+    :param unit: unit for precipIntensity rate ('in/h' or 'mm/h')
+    :return: str of precipitation rate. Note: this is appended to and used in special event times
     """
     intensities = {
         'in/h': {
@@ -177,7 +207,10 @@ def precipitation_intensity(precip_intensity, unit):
 
 def parse_time_string(raw_string):
     """
-    :param raw_string: string representing time in the format of '6:00'
+    This will parse raw_string and return it in the Time namedtuple form.
+    If any errors exist, an InvalidTimeError will be raised.
+    :type raw_string: str
+    :param raw_string: time in the format of '6:00'
     :return: Time namedtuple with an hour and minute field
     """
     tmp_time = raw_string.split(':')
@@ -202,9 +235,12 @@ def parse_time_string(raw_string):
 
 def get_times(raw_string_list):
     """
-        :param raw_string_list: string as returned from ConfigParser in the format of '7:00\n12:00\n15:00\n18:00\n22:00'
-        :return: list of Time namedtuples with an hour and minute field
-        """
+    This will return a list of Time namedtuples from the raw_string_list str.
+    The str is split on new lines and each time is passed into parse_time_string() for parsing.
+    :type raw_string_list: str
+    :param raw_string_list: string as returned from ConfigParser in the format of '7:00\n12:00\n15:00\n18:00\n22:00'
+    :return: list of Time namedtuples with an hour and minute field
+    """
     string_times = list(filter(None, (x.strip() for x in raw_string_list.splitlines())))
     tuple_times = list()
     for time in string_times:
