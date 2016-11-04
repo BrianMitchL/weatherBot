@@ -78,7 +78,6 @@ special_conditions:
     - "Holy moly it's {temp}. I could literally (figuratively) melt."
   dry:  # humidity under 30%
     - "It's dry as strained pasta. {humidity}% humid right now."
-# use 'rate'
 precipitations:
   rain:
     heavy:
