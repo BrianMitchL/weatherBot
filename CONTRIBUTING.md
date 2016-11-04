@@ -20,6 +20,7 @@ It is required that all code will pass a lint and validation test. I (@BrianMitc
 
 Code must conform to [PEP8](https://www.python.org/dev/peps/pep-0008/), but ultimately the linter.
 Here are the important things:
+
 1. Lines may have up to 120 characters
 2. Spaces must be used for indentation
 3. Use single-quotes for strings
