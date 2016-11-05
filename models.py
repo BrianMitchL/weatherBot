@@ -7,6 +7,7 @@ See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 
 import random
 from collections import namedtuple
+from copy import deepcopy
 from datetime import datetime
 from hashlib import sha256
 
@@ -148,18 +149,24 @@ class WeatherBotString:
     This is for storing and building strings based on a YAML file. The set_weather method must be used after creating
     a WeatherBotString object in order to set weather information to build alert, condition, and forecast strings.
     """
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, __strings):
         """
         :param __strings: dict containing fields from strings.yml file or similar
         """
+        self.__template_forecasts = __strings['forecasts']
+        self.__template_forecast_endings = __strings['forecast_endings']
+        self.__template_normal_conditions = __strings['normal_conditions']
+        self.__template_special_conditions = __strings['special_conditions']
+        self.__template_alerts = __strings['alerts']
+        self.__template_precipitations = __strings['precipitations']
         self.weather_data = None
         self.language = __strings['language']
-        self.forecasts = __strings['forecasts']
-        self.forecast_endings = __strings['forecast_endings']
-        self.normal_conditions = __strings['normal_conditions']
-        self.special_conditions = __strings['special_conditions']
-        self.alerts = __strings['alerts']
-        self.precipitations = __strings['precipitations']
+        self.forecasts = deepcopy(__strings['forecasts'])
+        self.forecasts_endings = deepcopy(__strings['forecast_endings'])
+        self.normal_conditions = deepcopy(__strings['normal_conditions'])
+        self.special_conditions = deepcopy(__strings['special_conditions'])
+        self.precipitations = deepcopy(__strings['precipitations'])
 
     def set_weather(self, weather_data):
         """
@@ -180,7 +187,7 @@ class WeatherBotString:
         units = self.weather_data.units
         high = str(round(self.weather_data.forecast.temperatureMax)) + 'º' + units['temperatureMax']
         low = str(round(self.weather_data.forecast.temperatureMin)) + 'º' + units['temperatureMin']
-        for i, forecast in enumerate(self.forecasts):
+        for i, forecast in enumerate(self.__template_forecasts):
             self.forecasts[i] = forecast.format(summary=summary,
                                                 summary_lower=summary_lower,
                                                 high=high,
@@ -191,8 +198,8 @@ class WeatherBotString:
         :return: random forecast string containing the text for a forecast tweet
         """
         forecast = random.choice(self.forecasts)
-        if self.forecast_endings:
-            forecast += ' ' + random.choice(self.forecast_endings)
+        if self.__template_forecast_endings:
+            forecast += ' ' + random.choice(self.__template_forecast_endings)
         return forecast
 
     def update_normal(self):
@@ -202,7 +209,7 @@ class WeatherBotString:
         temp = str(round(self.weather_data.temp)) + 'º' + self.weather_data.units['temperature']
         summary = self.weather_data.summary
         location = self.weather_data.location.name
-        for i, normal in enumerate(self.normal_conditions):
+        for i, normal in enumerate(self.__template_normal_conditions):
             self.normal_conditions[i] = normal.format(summary=summary,
                                                       temp=temp,
                                                       location=location)
@@ -225,8 +232,8 @@ class WeatherBotString:
         humidity = str(self.weather_data.humidity)
         summary = self.weather_data.summary
         location = self.weather_data.location.name
-        for condition in self.special_conditions:
-            for i, special in enumerate(self.special_conditions[condition]):
+        for condition in self.__template_special_conditions:
+            for i, special in enumerate(self.__template_special_conditions[condition]):
                 self.special_conditions[condition][i] = special.format(apparent_temp=apparent_temp,
                                                                        temp=temp,
                                                                        wind_speed=wind_speed,
@@ -282,9 +289,9 @@ class WeatherBotString:
         """
         rate = str(self.weather_data.precipIntensity)
         rate += self.weather_data.units['precipIntensity']
-        for precip_type in self.precipitations:
-            for precip_intensity in self.precipitations[precip_type]:
-                for i, precip in enumerate(self.precipitations[precip_type][precip_intensity]):
+        for precip_type in self.__template_precipitations:
+            for precip_intensity in self.__template_precipitations[precip_type]:
+                for i, precip in enumerate(self.__template_precipitations[precip_type][precip_intensity]):
                     self.precipitations[precip_type][precip_intensity][i] = precip.format(rate=rate)
 
     def precipitation(self):
@@ -312,4 +319,4 @@ class WeatherBotString:
         """
         # https://docs.python.org/3.3/library/datetime.html#strftime-and-strptime-behavior
         expires_formatted = expires.strftime('%a, %b %d at %X %Z')
-        return random.choice(self.alerts).format(title=title, expires=expires_formatted, uri=uri)
+        return random.choice(self.__template_alerts).format(title=title, expires=expires_formatted, uri=uri)

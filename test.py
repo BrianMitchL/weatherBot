@@ -350,14 +350,15 @@ class WeatherBotString(unittest.TestCase):
         """Testing that forecasts are formatted correctly"""
         forecast = forecastio.manual('fixtures/us.json')
         wd = models.WeatherData(forecast, self.location)
+        self.weatherbot_strings['forecast_endings'] = []
         wbs = models.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
-        wbs.forecast_endings = []
         forecast_string = wbs.forecast()
         self.assertIn(forecast_string, wbs.forecasts)
-        wbs.forecast_endings = ['Test ending!']
-        wbs.forecasts = ['The forecast for today is {summary_lower} {high}/{low}.']
-        wbs.update_forecast()
+        self.weatherbot_strings['forecast_endings'] = ['Test ending!']
+        self.weatherbot_strings['forecasts'] = ['The forecast for today is {summary_lower} {high}/{low}.']
+        wbs = models.WeatherBotString(self.weatherbot_strings)
+        wbs.set_weather(wd)
         forecast_string = wbs.forecast()
         self.assertEqual(forecast_string,
                          'The forecast for today is mostly cloudy throughout the day. 66ºF/50ºF. Test ending!')
@@ -491,7 +492,6 @@ class WeatherBotString(unittest.TestCase):
         self.assertIn('Thu, Sep 29 at 06:14:25 UTC', alert)
         self.assertIn('title', alert)
         self.assertIn('test.uri', alert)
-        self.assertNotIn(alert, wbs.alerts)
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_precipitation(self, mock_get):
@@ -550,6 +550,35 @@ class WeatherBotString(unittest.TestCase):
         precip = wbs.precipitation()
         self.assertEqual(precip.type, 'very-light-rain')
         self.assertIn(precip.text, wbs.precipitations['rain']['very-light'])
+
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_update_weather_data(self, mock_get):
+        """Testing that new weather data is loaded correctly"""
+        forecast1 = forecastio.manual('fixtures/us.json')
+        wd1 = models.WeatherData(forecast1, self.location)
+        forecast2 = forecastio.manual('fixtures/us_cincinnati.json')
+        wd2 = models.WeatherData(forecast2, self.location)
+        wbs = models.WeatherBotString(self.weatherbot_strings)
+        wbs.set_weather(wd1)
+        self.assertEqual(50.84, wbs.weather_data.apparentTemperature)
+        self.assertIn('51', wbs.normal())
+        self.assertIn('66ºF', wbs.forecast())
+        self.assertEqual('normal', wbs.special().type)
+        dt = datetime.datetime.utcfromtimestamp(1475129665)  # datetime.datetime(2016, 9, 29, 6, 14, 25)
+        alert = wbs.alert(title='test1', expires=pytz.utc.localize(dt), uri='test.uri1')
+        self.assertIn('test1', alert)
+        self.assertIn('Thu, Sep 29 at 06:14:25 UTC', alert)
+        self.assertIn('test.uri1', alert)
+        wbs.set_weather(wd2)
+        self.assertEqual(73.09, wbs.weather_data.apparentTemperature)
+        self.assertIn('73', wbs.normal())
+        self.assertIn('78ºF', wbs.forecast())
+        self.assertEqual('moderate-rain', wbs.special().type)
+        dt = datetime.datetime.utcfromtimestamp(1475129666)  # datetime.datetime(2016, 9, 29, 6, 14, 26)
+        alert = wbs.alert(title='test2', expires=pytz.utc.localize(dt), uri='test.uri2')
+        self.assertIn('test2', alert)
+        self.assertIn('Thu, Sep 29 at 06:14:26 UTC', alert)
+        self.assertIn('test.uri2', alert)
 
 
 class TestWB(unittest.TestCase):
