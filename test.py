@@ -237,7 +237,11 @@ class WeatherLocation(unittest.TestCase):
 
     def test_str(self):
         """Testing that stringifying the object works correctly"""
-        self.assertEqual(str(self.location), '<WeatherLocation: Lyngby-Taarbæk, Hovedstaden at 55.76,12.49>')
+        self.assertEqual('<WeatherLocation: Lyngby-Taarbæk, Hovedstaden at 55.76,12.49>', str(self.location))
+
+    def test_repr(self):
+        """Testing that __repr__ returns the __str__ representation of the object"""
+        self.assertEqual('<WeatherLocation: Lyngby-Taarbæk, Hovedstaden at 55.76,12.49>', repr(self.location))
 
     def test_equality(self):
         """Testing equality comparisons"""
