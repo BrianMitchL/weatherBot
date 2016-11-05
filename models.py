@@ -52,6 +52,9 @@ class WeatherLocation:
     def __ne__(self, other):
         return self.lat != other.lat or self.lng != other.lng or self.name != other.name
 
+    def __repr__(self):
+        return self.__str__()
+
 
 class WeatherAlert:
     """
@@ -167,6 +170,17 @@ class WeatherBotString:
         self.normal_conditions = deepcopy(__strings['normal_conditions'])
         self.special_conditions = deepcopy(__strings['special_conditions'])
         self.precipitations = deepcopy(__strings['precipitations'])
+
+    def __dict__(self):
+        return {
+            'language': self.language,
+            'weather_data': self.weather_data,
+            'forecasts': self.forecasts,
+            'forecast_endings': self.forecasts_endings,
+            'normal_conditions': self.normal_conditions,
+            'special_conditions': self.special_conditions,
+            'precipitations': self.precipitations
+        }
 
     def set_weather(self, weather_data):
         """

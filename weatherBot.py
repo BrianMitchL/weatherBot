@@ -302,6 +302,7 @@ def tweet_logic(weather_data, wb_string):
     # CACHE is being modified here, pylint doesn't see that
     global CACHE
     wb_string.set_weather(weather_data)
+    logging.debug(wb_string.__dict__())
     special = wb_string.special()
     normal_text = wb_string.normal()
 
@@ -388,7 +389,6 @@ def main(path):
                                            wb_string.language)
             if forecast is not None:
                 weather_data = models.WeatherData(forecast, location)
-                logging.debug(weather_data.json())
                 if weather_data.valid:
                     CACHE = get_cache()
                     tweet_logic(weather_data, wb_string)

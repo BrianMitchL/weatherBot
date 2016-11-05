@@ -580,6 +580,23 @@ class WeatherBotString(unittest.TestCase):
         self.assertIn('Thu, Sep 29 at 06:14:26 UTC', alert)
         self.assertIn('test.uri2', alert)
 
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_dict(self, mock_get):
+        """Testing that __dict__ returns the correct data"""
+        forecast = forecastio.manual('fixtures/us.json')
+        wd = models.WeatherData(forecast, self.location)
+        wbs = models.WeatherBotString(self.weatherbot_strings)
+        wbs.set_weather(wd)
+        self.assertEqual({
+            'language': wbs.language,
+            'weather_data': wbs.weather_data,
+            'forecasts': wbs.forecasts,
+            'forecast_endings': wbs.forecasts_endings,
+            'normal_conditions': wbs.normal_conditions,
+            'special_conditions': wbs.special_conditions,
+            'precipitations': wbs.precipitations
+        }, wbs.__dict__())
+
 
 class TestWB(unittest.TestCase):
     def setUp(self):
