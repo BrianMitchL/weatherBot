@@ -50,7 +50,7 @@ def load_config(path):
             'dm_errors': conf['basic'].getboolean('dm_errors', True),
             'units': conf['basic'].get('units', 'us'),
             'tweet_location': conf['basic'].getboolean('tweet_location', True),
-            'hashtag': conf['basic'].get('hashtag', ' #MorrisWeather'),
+            'hashtag': conf['basic'].get('hashtag', '#MorrisWeather'),
             'refresh': conf['basic'].getint('refresh', 3),
             'strings': conf['basic'].get('strings', 'strings.yml')
         },
