@@ -313,8 +313,8 @@ def tweet_logic(weather_data, wb_string):
     # weather alerts
     for alert in weather_data.alerts:
         if alert.sha() not in CACHE['throttles'] and not alert.expired(now_utc):
-            local_expires_time = utils.localize_utc_datetime(weather_data.timezone, alert.expires)
-            CACHE['throttles'][alert.sha()] = pytz.utc.localize(alert.expires)
+            local_expires_time = alert.expires.astimezone(pytz.timezone(weather_data.timezone))
+            CACHE['throttles'][alert.sha()] = alert.expires
             do_tweet(wb_string.alert(alert.title, local_expires_time, alert.uri),
                      weather_data.location,
                      CONFIG['basic']['tweet_location'],
