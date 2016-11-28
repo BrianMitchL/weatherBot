@@ -409,5 +409,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='weatherBot')
     parser.add_argument('conf', metavar='conf', type=str, help='The configuration file')
     args = parser.parse_args()
-    main(sys.argv[1]) if os.path.isfile(args.conf) else \
+    if os.path.isfile(args.conf):
+        main(sys.argv[1])
+    else:
         print('The file `' + sys.argv[1] + '` is not a file or does not exist. Try again.')
