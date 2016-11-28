@@ -50,7 +50,7 @@ You're all set!
 
 ### Configuration File
 Many features of weatherBot can be customized in a conf file. This ships with a file named `weatherBot.conf`, but can be called whatever you'd like. Each option has a comment above it describing its purpose.
-If you want a clean conf file, feel free to remove all but the settings you set, they are all optional.
+If you want a clean conf file, feel free to remove all but the settings you set, they are all optional. The section headers must remain in the file.
 
 ### API Keys
 The Twitter app consumer key and secret as well as the access token and token secret are located either in environmental variables (recommended) or in the `keys.py` file. The script will pull in the keys from the environmental variables over the keys.py file. See https://apps.twitter.com to get your keys and secrets.
