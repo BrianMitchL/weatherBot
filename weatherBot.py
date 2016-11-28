@@ -8,7 +8,7 @@ See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 """
 # pylint: disable=global-statement,invalid-name
 # invalid-name is to mute the 'weatherBot' module name from erring, unfortunately this has to be done file-wide
-
+import argparse
 import configparser
 import logging
 import os
@@ -22,9 +22,9 @@ from datetime import timedelta
 
 import forecastio
 import pytz
+import requests.exceptions
 import tweepy
 import yaml
-import requests.exceptions
 
 import keys
 import models
@@ -406,8 +406,8 @@ def main(path):
                                     text=str(random.randint(0, 9999)) + traceback.format_exc())
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('You need to pass in the path of the conf file. Try again.')
-        exit()
-    else:
-        main(sys.argv[1])
+    parser = argparse.ArgumentParser(description='weatherBot')
+    parser.add_argument('conf', metavar='conf', type=str, help='The configuration file')
+    args = parser.parse_args()
+    main(sys.argv[1]) if os.path.isfile(args.conf) else \
+        print('The file `' + sys.argv[1] + '` is not a file or does not exist. Try again.')
