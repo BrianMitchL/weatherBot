@@ -1,6 +1,6 @@
 # How to Contribute
 
-Third party suggestions, additions, and edits are highly encouraged. If you have any thoughts about weatherBot, please submit an issue or contact [@\_BrianMitchell\_](https://twitter.com/_BrianMitchell_) on Twitter.
+Third party suggestions, additions, and edits are highly encouraged. If you have any thoughts about weatherBot, please submit an issue or contact [@BrianMitchL](https://twitter.com/BrianMitchL) on Twitter.
 
 ## Getting Started
 
