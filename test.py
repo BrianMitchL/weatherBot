@@ -764,8 +764,9 @@ class TestWB(unittest.TestCase):
         tweet_location = False
         variable_location = False
         content = 'Just running unit tests, this should disappear... {0}'.format(random.randint(0, 9999))
-        tweet_content = content + weatherBot.CONFIG['basic']['hashtag']
-        status = weatherBot.do_tweet(content, self.location, tweet_location, variable_location)
+        hashtag = '#testing'
+        tweet_content = content + ' ' + hashtag
+        status = weatherBot.do_tweet(content, self.location, tweet_location, variable_location, hashtag=hashtag)
         self.assertEqual(status.text, tweet_content)
         # test destroy
         api = weatherBot.get_tweepy_api()

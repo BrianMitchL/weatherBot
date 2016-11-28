@@ -198,7 +198,7 @@ def get_location_from_user_timeline(username, fallback):
         return fallback
 
 
-def do_tweet(text, weather_location, tweet_location, variable_location):
+def do_tweet(text, weather_location, tweet_location, variable_location, hashtag=None):
     """
     Post a tweet.
     If set in the config, a hashtag will be applied to the end of the tweet.
@@ -213,11 +213,13 @@ def do_tweet(text, weather_location, tweet_location, variable_location):
     :param tweet_location: determines whether or not to include Twitter location
     :type variable_location: bool
     :param variable_location: determines whether or not to prefix the tweet with the location
+    :type hashtag: str
+    :param hashtag:
     :return: a tweepy status object
     """
     api = get_tweepy_api()
-    if CONFIG['basic']['hashtag']:
-        text += ' ' + CONFIG['basic']['hashtag']
+    if hashtag:
+        text += ' ' + hashtag
     logging.debug('Trying to tweet: %s', text)
     if variable_location:
         text = weather_location.name + ': ' + text
@@ -248,7 +250,11 @@ def timed_tweet(tweet_at, now, content, weather_location):
     """
     if tweet_at <= now < tweet_at + timedelta(minutes=CONFIG['basic']['refresh']):
         logging.debug('Timed tweet or forecast')
-        do_tweet(content, weather_location, CONFIG['basic']['tweet_location'], CONFIG['variable_location']['enabled'])
+        do_tweet(content,
+                 weather_location,
+                 CONFIG['basic']['tweet_location'],
+                 CONFIG['variable_location']['enabled'],
+                 hashtag=CONFIG['basic']['hashtag'])
 
 
 def cleanse_throttles(throttles, now):
@@ -318,7 +324,8 @@ def tweet_logic(weather_data, wb_string):
             do_tweet(wb_string.alert(alert.title, local_expires_time, alert.uri),
                      weather_data.location,
                      CONFIG['basic']['tweet_location'],
-                     CONFIG['variable_location']['enabled'])
+                     CONFIG['variable_location']['enabled'],
+                     hashtag=CONFIG['basic']['hashtag'])
 
     # forecast
     forecast_dt = now_local.replace(hour=CONFIG['scheduled_times']['forecast'].hour,
@@ -346,8 +353,11 @@ def tweet_logic(weather_data, wb_string):
                 minutes = CONFIG['throttles'][special.type]
             except KeyError:
                 minutes = CONFIG['throttles']['default']
-            do_tweet(special.text, weather_data.location, CONFIG['basic']['tweet_location'],
-                     CONFIG['variable_location']['enabled'])
+            do_tweet(special.text,
+                     weather_data.location,
+                     CONFIG['basic']['tweet_location'],
+                     CONFIG['variable_location']['enabled'],
+                     hashtag=CONFIG['basic']['hashtag'])
             CACHE['throttles'][special.type] = now_utc + timedelta(minutes=minutes)
         logging.debug(CACHE)
 
