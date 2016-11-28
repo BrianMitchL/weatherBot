@@ -255,7 +255,7 @@ class WeatherBotAlert(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_init(self, mock_get):
         """Test that a WeatherAlert is loaded correctly"""
-        forecast = forecastio.manual('fixtures/us_alert.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'us_alert.json'))
         alert = models.WeatherAlert(forecast.alerts()[0])
         self.assertEqual(alert.title, 'Wind Advisory for Los Angeles, CA')
         self.assertEqual(alert.time, pytz.utc.localize(datetime.datetime(2016, 10, 18, 4, 4)))
@@ -268,7 +268,7 @@ class WeatherBotAlert(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_expired(self, mock_get):
         """Test that an alert is expired or active"""
-        forecast = forecastio.manual('fixtures/us_alert.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'us_alert.json'))
         alert = models.WeatherAlert(forecast.alerts()[0])
         self.assertTrue(alert.expired(pytz.utc.localize(datetime.datetime(2017, 10, 18, 4, 4))))
         self.assertFalse(alert.expired(pytz.utc.localize(datetime.datetime(2016, 10, 18, 4, 4))))
@@ -284,7 +284,7 @@ class WeatherBotData(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_init(self, mock_get):
         """Testing that weather data is loaded correctly"""
-        forecast = forecastio.manual('fixtures/us.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'us.json'))
         wd = models.WeatherData(forecast, self.location)
         self.assertEqual(wd.units, utils.get_units('us'))
         self.assertEqual(wd.windBearing, 'SW')
@@ -308,7 +308,7 @@ class WeatherBotData(unittest.TestCase):
     def test_alerts(self, mock_get):
         """Testing that alerts are loaded correctly into a list"""
         location = models.WeatherLocation(34.2, -118.36, 'Los Angeles, CA')
-        forecast = forecastio.manual('fixtures/us_alert.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'us_alert.json'))
         wd = models.WeatherData(forecast, location)
         self.assertEqual(wd.alerts[0].title, 'Wind Advisory for Los Angeles, CA')
         self.assertEqual(wd.alerts[1].title, 'Beach Hazards Statement for Los Angeles, CA')
@@ -317,20 +317,20 @@ class WeatherBotData(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_bad_data(self, mock_get):
         """Testing that bad data will gracefully fail"""
-        forecast = forecastio.manual('fixtures/bad_data_unavailable.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'bad_data_unavailable.json'))
         wd = models.WeatherData(forecast, self.location)
         self.assertFalse(wd.valid)
-        forecast = forecastio.manual('fixtures/bad_data_temperature.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'bad_data_temperature.json'))
         wd = models.WeatherData(forecast, self.location)
         self.assertFalse(wd.valid)
-        forecast = forecastio.manual('fixtures/bad_data_summary.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'bad_data_summary.json'))
         wd = models.WeatherData(forecast, self.location)
         self.assertFalse(wd.valid)
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_optional_fields(self, mock_get):
         """Testing that bad data will gracefully fail"""
-        forecast = forecastio.manual('fixtures/optional_fields.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'optional_fields.json'))
         wd = models.WeatherData(forecast, self.location)
         self.assertEqual(wd.precipType, 'rain')
         self.assertEqual(wd.windBearing, 'unknown direction')
@@ -338,7 +338,7 @@ class WeatherBotData(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_json(self, mock_get):
         """Testing that json() returns a dict containing the response from the Dark Sky API"""
-        forecast = forecastio.manual('fixtures/us.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'us.json'))
         wd = models.WeatherData(forecast, self.location)
         self.assertEqual(wd.json(), forecast.json)
 
@@ -352,7 +352,7 @@ class WeatherBotString(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_forecast(self, mock_get):
         """Testing that forecasts are formatted correctly"""
-        forecast = forecastio.manual('fixtures/us.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'us.json'))
         wd = models.WeatherData(forecast, self.location)
         self.weatherbot_strings['forecast_endings'] = []
         wbs = models.WeatherBotString(self.weatherbot_strings)
@@ -370,7 +370,7 @@ class WeatherBotString(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_normal(self, mock_get):
         """Testing that normal events are formatted"""
-        forecast = forecastio.manual('fixtures/us.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'us.json'))
         wd = models.WeatherData(forecast, self.location)
         wbs = models.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
@@ -380,10 +380,10 @@ class WeatherBotString(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_special(self, mock_get):
         """Testing if special events are triggered"""
-        forecast_si = forecastio.manual('fixtures/si.json')
-        forecast_us = forecastio.manual('fixtures/us.json')
-        forecast_ca = forecastio.manual('fixtures/ca.json')
-        forecast_uk2 = forecastio.manual('fixtures/uk2.json')
+        forecast_si = forecastio.manual(os.path.join('fixtures', 'si.json'))
+        forecast_us = forecastio.manual(os.path.join('fixtures', 'us.json'))
+        forecast_ca = forecastio.manual(os.path.join('fixtures', 'ca.json'))
+        forecast_uk2 = forecastio.manual(os.path.join('fixtures', 'uk2.json'))
         wd = models.WeatherData(forecast_si, self.location)
         wbs = models.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
@@ -501,7 +501,7 @@ class WeatherBotString(unittest.TestCase):
     def test_precipitation(self, mock_get):
         """Testing that precipitation conditions are met"""
         wbs = models.WeatherBotString(self.weatherbot_strings)
-        forecast_us = forecastio.manual('fixtures/us.json')
+        forecast_us = forecastio.manual(os.path.join('fixtures', 'us.json'))
         wd = models.WeatherData(forecast_us, self.location)
         wbs.set_weather(wd)
         self.assertEqual(wbs.precipitation(), models.Condition(type='none', text=''))
@@ -558,9 +558,9 @@ class WeatherBotString(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_update_weather_data(self, mock_get):
         """Testing that new weather data is loaded correctly"""
-        forecast1 = forecastio.manual('fixtures/us.json')
+        forecast1 = forecastio.manual(os.path.join('fixtures', 'us.json'))
         wd1 = models.WeatherData(forecast1, self.location)
-        forecast2 = forecastio.manual('fixtures/us_cincinnati.json')
+        forecast2 = forecastio.manual(os.path.join('fixtures', 'us_cincinnati.json'))
         wd2 = models.WeatherData(forecast2, self.location)
         wbs = models.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd1)
@@ -587,7 +587,7 @@ class WeatherBotString(unittest.TestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_dict(self, mock_get):
         """Testing that __dict__ returns the correct data"""
-        forecast = forecastio.manual('fixtures/us.json')
+        forecast = forecastio.manual(os.path.join('fixtures', 'us.json'))
         wd = models.WeatherData(forecast, self.location)
         wbs = models.WeatherBotString(self.weatherbot_strings)
         wbs.set_weather(wd)
@@ -716,16 +716,16 @@ class TestWB(unittest.TestCase):
         }
         with open(os.getcwd() + '/weatherBotTest.conf', 'w') as configfile:
             conf.write(configfile)
-        weatherBot.load_config(os.getcwd() + '/weatherBotTest.conf')
+        weatherBot.load_config(os.path.abspath('weatherBotTest.conf'))
         self.assertDictEqual(weatherBot.CONFIG, equal)
-        os.remove(os.getcwd() + '/weatherBotTest.conf')
+        os.remove(os.path.abspath('weatherBotTest.conf'))
 
     def test_logging(self):
         """Testing if the system version is in the log and log file"""
         with LogCapture() as l:
             logger = logging.getLogger()
             logger.info('info')
-            weatherBot.initialize_logger(True, os.getcwd() + '/weatherBotTest.log')
+            weatherBot.initialize_logger(True, os.path.abspath('weatherBotTest.log'))
             logger.debug('debug')
             logger.warning('uh oh')
         l.check(('root', 'INFO', 'info'), ('root', 'INFO', 'Starting weatherBot with Python ' + sys.version),
@@ -736,7 +736,7 @@ class TestWB(unittest.TestCase):
         self.assertTrue(bytes(sys.version, 'UTF-8') in data)
         self.assertFalse(bytes('debug', 'UTF-8') in data)
         self.assertTrue(bytes('uh oh', 'UTF-8') in data)
-        os.remove(os.getcwd() + '/weatherBotTest.log')
+        os.remove(os.path.abspath('weatherBotTest.log'))
 
     def test_get_location_from_user_timeline(self):
         """Testing getting a location from twitter account's recent tweets"""
