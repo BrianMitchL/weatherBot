@@ -46,7 +46,11 @@ invoke validate_yaml
 If you are creating new strings files of your own, run `invoke validate_yaml --filename=filename.yml`
 
 ## Testing
-Tests have been written for nearly all of the non-looping/logic code. It is expected to add tests for your contributions (with the exception of adding new text to `strings.yml`).
+Tests have been written for nearly all of the non-looping/logic code. It is expected to add tests for your contributions (with the exception of adding new text to `strings.yml`). Tests must be run using environmental variables. To set the environmental variables per command, prepend the command with the followig, replacing `xxxx` with your keys.
+
+```sh
+WEATHERBOT_CONSUMER_KEY=xxxx WEATHERBOT_CONSUMER_SECRET=xxxx WEATHERBOT_ACCESS_TOKEN=xxxx WEATHERBOT_ACCESS_TOKEN_SECRET=xxxx WEATHERBOT_DARKSKY_KEY=xxxx your_command_here
+```
 
 ```shell
 invoke test
