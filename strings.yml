@@ -128,8 +128,16 @@ precipitations:
       - "Light hail."
     very-light:
       - "Very light hail."
-# use 'title', 'expires', and 'uri'
+# use 'title', 'time' (when the alert was issued), 'expires', and 'uri'
+# some locations support an expiry time, while others do not
 alerts:
-  - Oh goody, a weather alert! {title} until {expires}. {uri}
-  - 'Weather alert: {title} until {expires}. {uri}'
-  - "It's official now! {title} until {expires}. {uri}"
+  expires:
+    - 'Oh goody, a weather alert! {title} until {expires}. {uri}'
+    - 'Weather alert: {title} until {expires}. {uri}'
+    - "It's official now! {title} until {expires}. {uri}"
+    - "Get ready, there's a {title} until {expires}. {uri}"
+  no_expires:
+    - 'Oh goody, a weather alert! {title} from {time}. {uri}'
+    - 'Weather alert: {title}. {uri}'
+    - "It's official now! {title}. {uri}"
+    - "Get ready, there's a {title}. {uri}"

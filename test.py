@@ -257,13 +257,25 @@ class WeatherBotAlert(unittest.TestCase):
         """Test that a WeatherAlert is loaded correctly"""
         forecast = forecastio.manual(os.path.join('fixtures', 'us_alert.json'))
         alert = models.WeatherAlert(forecast.alerts()[0])
-        self.assertEqual(alert.title, 'Wind Advisory for Los Angeles, CA')
-        self.assertEqual(alert.time, pytz.utc.localize(datetime.datetime(2016, 10, 18, 4, 4)))
-        self.assertEqual(alert.expires, pytz.utc.localize(datetime.datetime(2016, 10, 20, 19, 0)))
-        self.assertEqual(alert.uri, 'https://alerts.weather.gov/cap/wwacapget.php?x=CA12561A519050.WindAdvisory.'
-                                    '12561A725D30CA.LOXNPWLOX.9240bcf720aae1b01b10f53f012e61bb')
-        self.assertEqual(alert.sha(), '7e220f06588bad306e05953409d8ec7ebe538ab76ecd4f4a562ac0e406a81c2e')
-        self.assertEqual(str(alert), '<WeatherAlert: Wind Advisory for Los Angeles, CA at 2016-10-18 04:04:00+00:00>')
+        self.assertEqual('Wind Advisory', alert.title)
+        self.assertEqual(pytz.utc.localize(datetime.datetime(2016, 10, 18, 4, 4)), alert.time)
+        self.assertEqual(pytz.utc.localize(datetime.datetime(2016, 10, 20, 19, 0)), alert.expires)
+        self.assertEqual('https://alerts.weather.gov/cap/wwacapget.php?x=CA12561A519050.WindAdvisory.'
+                         '12561A725D30CA.LOXNPWLOX.9240bcf720aae1b01b10f53f012e61bb', alert.uri)
+        self.assertEqual('a6bf597275fdf063c76a42b05c3c81ed093701b2344c3c98cfde36875f7a4c3d', alert.sha())
+        self.assertEqual('<WeatherAlert: Wind Advisory at 2016-10-18 04:04:00+00:00>', str(alert))
+
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_no_expires(self, mock_get):
+        """Test that a WeatherAlert is loaded correctly"""
+        forecast = forecastio.manual(os.path.join('fixtures', 'ca_alert.json'))
+        alert = models.WeatherAlert(forecast.alerts()[0])
+        self.assertEqual('Snowfall Warning', alert.title)
+        self.assertEqual(pytz.utc.localize(datetime.datetime(2017, 2, 4, 17, 11)), alert.time)
+        self.assertEqual('https://weather.gc.ca/warnings/report_e.html?ab6', alert.uri)
+        self.assertEqual('warning', alert.severity)
+        self.assertEqual('d5c1870d583f95441a41d452355173bad49f60f87c2962f195bd7873f0997d4b', alert.sha())
+        self.assertEqual('<WeatherAlert: Snowfall Warning at 2017-02-04 17:11:00+00:00>', str(alert))
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_expired(self, mock_get):
@@ -273,6 +285,12 @@ class WeatherBotAlert(unittest.TestCase):
         self.assertTrue(alert.expired(pytz.utc.localize(datetime.datetime(2017, 10, 18, 4, 4))))
         self.assertFalse(alert.expired(pytz.utc.localize(datetime.datetime(2016, 10, 18, 4, 4))))
         self.assertFalse(alert.expired(pytz.utc.localize(datetime.datetime(2015, 10, 18, 4, 4))))
+
+        forecast = forecastio.manual(os.path.join('fixtures', 'ca_alert.json'))
+        alert = models.WeatherAlert(forecast.alerts()[0])
+        self.assertTrue(alert.expired(pytz.utc.localize(datetime.datetime(2017, 2, 7, 17, 12))))
+        self.assertFalse(alert.expired(pytz.utc.localize(datetime.datetime(2017, 2, 7, 17, 11))))
+        self.assertFalse(alert.expired(pytz.utc.localize(datetime.datetime(2017, 2, 3, 17, 11))))
 
 
 class WeatherBotData(unittest.TestCase):
@@ -310,9 +328,9 @@ class WeatherBotData(unittest.TestCase):
         location = models.WeatherLocation(34.2, -118.36, 'Los Angeles, CA')
         forecast = forecastio.manual(os.path.join('fixtures', 'us_alert.json'))
         wd = models.WeatherData(forecast, location)
-        self.assertEqual(wd.alerts[0].title, 'Wind Advisory for Los Angeles, CA')
-        self.assertEqual(wd.alerts[1].title, 'Beach Hazards Statement for Los Angeles, CA')
-        self.assertEqual(wd.alerts[2].title, 'Red Flag Warning for Los Angeles, CA')
+        self.assertEqual(wd.alerts[0].title, 'Wind Advisory')
+        self.assertEqual(wd.alerts[1].title, 'Beach Hazards Statement')
+        self.assertEqual(wd.alerts[2].title, 'Red Flag Warning')
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_bad_data(self, mock_get):
@@ -488,14 +506,17 @@ class WeatherBotString(unittest.TestCase):
         wbs.set_weather(wd)
         self.assertEqual('dry', wbs.special().type)
 
-    def test_alert(self):
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def test_alert(self,  mock_get):
         """Testing that alerts are formatted"""
         wbs = models.WeatherBotString(self.weatherbot_strings)
-        dt = datetime.datetime.utcfromtimestamp(1475129665)  # datetime.datetime(2016, 9, 29, 6, 14, 25)
-        alert = wbs.alert(title='title', expires=pytz.utc.localize(dt), uri='test.uri')
-        self.assertIn('Thu, Sep 29 at 06:14:25 UTC', alert)
-        self.assertIn('title', alert)
-        self.assertIn('test.uri', alert)
+        forecast = forecastio.manual(os.path.join('fixtures', 'ca_alert.json'))
+        location = models.WeatherLocation(50.564167, -111.898889, 'Brooks, Alberta')
+        wd = models.WeatherData(forecast, location)
+        wbs.set_weather(wd)
+        alert = wbs.alert(wd.alerts[0], wd.timezone)
+        self.assertIn('Snowfall Warning', alert)
+        self.assertIn('https://weather.gc.ca/warnings/report_e.html?ab6', alert)
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_precipitation(self, mock_get):
@@ -568,21 +589,16 @@ class WeatherBotString(unittest.TestCase):
         self.assertIn('51', wbs.normal())
         self.assertIn('66ºF', wbs.forecast())
         self.assertEqual('normal', wbs.special().type)
-        dt = datetime.datetime.utcfromtimestamp(1475129665)  # datetime.datetime(2016, 9, 29, 6, 14, 25)
-        alert = wbs.alert(title='test1', expires=pytz.utc.localize(dt), uri='test.uri1')
-        self.assertIn('test1', alert)
-        self.assertIn('Thu, Sep 29 at 06:14:25 UTC', alert)
-        self.assertIn('test.uri1', alert)
+        self.assertEqual(0, len(wd1.alerts))
         wbs.set_weather(wd2)
         self.assertEqual(73.09, wbs.weather_data.apparentTemperature)
         self.assertIn('73', wbs.normal())
         self.assertIn('78ºF', wbs.forecast())
         self.assertEqual('moderate-rain', wbs.special().type)
-        dt = datetime.datetime.utcfromtimestamp(1475129666)  # datetime.datetime(2016, 9, 29, 6, 14, 26)
-        alert = wbs.alert(title='test2', expires=pytz.utc.localize(dt), uri='test.uri2')
-        self.assertIn('test2', alert)
-        self.assertIn('Thu, Sep 29 at 06:14:26 UTC', alert)
-        self.assertIn('test.uri2', alert)
+        alert = wbs.alert(wd2.alerts[0], wd2.timezone)
+        self.assertIn('Severe Thunderstorm Warning', alert)
+        self.assertIn('https://alerts.weather.gov/cap/wwacapget.php?x=OH12561A63BE38.SevereThunderstormWarning.'
+                      '12561A63C2E8OH.ILNSVSILN.f17bc0b3ead1db18bf60532894d9925e', alert)
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_dict(self, mock_get):
