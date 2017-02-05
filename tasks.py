@@ -1,4 +1,5 @@
 from invoke import task
+import sys
 
 
 @task(help={
@@ -31,12 +32,18 @@ def lint(ctx, pylintrc='.pylintrc', extra=''):
     This will, by default, use the PyLint configuration found in '.pylintrc',
     but can accept a different path.
     """
-    from pylint.lint import Run
-    args = ['--reports=no', '--rcfile=' + pylintrc]
-    files = ['weatherBot.py', 'utils.py', 'models.py', 'keys.py']
-    if extra:
-        files.append(extra)
-    Run(args + files)
+
+    # pylint doesn't support Python 3.6 yet
+    # FIXME when supported
+    if sys.version_info > (3, 6):
+        ctx.run('echo "pylint does not support Python 3.6"')
+    else:
+        from pylint.lint import Run
+        args = ['--reports=no', '--rcfile=' + pylintrc]
+        files = ['weatherBot.py', 'utils.py', 'models.py', 'keys.py']
+        if extra:
+            files.append(extra)
+        Run(args + files)
 
 
 @task(help={
