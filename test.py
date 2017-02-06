@@ -597,6 +597,7 @@ class WeatherBotString(unittest.TestCase):
         self.assertEqual('moderate-rain', wbs.special().type)
         alert = wbs.alert(wd2.alerts[0], wd2.timezone)
         self.assertIn('Severe Thunderstorm Warning', alert)
+        self.assertIn('Wed, Oct 19 at 19:30:00 EDT', alert)
         self.assertIn('https://alerts.weather.gov/cap/wwacapget.php?x=OH12561A63BE38.SevereThunderstormWarning.'
                       '12561A63C2E8OH.ILNSVSILN.f17bc0b3ead1db18bf60532894d9925e', alert)
 

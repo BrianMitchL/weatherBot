@@ -128,7 +128,8 @@ precipitations:
       - "Light hail."
     very-light:
       - "Very light hail."
-# use 'title', 'time' (when the alert was issued), 'expires', and 'uri'
+# use 'title', 'expires', and 'uri'
+# optional: 'time' (when the alert was issued)
 # some locations support an expiry time, while others do not
 alerts:
   expires:
