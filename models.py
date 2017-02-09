@@ -8,7 +8,7 @@ See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 import random
 from collections import namedtuple
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timedelta
 from hashlib import sha256
 
 import pytz
@@ -58,7 +58,7 @@ class WeatherLocation:
 
 class WeatherAlert:
     """
-    This is for storing weather alerts. The fields are very similar to a ForecastAlert, with the addition of
+    This is for storing weather alerts. The fields are very similar to a ForecastAlert.
     """
     def __init__(self, alert):
         """
@@ -66,8 +66,12 @@ class WeatherAlert:
         """
         self.title = alert.title
         self.time = pytz.utc.localize(datetime.utcfromtimestamp(alert.time))
-        self.expires = pytz.utc.localize(datetime.utcfromtimestamp(alert.expires))
+        try:
+            self.expires = pytz.utc.localize(datetime.utcfromtimestamp(alert.expires))
+        except PropertyUnavailable:
+            pass
         self.uri = alert.uri
+        self.severity = alert.severity
 
     def __str__(self):
         return '<WeatherAlert: {title} at {time}>'.format(title=self.title, time=self.time)
@@ -77,13 +81,17 @@ class WeatherAlert:
         :type now: datetime.datetime that is timezone aware to UTC
         :return boolean
         """
-        return now > self.expires
+        try:
+            return now > self.expires
+        except AttributeError:
+            # most alerts are probably done after 3 days
+            return now > self.time + timedelta(days=3)
 
     def sha(self):
         """
         :return: sha256 of alert as a string
         """
-        full_alert = self.title + str(self.expires)
+        full_alert = self.title + str(self.time)
         return sha256(full_alert.encode()).hexdigest()  # a (hopefully) unique id
 
 
@@ -104,7 +112,7 @@ class WeatherData:
             if 'darksky-unavailable' in forecast.json['flags']:
                 raise BadForecastDataError('Darksky unavailable')
             self.units = utils.get_units(forecast.json['flags']['units'])
-            # Dark Sky doesn't always include 'windBearing' or 'nearestStormDistance'
+            # Dark Sky doesn't always include 'windBearing'
             if hasattr(forecast.currently(), 'windBearing'):
                 self.windBearing = utils.get_wind_direction(forecast.currently().windBearing)
             else:
@@ -161,7 +169,8 @@ class WeatherBotString:
         self.__template_forecast_endings = __strings['forecast_endings']
         self.__template_normal_conditions = __strings['normal_conditions']
         self.__template_special_conditions = __strings['special_conditions']
-        self.__template_alerts = __strings['alerts']
+        self.__template_expires_alerts = __strings['alerts']['expires']
+        self.__template_no_expires_alerts = __strings['alerts']['no_expires']
         self.__template_precipitations = __strings['precipitations']
         self.weather_data = None
         self.language = __strings['language']
@@ -324,13 +333,22 @@ class WeatherBotString:
         else:
             return Condition(type='none', text='')
 
-    def alert(self, title, expires, uri):
+    def alert(self, alert, timezone_id):
         """
-        :param title: string of weather alert title
-        :param expires: a datetime.datetime object containing the expiration time
-        :param uri: a uri encoded link to view more information about the alert
+        :param alert: WeatherAlert object
+        :param timezone_id: str representing the local timezone
         :return: random alert
         """
         # https://docs.python.org/3.3/library/datetime.html#strftime-and-strptime-behavior
-        expires_formatted = expires.strftime('%a, %b %d at %X %Z')
-        return random.choice(self.__template_alerts).format(title=title, expires=expires_formatted, uri=uri)
+        str_format = '%a, %b %d at %X %Z'
+        time = alert.time.astimezone(pytz.timezone(timezone_id)).strftime(str_format)
+        try:
+            expires = alert.expires.astimezone(pytz.timezone(timezone_id)).strftime(str_format)
+            return random.choice(self.__template_expires_alerts).format(title=alert.title,
+                                                                        time=time,
+                                                                        expires=expires,
+                                                                        uri=alert.uri)
+        except AttributeError:
+            return random.choice(self.__template_no_expires_alerts).format(title=alert.title,
+                                                                           time=time,
+                                                                           uri=alert.uri)
