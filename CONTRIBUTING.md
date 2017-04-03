@@ -10,7 +10,7 @@ pip3 install -r requirements.txt
 pip3 install -r requirements-dev.txt
 ```
 
-Unless your contribution is an urgent bugfix or critical fix, contributions must be committed in a topic branch based on `master`. `git checkout -b my_contribution master`
+Unless your contribution is an urgent bugfix or critical fix, contributions must be committed in a topic branch based on `development`. `git checkout -b my_contribution development`
 
 ## Linting/Validating
 
