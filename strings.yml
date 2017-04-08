@@ -67,16 +67,18 @@ special_conditions:
   heavy-wind:  # wind speed equal or above 35mph, 56km/h, or 15m/s
     - "Hold onto your hats! The wind is blowing at {wind_speed} coming from
     the {wind_bearing}."
+    - "Heavy wind at {wind_speed} from the {wind_bearing}."
   fog:
     - "Do you even fog bro? \U0001f32b"
     - "The clouds are saying hi, it's foggy right now."
   cold:  # below -28C or -20F
     - "It's {temp}. Too cold."
   super-hot:  # over 110F or 43C
-    - "Wowowowowowowowow, it's {apparent_temp}. I need some A/C ASAP."
+    - "Wowowowowowowowow, it's {temp}. I need some A/C ASAP."
   hot:  # over 100F or 37C
     - "Holy moly it's {temp}. I could literally (figuratively) melt."
-  dry:  # humidity under 30%
+  dry:  # humidity under 25%
+    - "{temp} with {humidity}% humidity."
     - "It's dry as strained pasta. {humidity}% humid right now."
     - "Watch out for spontaneous combustion, it's {humidity}% humid right now."
 precipitations:
@@ -89,11 +91,15 @@ precipitations:
       - "It's raining \U0001F327"
       - "Grab your umbrella, it's raining! \U00002614"
       - "\U0001F327"
+      - "Great, it's raining. \U0001F644"
     light:
       - "Light rain!"
       - "Light rain, enjoy!"
       - "Look out for precipitated condensed atmospheric water vapor, it's lightly raining."
       - "Light rain. Just think of all of the happy hydroelectric power plants!"
+      - "Light rain detected."
+      - "Ahh, light rain!"
+      - "Light rain, how refreshing!"
     very-light:
       - "Drizzlin' yo."
       - "Very light rain detected."
