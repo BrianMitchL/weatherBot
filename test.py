@@ -502,7 +502,7 @@ class WeatherBotString(unittest.TestCase):
         self.assertEqual('hot', wbs.special().type)
         """Testing if dry type is triggered"""
         wd = models.WeatherData(forecast_si, self.location)
-        wd.humidity = 30.0
+        wd.humidity = 25.0
         wbs.set_weather(wd)
         self.assertEqual('dry', wbs.special().type)
 
