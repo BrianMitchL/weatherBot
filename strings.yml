@@ -7,7 +7,7 @@ language: "en"
 # use 'summary', 'summary_lower', 'high', and 'low'
 forecasts:
   - "The forecast for today is {summary_lower} {high}/{low}."
-# if empy, no ending will be applied to the forecast
+# if empty, no ending will be applied to the forecast
 forecast_endings:
   - "Exciting!"
   - "Nice!"
@@ -78,6 +78,7 @@ special_conditions:
     - "Holy moly it's {temp}. I could literally (figuratively) melt."
   dry:  # humidity under 30%
     - "It's dry as strained pasta. {humidity}% humid right now."
+    - "Watch out for spontaneous combustion, it's {humidity}% humid right now."
 precipitations:
   rain:
     heavy:
@@ -90,6 +91,9 @@ precipitations:
       - "\U0001F327"
     light:
       - "Light rain!"
+      - "Light rain, enjoy!"
+      - "Look out for precipitated condensed atmospheric water vapor, it's lightly raining."
+      - "Light rain. Just think of all of the happy hydroelectric power plants!"
     very-light:
       - "Drizzlin' yo."
       - "Very light rain detected."
@@ -107,6 +111,7 @@ precipitations:
     light:
       - "Light snow!"
       - "It's lightly snowing."
+      - "Light snow. At least it's not raining."
     very-light:
       - "Flurries"
       - "Flurries detected."
