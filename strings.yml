@@ -62,7 +62,7 @@ normal_conditions:
   - "{summary} and {temp}. \U0001f644"
   - "Welcome to {location}, where it's {summary} and {temp}."
   - "Only in {location} would it be {temp} and {summary} right now."
-  - "I hope you like that it's {condition}. It's {temp}."
+  - "I hope you like that it's {summary}. It's {temp}."
   - "{summary} and {temp}. \U0001f4af\U0001f4af\U0001f4af"
 # use 'apparent_temp', 'temp', 'wind_speed', 'wind_bearing', 'humidity',
 # 'summary', or 'location'
@@ -105,7 +105,7 @@ precipitations:
     moderate:
       - "Alert: there is water falling from the sky."
       - "It's raining \U0001f327"
-      - "Grab your umbrella, it's raining! ☔️"
+      - "Grab your umbrella, it's raining! \u2614\ufe0f"
       - "\U0001f327"
       - "Great, it's raining. \U0001f644"
     light:
