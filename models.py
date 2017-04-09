@@ -298,7 +298,7 @@ class WeatherBotString:
             weather_type = 'super-hot'
         elif (units['temperature'] == 'F' and temp >= 100) or (units['temperature'] == 'C' and temp >= 37):
             weather_type = 'hot'
-        elif humidity <= 30:
+        elif humidity <= 25:
             weather_type = 'dry'
 
         if weather_type == 'none':

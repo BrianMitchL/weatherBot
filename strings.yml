@@ -7,7 +7,7 @@ language: "en"
 # use 'summary', 'summary_lower', 'high', and 'low'
 forecasts:
   - "The forecast for today is {summary_lower} {high}/{low}."
-# if empy, no ending will be applied to the forecast
+# if empty, no ending will be applied to the forecast
 forecast_endings:
   - "Exciting!"
   - "Nice!"
@@ -27,9 +27,16 @@ forecast_endings:
   - "Or maybe not, who knows."
   - "Praise the sun!"
   - "Jolly good!"
+  - "\u270c\ufe0f"
+  - "\U0001f44b"
+  - "\U0001f918"
+  - "\U0001f44c"
+  - "\U0001f4af"
+  - "\U0001f44c\U0001f4af"
 # use 'temp', 'summary', or 'location'
 normal_conditions:
-  - "{temp} and {summary}. \U0001F937"
+  - "{temp} and {summary}. \U0001f937"
+  - "{temp} and {summary}. \U0001f937\u200d\u2642\ufe0f"
   - "The weather is boring. {temp} and {summary}."
   - "Whoopie do, it's {temp} and {summary}."
   - "{temp} and {summary}."
@@ -55,6 +62,8 @@ normal_conditions:
   - "{summary} and {temp}. \U0001f644"
   - "Welcome to {location}, where it's {summary} and {temp}."
   - "Only in {location} would it be {temp} and {summary} right now."
+  - "I hope you like that it's {summary}. It's {temp}."
+  - "{summary} and {temp}. \U0001f4af\U0001f4af\U0001f4af"
 # use 'apparent_temp', 'temp', 'wind_speed', 'wind_bearing', 'humidity',
 # 'summary', or 'location'
 special_conditions:
@@ -64,32 +73,52 @@ special_conditions:
   medium-wind:
     - "Looks like we've got some medium wind at {wind_speed} coming from
     the {wind_bearing}."
+    - "{wind_speed} \U0001f4a8 coming from the {wind_bearing}"
   heavy-wind:  # wind speed equal or above 35mph, 56km/h, or 15m/s
     - "Hold onto your hats! The wind is blowing at {wind_speed} coming from
     the {wind_bearing}."
+    - "Heavy wind at {wind_speed} from the {wind_bearing}."
+    - "Psh, it's just a little windy \U0001f4a8 ({wind_speed} from the {wind_bearing})"
   fog:
     - "Do you even fog bro? \U0001f32b"
     - "The clouds are saying hi, it's foggy right now."
+    - "\U0001f301"
   cold:  # below -28C or -20F
     - "It's {temp}. Too cold."
+    - "It's a wee bit chilly. {temp} \U0001f643"
   super-hot:  # over 110F or 43C
-    - "Wowowowowowowowow, it's {apparent_temp}. I need some A/C ASAP."
+    - "Wowowowowowowowow, it's {temp}. I need some A/C ASAP."
+    - "\U0001f525\U0001f525\U0001f525 \U0001f635"
   hot:  # over 100F or 37C
     - "Holy moly it's {temp}. I could literally (figuratively) melt."
-  dry:  # humidity under 30%
+    - "\U0001f321 It's {temp}!"
+  dry:  # humidity under 25%
+    - "{temp} with {humidity}% humidity."
     - "It's dry as strained pasta. {humidity}% humid right now."
+    - "Watch out for spontaneous combustion, it's {humidity}% humid right now."
 precipitations:
   rain:
     heavy:
       - "Run for cover and stay dry! Heavy rain!"
       - "Heavy rain detected, I hope your windows are closed."
+      - "Heavy rain! \u26c8"
     moderate:
       - "Alert: there is water falling from the sky."
-      - "It's raining \U0001F327"
-      - "Grab your umbrella, it's raining! \U00002614"
-      - "\U0001F327"
+      - "It's raining \U0001f327"
+      - "Grab your umbrella, it's raining! \u2614\ufe0f"
+      - "\U0001f327"
+      - "Great, it's raining. \U0001f644"
     light:
       - "Light rain!"
+      - "Light rain, enjoy!"
+      - "Look out for precipitated condensed atmospheric water vapor, it's lightly raining."
+      - "Light rain. Just think of all of the happy hydroelectric power plants!"
+      - "Light rain detected."
+      - "Ahh, light rain!"
+      - "Light rain, how refreshing!"
+      - "Light rain. \U0001f326"
+      - "Light rain. Just think how hydrated all of the plants will be!"
+      - "Light rain? More like free car wash!"
     very-light:
       - "Drizzlin' yo."
       - "Very light rain detected."
@@ -100,13 +129,15 @@ precipitations:
     moderate:
       - "Alert: there are flakes of crystalline water
       ice falling from the clouds."
-      - "It's snowing. \u2744\ufe0f"
-      - "It's snowing. \U0001F328"
-      - "\U0001F328"
-      - "\u2744\ufe0f"
+      - "It's snowing. \u2744"
+      - "It's snowing. \U0001f328"
+      - "\U0001f328"
+      - "\u2744"
+      - "Yay, snow! \u2603\\ufe0f"
     light:
       - "Light snow!"
       - "It's lightly snowing."
+      - "Light snow. At least it's not raining."
     very-light:
       - "Flurries"
       - "Flurries detected."
@@ -137,8 +168,12 @@ alerts:
     - 'Weather alert: {title} until {expires}. {uri}'
     - "It's official now! {title} until {expires}. {uri}"
     - "Get ready, there's a {title} until {expires}. {uri}"
+    - "\u26a0\ufe0f {title} until {expires}. {uri}"
+    - "\U0001f6a8 Weather alert! {title} until {expires}. {uri} \U0001f6a8"
   no_expires:
     - 'Oh goody, a weather alert! {title} from {time}. {uri}'
     - 'Weather alert: {title}. {uri}'
     - "It's official now! {title}. {uri}"
     - "Get ready, there's a {title}. {uri}"
+    - "\u26a0\ufe0f {title}. {uri}"
+    - "\U0001f6a8 Weather alert! {title}. {uri} \U0001f6a8"
