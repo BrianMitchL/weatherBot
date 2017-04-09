@@ -27,9 +27,16 @@ forecast_endings:
   - "Or maybe not, who knows."
   - "Praise the sun!"
   - "Jolly good!"
+  - "✌️"
+  - "👋"
+  - "🤘"
+  - "👌"
+  - "💯"
+  - "👌💯"
 # use 'temp', 'summary', or 'location'
 normal_conditions:
-  - "{temp} and {summary}. \U0001F937"
+  - "{temp} and {summary}. 🤷‍♀️"
+  - "{temp} and {summary}. 🤷‍♂️"
   - "The weather is boring. {temp} and {summary}."
   - "Whoopie do, it's {temp} and {summary}."
   - "{temp} and {summary}."
@@ -52,9 +59,11 @@ normal_conditions:
   - "Look up, it's {summary} and {temp}."
   - "For Pete's sake, it's {summary} and {temp} again."
   - "{summary} and {temp}."
-  - "{summary} and {temp}. \U0001f644"
+  - "{summary} and {temp}. 🙄"
   - "Welcome to {location}, where it's {summary} and {temp}."
   - "Only in {location} would it be {temp} and {summary} right now."
+  - "I hope you like that it's {condition}. It's {temp}."
+  - "{summary} and {temp}. 💯💯💯"
 # use 'apparent_temp', 'temp', 'wind_speed', 'wind_bearing', 'humidity',
 # 'summary', or 'location'
 special_conditions:
@@ -64,19 +73,25 @@ special_conditions:
   medium-wind:
     - "Looks like we've got some medium wind at {wind_speed} coming from
     the {wind_bearing}."
+    - "{wind_speed} 💨 coming from the {wind_bearing}"
   heavy-wind:  # wind speed equal or above 35mph, 56km/h, or 15m/s
     - "Hold onto your hats! The wind is blowing at {wind_speed} coming from
     the {wind_bearing}."
     - "Heavy wind at {wind_speed} from the {wind_bearing}."
+    - "Psh, it's just a little windy 💨 ({wind_speed} from the {wind_bearing})"
   fog:
-    - "Do you even fog bro? \U0001f32b"
+    - "Do you even fog bro? 🌫"
     - "The clouds are saying hi, it's foggy right now."
+    - "🌁"
   cold:  # below -28C or -20F
     - "It's {temp}. Too cold."
+    - "It's a wee bit chilly. {temp} 🙃"
   super-hot:  # over 110F or 43C
     - "Wowowowowowowowow, it's {temp}. I need some A/C ASAP."
+    - "🔥🔥🔥 😵"
   hot:  # over 100F or 37C
     - "Holy moly it's {temp}. I could literally (figuratively) melt."
+    - "🌡 It's {temp}!"
   dry:  # humidity under 25%
     - "{temp} with {humidity}% humidity."
     - "It's dry as strained pasta. {humidity}% humid right now."
@@ -86,12 +101,13 @@ precipitations:
     heavy:
       - "Run for cover and stay dry! Heavy rain!"
       - "Heavy rain detected, I hope your windows are closed."
+      - "Heavy rain! ⛈"
     moderate:
       - "Alert: there is water falling from the sky."
-      - "It's raining \U0001F327"
-      - "Grab your umbrella, it's raining! \U00002614"
-      - "\U0001F327"
-      - "Great, it's raining. \U0001F644"
+      - "It's raining 🌧"
+      - "Grab your umbrella, it's raining! ☔️"
+      - "🌧"
+      - "Great, it's raining. 🙄"
     light:
       - "Light rain!"
       - "Light rain, enjoy!"
@@ -100,6 +116,9 @@ precipitations:
       - "Light rain detected."
       - "Ahh, light rain!"
       - "Light rain, how refreshing!"
+      - "Light rain. 🌦"
+      - "Light rain. Just think how hydrated all of the plants will be!"
+      - "Light rain? More like free car wash!"
     very-light:
       - "Drizzlin' yo."
       - "Very light rain detected."
@@ -110,10 +129,11 @@ precipitations:
     moderate:
       - "Alert: there are flakes of crystalline water
       ice falling from the clouds."
-      - "It's snowing. \u2744\ufe0f"
-      - "It's snowing. \U0001F328"
-      - "\U0001F328"
-      - "\u2744\ufe0f"
+      - "It's snowing. ❄️"
+      - "It's snowing. 🌨"
+      - "🌨"
+      - "❄️"
+      - "Yay, snow! ☃️"
     light:
       - "Light snow!"
       - "It's lightly snowing."
@@ -148,8 +168,12 @@ alerts:
     - 'Weather alert: {title} until {expires}. {uri}'
     - "It's official now! {title} until {expires}. {uri}"
     - "Get ready, there's a {title} until {expires}. {uri}"
+    - "⚠️ {title} until {expires}. {uri}"
+    - "🚨 Weather alert! {title} until {expires}. {uri} 🚨"
   no_expires:
     - 'Oh goody, a weather alert! {title} from {time}. {uri}'
     - 'Weather alert: {title}. {uri}'
     - "It's official now! {title}. {uri}"
     - "Get ready, there's a {title}. {uri}"
+    - "⚠️ {title}. {uri}"
+    - "🚨 Weather alert! {title}. {uri} 🚨"
