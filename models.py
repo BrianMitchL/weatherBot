@@ -303,8 +303,7 @@ class WeatherBotString:
 
         if weather_type == 'none':
             return Condition(type='normal', text='')
-        else:
-            return Condition(type=weather_type, text=random.choice(self.special_conditions[weather_type]))
+        return Condition(type=weather_type, text=random.choice(self.special_conditions[weather_type]))
 
     def update_precipitation(self):
         """
@@ -330,8 +329,7 @@ class WeatherBotString:
             detailed_type = intensity + '-' + precip_type
             text = random.choice(self.precipitations[precip_type][intensity])
             return Condition(type=detailed_type, text=text)
-        else:
-            return Condition(type='none', text='')
+        return Condition(type='none', text='')
 
     def alert(self, alert, timezone_id):
         """

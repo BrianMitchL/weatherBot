@@ -133,7 +133,7 @@ precipitations:
       - "It's snowing. \U0001f328"
       - "\U0001f328"
       - "\u2744"
-      - "Yay, snow! \u2603\\ufe0f"
+      - "Yay, snow! \u2603\ufe0f"
     light:
       - "Light snow!"
       - "It's lightly snowing."
