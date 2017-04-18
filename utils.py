@@ -72,22 +72,22 @@ def get_units(unit):
             'pressure': 'hPa',
             'visibility': 'mi'
         }
-    else:  # si
-        return {
-            'unit': 'si',
-            'nearestStormDistance': 'km',
-            'precipIntensity': 'mm/h',
-            'precipIntensityMax': 'mm/h',
-            'precipAccumulation': 'cm',
-            'temperature': 'C',
-            'temperatureMin': 'C',
-            'temperatureMax': 'C',
-            'apparentTemperature': 'C',
-            'dewPoint': 'C',
-            'windSpeed': 'm/s',
-            'pressure': 'hPa',
-            'visibility': 'km'
-        }
+    # si
+    return {
+        'unit': 'si',
+        'nearestStormDistance': 'km',
+        'precipIntensity': 'mm/h',
+        'precipIntensityMax': 'mm/h',
+        'precipAccumulation': 'cm',
+        'temperature': 'C',
+        'temperatureMin': 'C',
+        'temperatureMax': 'C',
+        'apparentTemperature': 'C',
+        'dewPoint': 'C',
+        'windSpeed': 'm/s',
+        'pressure': 'hPa',
+        'visibility': 'km'
+    }
 
 
 def get_wind_direction(degrees):
@@ -201,8 +201,7 @@ def precipitation_intensity(precip_intensity, unit):
         return intensities[unit]['light'][0]
     elif precip_intensity >= intensities[unit]['very-light'][1]:
         return intensities[unit]['very-light'][0]
-    else:
-        return 'none'
+    return 'none'
 
 
 def parse_time_string(raw_string):
