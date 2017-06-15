@@ -1,5 +1,5 @@
-testfixtures>=4.13.5,<5.0
-invoke>=0.15.0,<1.0
+testfixtures>=5.1.1,<6.0
+invoke>=0.18.1,<1.0
 pylint>=1.7.1,<2.0
-yamllint>=1.6.1,<2.0
-coverage>=4.3.4,<5.0
+yamllint>=1.7,<2.0
+coverage>=4.4.1,<5.0
