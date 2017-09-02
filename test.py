@@ -17,6 +17,7 @@ import unittest
 
 import forecastio
 import pytz
+import tweepy
 import yaml
 from testfixtures import LogCapture
 from testfixtures import replace
@@ -25,10 +26,11 @@ import keys
 import models
 import utils
 import weatherBot
-from test_helpers import mocked_requests_get
 from test_helpers import mocked_forecastio_manual
 from test_helpers import mocked_forecastio_manual_error
 from test_helpers import mocked_get_tweepy_api
+from test_helpers import mocked_tweepy_o_auth_handler
+from test_helpers import mocked_requests_get
 
 
 class TestUtils(unittest.TestCase):
@@ -725,6 +727,12 @@ class TestWB(unittest.TestCase):
         self.assertFalse(bytes('debug', 'UTF-8') in data)
         self.assertTrue(bytes('uh oh', 'UTF-8') in data)
         os.remove(os.path.abspath('weatherBotTest.log'))
+
+    @replace('tweepy.OAuthHandler', mocked_tweepy_o_auth_handler)
+    def test_get_tweepy_api(self):
+        """Testing getting a tweepy API object"""
+        api = weatherBot.get_tweepy_api()
+        self.assertTrue(type(api) is tweepy.API)
 
     @replace('forecastio.manual', mocked_forecastio_manual)
     def test_get_forecast_object(self):

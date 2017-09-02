@@ -127,3 +127,11 @@ def mocked_forecastio_manual(url):
 
 def mocked_forecastio_manual_error(url):
     raise requests.exceptions.HTTPError
+
+
+def mocked_tweepy_o_auth_handler(key, secret):
+    class Auth:
+        def set_access_token(self, token, secret):
+            pass
+
+    return Auth()
