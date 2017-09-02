@@ -218,21 +218,31 @@ def do_tweet(text, weather_location, tweet_location, variable_location, hashtag=
     :return: a tweepy status object
     """
     api = get_tweepy_api()
-    if hashtag:
-        text += ' ' + hashtag
-    logging.debug('Trying to tweet: %s', text)
+    body = text
+    # account for space before hashtag
+    max_length = 139 - len(hashtag) if hashtag else 140
+
     if variable_location:
-        text = weather_location.name + ': ' + text
+        body = weather_location.name + ': ' + body
+
+    logging.debug('Trying to tweet: %s', body)
+    if len(body) > max_length:
+        # horizontal ellipsis
+        body = body[:(max_length - 1)] + '\u2026'
+        logging.warning('Status text is too long, tweeting the following instead: %s', body)
+
+    if hashtag:
+        body += ' ' + hashtag
     try:
         if tweet_location:
-            status = api.update_status(status=text, lat=weather_location.lat, long=weather_location.lng)
+            status = api.update_status(status=body, lat=weather_location.lat, long=weather_location.lng)
         else:
-            status = api.update_status(status=text)
-        logging.info('Tweet success: %s', text)
+            status = api.update_status(status=body)
+        logging.info('Tweet success: %s', body)
         return status
     except tweepy.TweepError as err:
         logging.error('Tweet failed: %s', err.reason)
-        logging.warning('Tweet skipped due to error: %s', text)
+        logging.warning('Tweet skipped due to error: %s', body)
         return None
 
 
@@ -319,7 +329,11 @@ def tweet_logic(weather_data, wb_string):
     # weather alerts
     for alert in weather_data.alerts:
         if alert.sha() not in CACHE['throttles'] and not alert.expired(now_utc):
-            CACHE['throttles'][alert.sha()] = alert.expires
+            try:
+                CACHE['throttles'][alert.sha()] = alert.expires
+            except AttributeError:
+                # most alerts are probably done after 3 days
+                CACHE['throttles'][alert.sha()] = alert.time + timedelta(days=3)
             do_tweet(wb_string.alert(alert, weather_data.timezone),
                      weather_data.location,
                      CONFIG['basic']['tweet_location'],
