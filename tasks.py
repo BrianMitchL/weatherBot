@@ -43,7 +43,7 @@ def lint(ctx, pylintrc='.pylintrc', extra=''):
     'yamllintrc': 'Path to a yamllintrc file for configuring PyLint.',
     'filename': 'Path to the strings YAML file to validate.'
 })
-def validate_yaml(ctx, yamllintrc='.yamllint', filename='strings.yml'):
+def validateyaml(ctx, yamllintrc='.yamllint', filename='strings.yml'):
     """
     Use yamllint to check for errors and enforce a markup standard for the strings YAML file.
     By default this will use the '.yamllint' config file to validate 'strings.yml'.
