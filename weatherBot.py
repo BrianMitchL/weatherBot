@@ -329,7 +329,11 @@ def tweet_logic(weather_data, wb_string):
     # weather alerts
     for alert in weather_data.alerts:
         if alert.sha() not in CACHE['throttles'] and not alert.expired(now_utc):
-            CACHE['throttles'][alert.sha()] = alert.expires
+            try:
+                CACHE['throttles'][alert.sha()] = alert.expires
+            except AttributeError:
+                # most alerts are probably done after 3 days
+                CACHE['throttles'][alert.sha()] = alert.time + timedelta(days=3)
             do_tweet(wb_string.alert(alert, weather_data.timezone),
                      weather_data.location,
                      CONFIG['basic']['tweet_location'],
