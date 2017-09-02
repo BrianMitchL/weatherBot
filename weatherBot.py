@@ -227,7 +227,8 @@ def do_tweet(text, weather_location, tweet_location, variable_location, hashtag=
 
     logging.debug('Trying to tweet: %s', body)
     if len(body) > max_length:
-        body = body[:(max_length - 3)] + '...'
+        # horizontal ellipsis
+        body = body[:(max_length - 1)] + '\u2026'
         logging.warning('Status text is too long, tweeting the following instead: %s', body)
 
     if hashtag:
