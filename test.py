@@ -748,14 +748,34 @@ class TestWB(unittest.TestCase):
         self.assertEqual(bad_forecast, None)
 
     @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
-    def test_get_location_from_user_timeline(self):
-        """Testing getting a location from twitter account's recent tweets"""
-        fallback_loc = models.WeatherLocation(4, 3, 'test2')
+    def test_get_location_from_user_timeline_coordinates(self):
+        """Testing getting a location from twitter account's recent tweets using the coordinates property"""
+        fallback_loc = models.WeatherLocation(4, 3, 'test')
         test_loc = models.WeatherLocation(2, 1, 'test')
         loc = weatherBot.get_location_from_user_timeline('MorrisMNWeather', fallback_loc)
         self.assertTrue(type(loc) is models.WeatherLocation)
         self.assertEqual(loc, test_loc)
-        self.assertEqual(weatherBot.get_location_from_user_timeline('testuser', fallback_loc), fallback_loc)
+
+    @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
+    def test_get_location_from_user_timeline_place(self):
+        """Testing getting a location from twitter account's recent tweets using the place bounding box"""
+        fallback_loc = models.WeatherLocation(4, 3, 'test')
+        test_loc = models.WeatherLocation(5.0, 4.0, 'cool place')
+        loc = weatherBot.get_location_from_user_timeline('nocoords', fallback_loc)
+        self.assertTrue(type(loc) is models.WeatherLocation)
+        self.assertEqual(loc, test_loc)
+
+    @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
+    def test_get_location_from_user_timeline_empty(self):
+        """Testing getting a location from twitter account's recent tweets when there are none"""
+        fallback_loc = models.WeatherLocation(4, 3, 'test')
+        self.assertEqual(weatherBot.get_location_from_user_timeline('no tweets', fallback_loc), fallback_loc)
+
+    @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
+    def test_get_location_from_user_timeline_error(self):
+        """Testing getting a location from twitter account's recent tweets when there is an error"""
+        fallback_loc = models.WeatherLocation(4, 3, 'test')
+        self.assertEqual(weatherBot.get_location_from_user_timeline('error', fallback_loc), fallback_loc)
 
     @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
     def test_do_tweet(self):

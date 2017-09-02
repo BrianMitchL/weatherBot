@@ -50,24 +50,32 @@ def mocked_get_tweepy_api():
             :return: list
             """
 
+            class Box:
+                def __init__(self):
+                    self.coordinates = [[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]]]
+
             class Place:
                 def __init__(self, place_name):
                     self.full_name = place_name
+                    self.bounding_box = Box()
 
             class Tweet:
                 def __init__(self):
-                    if screen_name == 'testuser':
-                        self.coordinates = {
-                            'coordinates': [3, 4]
-                        }
-                        self.place = Place('test2')
+                    if screen_name == 'nocoords':
+                        self.coordinates = None
+                        self.place = Place('cool place')
                     else:
                         self.coordinates = {
                             'coordinates': [1, 2]
                         }
                         self.place = Place('test')
 
-            return [Tweet()]
+            if screen_name == 'error':
+                raise tweepy.TweepError('uh oh')
+            elif screen_name != 'no tweets':
+                return [Tweet()]
+            else:
+                return []
 
     return API()
 
