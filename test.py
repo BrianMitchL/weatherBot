@@ -800,10 +800,11 @@ class TestWB(unittest.TestCase):
                   'This tweet is over 140 characters.'
         hashtag = '#testing'
         status = weatherBot.do_tweet(content, self.location, tweet_location, variable_location, hashtag=hashtag)
-        expected_text = 'This tweet is over 140 characters.\n' \
-                        'This tweet is over 140 characters.\n' \
-                        'This tweet is over 140 characters.\n' \
-                        'This tweet is over 140 ch\u2026 #testing'
+        expected_text = 'This tweet is over 140 characters. ' \
+                        'This tweet is over 140 characters. ' \
+                        'This tweet is over 140 characters. ' \
+                        'This tweet is over 140… #testing'
+
         self.assertEqual(status.text, expected_text)
 
     @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
