@@ -15,6 +15,7 @@ import os
 import pickle
 import random
 import sys
+import textwrap
 import time
 import traceback
 from datetime import datetime
@@ -228,7 +229,7 @@ def do_tweet(text, weather_location, tweet_location, variable_location, hashtag=
     logging.debug('Trying to tweet: %s', body)
     if len(body) > max_length:
         # horizontal ellipsis
-        body = body[:(max_length - 1)] + '\u2026'
+        body = textwrap.shorten(body, width=max_length, placeholder='\u2026')
         logging.warning('Status text is too long, tweeting the following instead: %s', body)
 
     if hashtag:
