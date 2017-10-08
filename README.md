@@ -1,4 +1,4 @@
-# weatherBot [![GitHub release](https://img.shields.io/github/release/BrianMitchL/weatherBot.svg?maxAge=86400)](https://github.com/BrianMitchL/weatherBot/releases/latest) [![Python Version](https://img.shields.io/badge/python-3.3+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master) [![Dependency Status](https://gemnasium.com/badges/github.com/BrianMitchL/weatherBot.svg)](https://gemnasium.com/github.com/BrianMitchL/weatherBot)
+# weatherBot [![GitHub release](https://img.shields.io/github/release/BrianMitchL/weatherBot.svg?maxAge=86400)](https://github.com/BrianMitchL/weatherBot/releases/latest) [![Python Version](https://img.shields.io/badge/python-3.4+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master) [![Dependency Status](https://gemnasium.com/badges/github.com/BrianMitchL/weatherBot.svg)](https://gemnasium.com/github.com/BrianMitchL/weatherBot)
 
 A Twitter bot for weather. [Powered by Dark Sky](https://darksky.net/poweredby/).
 
@@ -36,7 +36,7 @@ pip3 install -r requirements-dev.txt
 ```
 
 ## Use
-weatherBot.py has been built for Python 3 (tested with 3.3 and above). Legacy Python is not supported. 
+weatherBot.py has been built for Python 3 (tested with 3.4 and above). Legacy Python is not supported. 
 
 1. Set your location and other settings in `weatherBot.conf`
 2. Set your API keys and secrets as environmental variables (recommended) or in `keys.py`
