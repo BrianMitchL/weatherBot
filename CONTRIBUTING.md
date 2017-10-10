@@ -10,13 +10,13 @@ pip3 install -r requirements.txt
 pip3 install -r requirements-dev.txt
 ```
 
-Unless your contribution is an urgent bugfix or critical fix, contributions must be committed in a topic branch based on `development`. `git checkout -b my_contribution development`
+Contributions must be committed in a topic branch based on `development`. `git checkout -b my_contribution development`
 
 ## Linting/Validating
 
 ### Python Code
 
-It is required that all code will pass a lint and validation test. I (@BrianMitchL), have made exceptions for some cases in the existing code, but this should be kept to a minimum.
+It is required that all code will pass a lint and validation test. Some exceptions can be made, but this should be kept to a minimum.
 
 Code must conform to [PEP8](https://www.python.org/dev/peps/pep-0008/), but ultimately the linter.
 Here are the important things:
@@ -28,7 +28,7 @@ Here are the important things:
 5. Use underscores to separate variable names vs camel-case. (Yes, I know this contradicts the name _weatherBot_)
 
 Lint your code with the following:
-```shell
+```sh
 invoke lint
 ```
 
@@ -36,23 +36,25 @@ If you are adding a new Python file, run `invoke lint --extra=newfile.py`
 
 ### Strings.yml
 
-Mind the 140 character limit that Twitter enforces.
+Mind the 140 character limit that Twitter enforces. Anything over 140 characters will be truncated.
+
+Emoji must be escaped until the PyYAML libary is updated (https://github.com/yaml/pyyaml/issues/25).
 
 If you are contributing to the `strings.yml` file, you must validate the file by running:
 ```shell
 invoke validate_yaml
 ```
 
-If you are creating new strings files of your own, run `invoke validate_yaml --filename=filename.yml`
+If you are creating new strings files of your own, run `invoke validate_yaml --filename=filename.yml`.
 
 ## Testing
-Tests have been written for nearly all of the non-looping/logic code. It is expected to add tests for your contributions (with the exception of adding new text to `strings.yml`). Tests must be run using environmental variables. To set the environmental variables per command, prepend the command with the followig, replacing `xxxx` with your keys.
+Tests have been written for nearly all of the non-looping/logic code. It is expected to add tests for your contributions (with the exception of adding new text to `strings.yml`). Tests must be run using environmental variables. To set the environmental variables per command, prepend the command with the following, replacing `xxxx` with your keys.
 
 ```sh
 WEATHERBOT_CONSUMER_KEY=xxxx WEATHERBOT_CONSUMER_SECRET=xxxx WEATHERBOT_ACCESS_TOKEN=xxxx WEATHERBOT_ACCESS_TOKEN_SECRET=xxxx WEATHERBOT_DARKSKY_KEY=xxxx your_command_here
 ```
 
-```shell
+```sh
 invoke test
 # For a coverage report
 invoke test --report
