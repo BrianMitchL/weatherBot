@@ -61,7 +61,7 @@ The language as well as the text used for all tweets can be edited or added in `
 
 ### Variable Location
 Enable variable location to have the location for weather change. The Twitter username in the variable location user setting will be used to determine this location. The specified user must tweet with location fairly regularly (at least every 20 tweets, not including retweets), or the manually entered location will be used. The most recent tweet with a location will be used to get the location for weather.
-For example, say the given user tweets from Minneapolis, MN one day. Minneapolis will be used as the location indefinitely until a new tweet with location is posted or if 20 new tweets have been posted that do not contain a location. weatherBot checked the user's timeline every 30 minutes for updated in location.
+For example, say the given user tweets from Minneapolis, MN one day. Minneapolis will be used as the location indefinitely until a new tweet with location is posted or if 20 new tweets have been posted that do not contain a location. weatherBot checks the user's timeline every 30 minutes for updates in location.
 The human readable Twitter location will also be added to the beginning of each tweet. For example, in the same case as earlier, "Minneapolis, MN: " would be prefixed to every tweet.
 
 ## Deploying to [Heroku](https://www.heroku.com/)
