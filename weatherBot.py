@@ -3,7 +3,7 @@
 """
 weatherBot
 
-Copyright 2015-2016 Brian Mitchell under the MIT license
+Copyright 2015-2018 Brian Mitchell under the MIT license
 See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 """
 # pylint: disable=global-statement,invalid-name
@@ -15,6 +15,7 @@ import os
 import pickle
 import random
 import sys
+import textwrap
 import time
 import traceback
 from datetime import datetime
@@ -64,7 +65,8 @@ def load_config(path):
                                                    name=conf['default location'].get('name', 'Morris, MN')),
         'variable_location': {
             'enabled': conf['variable location'].getboolean('enabled', False),
-            'user': conf['variable location'].get('user', 'BrianMitchL')
+            'user': conf['variable location'].get('user', 'BrianMitchL'),
+            'unnamed_location_name': conf['variable location'].get('unnamed_location_name', 'The Wilderness')
         },
         'log': {
             'enabled': conf['log'].getboolean('enabled', True),
@@ -149,9 +151,7 @@ def get_forecast_object(lat, lng, units='us', lang='en'):
     :return: Forecast object or None if HTTPError or ConnectionError
     """
     try:
-        url = 'https://api.darksky.net/forecast/{0}/{1},{2}?units={3}&lang={4}'\
-            .format(os.getenv('WEATHERBOT_DARKSKY_KEY'), lat, lng, units, lang)
-        return forecastio.manual(url)
+        return forecastio.load_forecast(os.getenv('WEATHERBOT_DARKSKY_KEY'), lat, lng, units=units, lang=lang)
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as err:
         logging.error(err)
         logging.error('Error when getting Forecast object', exc_info=True)
@@ -178,7 +178,11 @@ def get_location_from_user_timeline(username, fallback):
             if tweet.coordinates is not None:
                 lat = tweet.coordinates['coordinates'][1]
                 lng = tweet.coordinates['coordinates'][0]
-                name = tweet.place.full_name
+                name = CONFIG['variable_location']['unnamed_location_name']
+                # sometimes a tweet contains a coordinate, but is not in a Twitter place
+                # for example, https://twitter.com/BrianMitchL/status/982664157857271810 has coordinates, but no place
+                if tweet.place is not None:
+                    name = tweet.place.full_name
                 logging.debug('Found %s: %f, %f', name, lat, lng)
                 return models.WeatherLocation(lat=lat, lng=lng, name=name)
             # if the location is a place, not coordinates
@@ -220,7 +224,7 @@ def do_tweet(text, weather_location, tweet_location, variable_location, hashtag=
     api = get_tweepy_api()
     body = text
     # account for space before hashtag
-    max_length = 139 - len(hashtag) if hashtag else 140
+    max_length = 279 - len(hashtag) if hashtag else 280
 
     if variable_location:
         body = weather_location.name + ': ' + body
@@ -228,7 +232,7 @@ def do_tweet(text, weather_location, tweet_location, variable_location, hashtag=
     logging.debug('Trying to tweet: %s', body)
     if len(body) > max_length:
         # horizontal ellipsis
-        body = body[:(max_length - 1)] + '\u2026'
+        body = textwrap.shorten(body, width=max_length, placeholder='\u2026')
         logging.warning('Status text is too long, tweeting the following instead: %s', body)
 
     if hashtag:
@@ -318,7 +322,6 @@ def tweet_logic(weather_data, wb_string):
     # CACHE is being modified here, pylint doesn't see that
     global CACHE
     wb_string.set_weather(weather_data)
-    logging.debug(wb_string.__dict__())
     special = wb_string.special()
     normal_text = wb_string.normal()
 
@@ -427,6 +430,7 @@ def main(path):
             api = get_tweepy_api()
             api.send_direct_message(screen_name=api.me().screen_name,
                                     text=str(random.randint(0, 9999)) + traceback.format_exc())
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='weatherBot')

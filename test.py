@@ -3,7 +3,7 @@
 """
 weatherBot tests
 
-Copyright 2015-2016 Brian Mitchell under the MIT license
+Copyright 2015-2018 Brian Mitchell under the MIT license
 See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 """
 
@@ -26,8 +26,8 @@ import keys
 import models
 import utils
 import weatherBot
-from test_helpers import mocked_forecastio_manual
-from test_helpers import mocked_forecastio_manual_error
+from test_helpers import mocked_forecastio_load_forecast
+from test_helpers import mocked_forecastio_load_forecast_error
 from test_helpers import mocked_get_tweepy_api
 from test_helpers import mocked_tweepy_o_auth_handler
 from test_helpers import mocked_requests_get
@@ -615,10 +615,11 @@ class TestWB(unittest.TestCase):
                                utils.Time(hour=18, minute=0),
                                utils.Time(hour=22, minute=0)]
             },
-            'default_location': models.WeatherLocation(-79, 12, 'Just a Test'),
+            'default_location': models.WeatherLocation(-79.0, 12.0, 'Just a Test'),
             'variable_location': {
                 'enabled': True,
-                'user': 'test_user'
+                'user': 'test_user',
+                'unnamed_location_name': 'Somewhere in deep space'
             },
             'log': {
                 'enabled': False,
@@ -672,7 +673,8 @@ class TestWB(unittest.TestCase):
         }
         conf['variable location'] = {
             'enabled': 'yes',
-            'user': 'test_user'
+            'user': 'test_user',
+            'unnamed_location_name': 'Somewhere in deep space'
         }
         conf['log'] = {
             'enabled': '0',
@@ -734,14 +736,14 @@ class TestWB(unittest.TestCase):
         api = weatherBot.get_tweepy_api()
         self.assertTrue(type(api) is tweepy.API)
 
-    @replace('forecastio.manual', mocked_forecastio_manual)
+    @replace('forecastio.load_forecast', mocked_forecastio_load_forecast)
     def test_get_forecast_object(self):
         """Testing getting the forecastio object"""
         forecast = weatherBot.get_forecast_object(self.location.lat, self.location.lng, units='us', lang='de')
         self.assertEqual(forecast.response.status_code, 200)
         self.assertEqual(forecast.json['flags']['units'], 'us')
 
-    @replace('forecastio.manual', mocked_forecastio_manual_error)
+    @replace('forecastio.load_forecast', mocked_forecastio_load_forecast_error)
     def test_get_forecast_object_error(self):
         """Testing getting the forecastio object"""
         bad_forecast = weatherBot.get_forecast_object(45.5, 123.45)
@@ -753,6 +755,17 @@ class TestWB(unittest.TestCase):
         fallback_loc = models.WeatherLocation(4, 3, 'test')
         test_loc = models.WeatherLocation(2, 1, 'test')
         loc = weatherBot.get_location_from_user_timeline('MorrisMNWeather', fallback_loc)
+        self.assertTrue(type(loc) is models.WeatherLocation)
+        self.assertEqual(loc, test_loc)
+
+    @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
+    def test_get_location_from_user_timeline_coordinates_no_place_full_name(self):
+        """Testing getting a location from twitter account's recent tweets using the coordinates property
+         when a place does not exist for that location"""
+        fallback_loc = models.WeatherLocation(4, 3, 'test')
+        test_loc = models.WeatherLocation(2.5, 1.5, 'unnamed location')
+        weatherBot.CONFIG['variable_location']['unnamed_location_name'] = 'unnamed location'
+        loc = weatherBot.get_location_from_user_timeline('coordsnoplace', fallback_loc)
         self.assertTrue(type(loc) is models.WeatherLocation)
         self.assertEqual(loc, test_loc)
 
@@ -790,20 +803,30 @@ class TestWB(unittest.TestCase):
 
     @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
     def test_do_tweet_long(self):
-        """Testing tweeting a test tweet that is over 140 characters"""
+        """Testing tweeting a test tweet that is over 280 characters"""
         tweet_location = False
         variable_location = False
-        content = 'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.'
+        content = 'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.'
         hashtag = '#testing'
         status = weatherBot.do_tweet(content, self.location, tweet_location, variable_location, hashtag=hashtag)
-        expected_text = 'This tweet is over 140 characters.\n' \
-                        'This tweet is over 140 characters.\n' \
-                        'This tweet is over 140 characters.\n' \
-                        'This tweet is over 140 ch\u2026 #testing'
+        expected_text = 'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280… #testing'
+
         self.assertEqual(status.text, expected_text)
 
     @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
