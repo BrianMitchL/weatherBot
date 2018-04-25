@@ -151,9 +151,7 @@ def get_forecast_object(lat, lng, units='us', lang='en'):
     :return: Forecast object or None if HTTPError or ConnectionError
     """
     try:
-        url = 'https://api.darksky.net/forecast/{0}/{1},{2}?units={3}&lang={4}'\
-            .format(os.getenv('WEATHERBOT_DARKSKY_KEY'), lat, lng, units, lang)
-        return forecastio.manual(url)
+        return forecastio.load_forecast(os.getenv('WEATHERBOT_DARKSKY_KEY'), lat, lng, units=units, lang=lang)
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as err:
         logging.error(err)
         logging.error('Error when getting Forecast object', exc_info=True)
@@ -324,7 +322,6 @@ def tweet_logic(weather_data, wb_string):
     # CACHE is being modified here, pylint doesn't see that
     global CACHE
     wb_string.set_weather(weather_data)
-    logging.debug(wb_string.__dict__())
     special = wb_string.special()
     normal_text = wb_string.normal()
 

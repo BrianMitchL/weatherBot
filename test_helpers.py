@@ -117,7 +117,7 @@ def mocked_requests_get(*args, **kwargs):
         return MockResponse(json.load(file_stream), 200)
 
 
-def mocked_forecastio_manual(url):
+def mocked_forecastio_load_forecast(*args, **kwargs):
     class Response:
         def __init__(self, status_code):
             self.status_code = status_code
@@ -138,7 +138,7 @@ def mocked_forecastio_manual(url):
     return Forecast()
 
 
-def mocked_forecastio_manual_error(url):
+def mocked_forecastio_load_forecast_error(*args, **kwargs):
     raise requests.exceptions.HTTPError
 
 

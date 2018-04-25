@@ -26,8 +26,8 @@ import keys
 import models
 import utils
 import weatherBot
-from test_helpers import mocked_forecastio_manual
-from test_helpers import mocked_forecastio_manual_error
+from test_helpers import mocked_forecastio_load_forecast
+from test_helpers import mocked_forecastio_load_forecast_error
 from test_helpers import mocked_get_tweepy_api
 from test_helpers import mocked_tweepy_o_auth_handler
 from test_helpers import mocked_requests_get
@@ -736,14 +736,14 @@ class TestWB(unittest.TestCase):
         api = weatherBot.get_tweepy_api()
         self.assertTrue(type(api) is tweepy.API)
 
-    @replace('forecastio.manual', mocked_forecastio_manual)
+    @replace('forecastio.load_forecast', mocked_forecastio_load_forecast)
     def test_get_forecast_object(self):
         """Testing getting the forecastio object"""
         forecast = weatherBot.get_forecast_object(self.location.lat, self.location.lng, units='us', lang='de')
         self.assertEqual(forecast.response.status_code, 200)
         self.assertEqual(forecast.json['flags']['units'], 'us')
 
-    @replace('forecastio.manual', mocked_forecastio_manual_error)
+    @replace('forecastio.load_forecast', mocked_forecastio_load_forecast_error)
     def test_get_forecast_object_error(self):
         """Testing getting the forecastio object"""
         bad_forecast = weatherBot.get_forecast_object(45.5, 123.45)
