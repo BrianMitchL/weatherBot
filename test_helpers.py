@@ -64,6 +64,11 @@ def mocked_get_tweepy_api():
                     if screen_name == 'nocoords':
                         self.coordinates = None
                         self.place = Place('cool place')
+                    elif screen_name == 'coordsnoplace':
+                        self.coordinates = {
+                            'coordinates': [1.5, 2.5]
+                        }
+                        self.place = None
                     else:
                         self.coordinates = {
                             'coordinates': [1, 2]

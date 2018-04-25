@@ -65,7 +65,8 @@ def load_config(path):
                                                    name=conf['default location'].get('name', 'Morris, MN')),
         'variable_location': {
             'enabled': conf['variable location'].getboolean('enabled', False),
-            'user': conf['variable location'].get('user', 'BrianMitchL')
+            'user': conf['variable location'].get('user', 'BrianMitchL'),
+            'unnamed_location_name': conf['variable location'].get('unnamed_location_name', 'The Wilderness')
         },
         'log': {
             'enabled': conf['log'].getboolean('enabled', True),
@@ -179,7 +180,11 @@ def get_location_from_user_timeline(username, fallback):
             if tweet.coordinates is not None:
                 lat = tweet.coordinates['coordinates'][1]
                 lng = tweet.coordinates['coordinates'][0]
-                name = tweet.place.full_name
+                name = CONFIG['variable_location']['unnamed_location_name']
+                # sometimes a tweet contains a coordinate, but is not in a Twitter place
+                # for example, https://twitter.com/BrianMitchL/status/982664157857271810 has coordinates, but no place
+                if tweet.place is not None:
+                    name = tweet.place.full_name
                 logging.debug('Found %s: %f, %f', name, lat, lng)
                 return models.WeatherLocation(lat=lat, lng=lng, name=name)
             # if the location is a place, not coordinates
@@ -428,6 +433,7 @@ def main(path):
             api = get_tweepy_api()
             api.send_direct_message(screen_name=api.me().screen_name,
                                     text=str(random.randint(0, 9999)) + traceback.format_exc())
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='weatherBot')
