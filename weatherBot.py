@@ -66,7 +66,7 @@ def load_config(path):
         'variable_location': {
             'enabled': conf['variable location'].getboolean('enabled', False),
             'user': conf['variable location'].get('user', 'BrianMitchL'),
-            'unnamed_location_name': conf['variable location'].get('unnamed-location-name', 'The Wilderness')
+            'unnamed_location_name': conf['variable location'].get('unnamed_location_name', 'The Wilderness')
         },
         'log': {
             'enabled': conf['log'].getboolean('enabled', True),

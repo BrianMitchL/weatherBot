@@ -615,10 +615,11 @@ class TestWB(unittest.TestCase):
                                utils.Time(hour=18, minute=0),
                                utils.Time(hour=22, minute=0)]
             },
-            'default_location': models.WeatherLocation(-79, 12, 'Just a Test'),
+            'default_location': models.WeatherLocation(-79.0, 12.0, 'Just a Test'),
             'variable_location': {
                 'enabled': True,
-                'user': 'test_user'
+                'user': 'test_user',
+                'unnamed_location_name': 'Somewhere in deep space'
             },
             'log': {
                 'enabled': False,
@@ -672,7 +673,8 @@ class TestWB(unittest.TestCase):
         }
         conf['variable location'] = {
             'enabled': 'yes',
-            'user': 'test_user'
+            'user': 'test_user',
+            'unnamed_location_name': 'Somewhere in deep space'
         }
         conf['log'] = {
             'enabled': '0',
@@ -753,6 +755,17 @@ class TestWB(unittest.TestCase):
         fallback_loc = models.WeatherLocation(4, 3, 'test')
         test_loc = models.WeatherLocation(2, 1, 'test')
         loc = weatherBot.get_location_from_user_timeline('MorrisMNWeather', fallback_loc)
+        self.assertTrue(type(loc) is models.WeatherLocation)
+        self.assertEqual(loc, test_loc)
+
+    @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
+    def test_get_location_from_user_timeline_coordinates_no_place_full_name(self):
+        """Testing getting a location from twitter account's recent tweets using the coordinates property
+         when a place does not exist for that location"""
+        fallback_loc = models.WeatherLocation(4, 3, 'test')
+        test_loc = models.WeatherLocation(2.5, 1.5, 'unnamed location')
+        weatherBot.CONFIG['variable_location']['unnamed_location_name'] = 'unnamed location'
+        loc = weatherBot.get_location_from_user_timeline('coordsnoplace', fallback_loc)
         self.assertTrue(type(loc) is models.WeatherLocation)
         self.assertEqual(loc, test_loc)
 
