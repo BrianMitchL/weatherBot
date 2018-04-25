@@ -224,7 +224,7 @@ def do_tweet(text, weather_location, tweet_location, variable_location, hashtag=
     api = get_tweepy_api()
     body = text
     # account for space before hashtag
-    max_length = 139 - len(hashtag) if hashtag else 140
+    max_length = 279 - len(hashtag) if hashtag else 280
 
     if variable_location:
         body = weather_location.name + ': ' + body

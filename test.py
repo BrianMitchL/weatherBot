@@ -803,20 +803,29 @@ class TestWB(unittest.TestCase):
 
     @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
     def test_do_tweet_long(self):
-        """Testing tweeting a test tweet that is over 140 characters"""
+        """Testing tweeting a test tweet that is over 280 characters"""
         tweet_location = False
         variable_location = False
-        content = 'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.'
+        content = 'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.'
         hashtag = '#testing'
         status = weatherBot.do_tweet(content, self.location, tweet_location, variable_location, hashtag=hashtag)
-        expected_text = 'This tweet is over 140 characters. ' \
-                        'This tweet is over 140 characters. ' \
-                        'This tweet is over 140 characters. ' \
-                        'This tweet is over 140… #testing'
+        expected_text = 'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280… #testing'
 
         self.assertEqual(status.text, expected_text)
 
