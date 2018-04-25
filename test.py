@@ -3,7 +3,7 @@
 """
 weatherBot tests
 
-Copyright 2015-2016 Brian Mitchell under the MIT license
+Copyright 2015-2018 Brian Mitchell under the MIT license
 See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 """
 
@@ -26,8 +26,8 @@ import keys
 import models
 import utils
 import weatherBot
-from test_helpers import mocked_forecastio_manual
-from test_helpers import mocked_forecastio_manual_error
+from test_helpers import mocked_forecastio_load_forecast
+from test_helpers import mocked_forecastio_load_forecast_error
 from test_helpers import mocked_get_tweepy_api
 from test_helpers import mocked_tweepy_o_auth_handler
 from test_helpers import mocked_requests_get
@@ -736,14 +736,14 @@ class TestWB(unittest.TestCase):
         api = weatherBot.get_tweepy_api()
         self.assertTrue(type(api) is tweepy.API)
 
-    @replace('forecastio.manual', mocked_forecastio_manual)
+    @replace('forecastio.load_forecast', mocked_forecastio_load_forecast)
     def test_get_forecast_object(self):
         """Testing getting the forecastio object"""
         forecast = weatherBot.get_forecast_object(self.location.lat, self.location.lng, units='us', lang='de')
         self.assertEqual(forecast.response.status_code, 200)
         self.assertEqual(forecast.json['flags']['units'], 'us')
 
-    @replace('forecastio.manual', mocked_forecastio_manual_error)
+    @replace('forecastio.load_forecast', mocked_forecastio_load_forecast_error)
     def test_get_forecast_object_error(self):
         """Testing getting the forecastio object"""
         bad_forecast = weatherBot.get_forecast_object(45.5, 123.45)
@@ -803,20 +803,29 @@ class TestWB(unittest.TestCase):
 
     @replace('weatherBot.get_tweepy_api', mocked_get_tweepy_api)
     def test_do_tweet_long(self):
-        """Testing tweeting a test tweet that is over 140 characters"""
+        """Testing tweeting a test tweet that is over 280 characters"""
         tweet_location = False
         variable_location = False
-        content = 'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.\n' \
-                  'This tweet is over 140 characters.'
+        content = 'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.\n' \
+                  'This tweet is over 280 characters.'
         hashtag = '#testing'
         status = weatherBot.do_tweet(content, self.location, tweet_location, variable_location, hashtag=hashtag)
-        expected_text = 'This tweet is over 140 characters. ' \
-                        'This tweet is over 140 characters. ' \
-                        'This tweet is over 140 characters. ' \
-                        'This tweet is over 140… #testing'
+        expected_text = 'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280 characters. ' \
+                        'This tweet is over 280… #testing'
 
         self.assertEqual(status.text, expected_text)
 

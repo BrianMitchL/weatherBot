@@ -3,7 +3,7 @@
 """
 weatherBot
 
-Copyright 2015-2016 Brian Mitchell under the MIT license
+Copyright 2015-2018 Brian Mitchell under the MIT license
 See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 """
 # pylint: disable=global-statement,invalid-name
@@ -151,9 +151,7 @@ def get_forecast_object(lat, lng, units='us', lang='en'):
     :return: Forecast object or None if HTTPError or ConnectionError
     """
     try:
-        url = 'https://api.darksky.net/forecast/{0}/{1},{2}?units={3}&lang={4}'\
-            .format(os.getenv('WEATHERBOT_DARKSKY_KEY'), lat, lng, units, lang)
-        return forecastio.manual(url)
+        return forecastio.load_forecast(os.getenv('WEATHERBOT_DARKSKY_KEY'), lat, lng, units=units, lang=lang)
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as err:
         logging.error(err)
         logging.error('Error when getting Forecast object', exc_info=True)
@@ -226,7 +224,7 @@ def do_tweet(text, weather_location, tweet_location, variable_location, hashtag=
     api = get_tweepy_api()
     body = text
     # account for space before hashtag
-    max_length = 139 - len(hashtag) if hashtag else 140
+    max_length = 279 - len(hashtag) if hashtag else 280
 
     if variable_location:
         body = weather_location.name + ': ' + body
@@ -324,7 +322,6 @@ def tweet_logic(weather_data, wb_string):
     # CACHE is being modified here, pylint doesn't see that
     global CACHE
     wb_string.set_weather(weather_data)
-    logging.debug(wb_string.__dict__())
     special = wb_string.special()
     normal_text = wb_string.normal()
 
