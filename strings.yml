@@ -33,6 +33,8 @@ forecast_endings:
   - "\U0001f44c"
   - "\U0001f4af"
   - "\U0001f44c\U0001f4af"
+  - "It's going to be great!"
+  - "Oh joy \U0001f644"
 # use 'temp', 'summary', or 'location'
 normal_conditions:
   - "{temp} and {summary}. \U0001f937"
@@ -64,12 +66,21 @@ normal_conditions:
   - "Only in {location} would it be {temp} and {summary} right now."
   - "I hope you like that it's {summary}. It's {temp}."
   - "{summary} and {temp}. \U0001f4af\U0001f4af\U0001f4af"
+  - "My word, it's {summary} and {temp}."
+  - "It's {summary} and {temp}. Don't forget to like, comment, and subscribe."
+  - "Can you believe it's {temp} and {summary}?"
+  - "It's {summary} and {temp}. Cheers, mate."
+  - "It's {temp} and {summary}. Finally!"
+  - "Good grief, it's {temp} and {summary}."
 # use 'apparent_temp', 'temp', 'wind_speed', 'wind_bearing', 'humidity',
 # 'summary', or 'location'
 special_conditions:
   wind-chill:  # wind chill at or below -30F or -34C
     - "Brr! The windchill is {apparent_temp} and the wind is blowing at
     {wind_speed} from the {wind_bearing}. Stay safe out there!"
+    - "Even though it feels like {apparent_temp}, it's actually only {temp}."
+    - "It's cold out there! The windchill is {apparent_temp} and the wind is blowing at
+    {wind_speed} from the {wind_bearing}."
   medium-wind:
     - "Looks like we've got some medium wind at {wind_speed} coming from
     the {wind_bearing}."
@@ -86,12 +97,16 @@ special_conditions:
   cold:  # below -28C or -20F
     - "It's {temp}. Too cold."
     - "It's a wee bit chilly. {temp} \U0001f643"
+    - "Stupid polar vortex making things all cold, it's {temp}!"
+    - "It's {temp}. Just put a hat on, you'll be fine."
   super-hot:  # over 110F or 43C
     - "Wowowowowowowowow, it's {temp}. I need some A/C ASAP."
     - "\U0001f525\U0001f525\U0001f525 \U0001f635"
   hot:  # over 100F or 37C
     - "Holy moly it's {temp}. I could literally (figuratively) melt."
     - "\U0001f321 It's {temp}!"
+    - "We did it, it's {temp}!"
+    - "High five for climate change! It's {temp}."
   dry:  # humidity under 25%
     - "{temp} with {humidity}% humidity."
     - "It's dry as strained pasta. {humidity}% humid right now."
@@ -119,13 +134,16 @@ precipitations:
       - "Light rain. \U0001f326"
       - "Light rain. Just think how hydrated all of the plants will be!"
       - "Light rain? More like free car wash!"
+      - "Light rain. At least it's not snowing."
     very-light:
       - "Drizzlin' yo."
       - "Very light rain detected."
+      - "Hey look, it's drizzling!"
   snow:
     heavy:
       - "Heavy snow, bundle up."
       - "Heavy snow detected, good luck with that."
+      - "Look at the snow, there's so much of it!"
     moderate:
       - "Alert: there are flakes of crystalline water
       ice falling from the clouds."
@@ -141,6 +159,7 @@ precipitations:
     very-light:
       - "Flurries"
       - "Flurries detected."
+      - "Hey look, flurries!"
   sleet:
     heavy:
       - "Heavy sleet."
