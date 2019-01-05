@@ -1,7 +1,7 @@
 """
 weatherBot utils
 
-Copyright 2015-2018 Brian Mitchell under the MIT license
+Copyright 2015-2019 Brian Mitchell under the MIT license
 See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 """
 
@@ -14,7 +14,6 @@ Time = namedtuple('Time', ['hour', 'minute'])
 
 class InvalidTimeError(Exception):
     """Designed to be thrown when parsing a bad str for creating a Time namedtuple"""
-    pass
 
 
 def get_units(unit):
@@ -40,7 +39,7 @@ def get_units(unit):
             'pressure': 'mb',
             'visibility': 'mi'
         }
-    elif unit == 'ca':
+    if unit == 'ca':
         return {
             'unit': 'ca',
             'nearestStormDistance': 'km',
@@ -56,7 +55,7 @@ def get_units(unit):
             'pressure': 'hPa',
             'visibility': 'km'
         }
-    elif unit == 'uk2':
+    if unit == 'uk2':
         return {
             'unit': 'uk2',
             'nearestStormDistance': 'mi',
@@ -195,11 +194,11 @@ def precipitation_intensity(precip_intensity, unit):
 
     if precip_intensity >= intensities[unit]['heavy'][1]:
         return intensities[unit]['heavy'][0]
-    elif precip_intensity >= intensities[unit]['moderate'][1]:
+    if precip_intensity >= intensities[unit]['moderate'][1]:
         return intensities[unit]['moderate'][0]
-    elif precip_intensity >= intensities[unit]['light'][1]:
+    if precip_intensity >= intensities[unit]['light'][1]:
         return intensities[unit]['light'][0]
-    elif precip_intensity >= intensities[unit]['very-light'][1]:
+    if precip_intensity >= intensities[unit]['very-light'][1]:
         return intensities[unit]['very-light'][0]
     return 'none'
 
