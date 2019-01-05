@@ -1,4 +1,4 @@
-# weatherBot [![GitHub release](https://img.shields.io/github/release/BrianMitchL/weatherBot.svg?maxAge=86400)](https://github.com/BrianMitchL/weatherBot/releases/latest) [![Python Version](https://img.shields.io/badge/python-3.4+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master) [![Dependency Status](https://gemnasium.com/badges/github.com/BrianMitchL/weatherBot.svg)](https://gemnasium.com/github.com/BrianMitchL/weatherBot)
+# weatherBot [![GitHub release](https://img.shields.io/github/release/BrianMitchL/weatherBot.svg?maxAge=86400)](https://github.com/BrianMitchL/weatherBot/releases/latest) [![Python Version](https://img.shields.io/badge/python-3.4+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master)
 
 A Twitter bot for weather. [Powered by Dark Sky](https://darksky.net/poweredby/).
 
@@ -111,6 +111,56 @@ Alternatively, if you wish to build the Docker image yourself, run:
 docker build -t weatherbot .
 ```
 Start the bot using the same run command as above, while replacing the image name with what you call yours.
+
+## Task Runner
+
+The following tasks are available through `invoke`.
+
+- `invoke lint`
+```text
+Docstring:
+  Use PyLint to check for errors and enforce a coding standard.
+  This will, by default, use the PyLint configuration found in '.pylintrc',
+  but can accept a different path.
+
+Options:
+  -e STRING, --extra=STRING      Extra Python files to lint in addition to the
+                                 default.
+  -p STRING, --pylintrc=STRING   Path to a pylintrc file for configuring
+                                 PyLint.
+
+```
+- `invoke clean`
+```text
+Docstring:
+  Clean (delete) files. If passed with no arguments, nothing is deleted.
+
+Options:
+  -b, --bytecode              Remove bytecode files matching the pattern
+                              '**/*.pyc'.
+  -c, --cache                 Remove the '.wbcache.p' file.
+  -e STRING, --extra=STRING   Remove any extra files passed in here.
+```
+- `invoke validateyaml`
+```text
+Docstring:
+  Use yamllint to check for errors and enforce a markup standard for the strings YAML file.
+  By default this will use the '.yamllint' config file to validate 'strings.yml'.
+
+Options:
+  -f STRING, --filename=STRING     Path to the strings YAML file to validate.
+  -y STRING, --yamllintrc=STRING   Path to a yamllintrc file for configuring
+                                   PyLint.
+```
+- `invoke test`
+```text
+Docstring:
+  Runs tests and reports on code coverage.
+  Keys need to be entered in 'keys.py' or set as environmental variables.
+
+Options:
+  -r, --report   Flag to print a coverage report
+```
 
 ## Tools Used
 * [Tweepy](https://github.com/tweepy/tweepy)

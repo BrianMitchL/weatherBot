@@ -1,7 +1,7 @@
 """
 weatherBot models
 
-Copyright 2015-2018 Brian Mitchell under the MIT license
+Copyright 2015-2019 Brian Mitchell under the MIT license
 See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 """
 
@@ -23,7 +23,6 @@ class BadForecastDataError(Exception):
     """
     Designed to be thrown when a Forecast object contains issues that would render the weather data unusable
     """
-    pass
 
 
 class WeatherLocation:
