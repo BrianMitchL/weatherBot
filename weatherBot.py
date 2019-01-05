@@ -186,7 +186,7 @@ def get_location_from_user_timeline(username, fallback):
                 logging.debug('Found %s: %f, %f', name, lat, lng)
                 return models.WeatherLocation(lat=lat, lng=lng, name=name)
             # if the location is a place, not coordinates
-            elif tweet.place is not None:
+            if tweet.place is not None:
                 point = utils.centerpoint(tweet.place.bounding_box.coordinates[0])
                 lat = point[0]
                 lng = point[1]

@@ -19,10 +19,10 @@ KEYS = {
 
 def set_twitter_env_vars():
     """
-    If no Twitter environmental variables are set, set them based on the keys dict
+    If any of the Twitter environmental variables are not set, set them based on the keys dict
     """
-    if os.getenv('WEATHERBOT_CONSUMER_KEY', 0) is 0 or os.getenv('WEATHERBOT_CONSUMER_SECRET', 0) is 0 \
-            or os.getenv('WEATHERBOT_ACCESS_TOKEN', 0) is 0 or os.getenv('WEATHERBOT_ACCESS_TOKEN_SECRET', 0) is 0:
+    if os.getenv('WEATHERBOT_CONSUMER_KEY') is None or os.getenv('WEATHERBOT_CONSUMER_SECRET') is None \
+            or os.getenv('WEATHERBOT_ACCESS_TOKEN') is None or os.getenv('WEATHERBOT_ACCESS_TOKEN_SECRET') is None:
         os.environ['WEATHERBOT_CONSUMER_KEY'] = KEYS['consumer_key']
         os.environ['WEATHERBOT_CONSUMER_SECRET'] = KEYS['consumer_secret']
         os.environ['WEATHERBOT_ACCESS_TOKEN'] = KEYS['access_token']
@@ -33,5 +33,5 @@ def set_darksky_env_vars():
     """
     If no Dark Sky environmental variable is set, set it based on the keys dict
     """
-    if os.getenv('WEATHERBOT_DARKSKY_KEY', 0) is 0:
+    if os.getenv('WEATHERBOT_DARKSKY_KEY') is None:
         os.environ['WEATHERBOT_DARKSKY_KEY'] = KEYS['darksky_key']

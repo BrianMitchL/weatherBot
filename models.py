@@ -23,7 +23,6 @@ class BadForecastDataError(Exception):
     """
     Designed to be thrown when a Forecast object contains issues that would render the weather data unusable
     """
-    pass
 
 
 class WeatherLocation:
