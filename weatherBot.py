@@ -3,7 +3,7 @@
 """
 weatherBot
 
-Copyright 2015-2018 Brian Mitchell under the MIT license
+Copyright 2015-2019 Brian Mitchell under the MIT license
 See the GitHub repository: https://github.com/BrianMitchL/weatherBot
 """
 # pylint: disable=global-statement,invalid-name
