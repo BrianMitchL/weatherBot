@@ -64,53 +64,9 @@ Enable variable location to have the location for weather change. The Twitter us
 For example, say the given user tweets from Minneapolis, MN one day. Minneapolis will be used as the location indefinitely until a new tweet with location is posted or if 20 new tweets have been posted that do not contain a location. weatherBot checks the user's timeline every 30 minutes for updates in location.
 The human readable Twitter location will also be added to the beginning of each tweet. For example, in the same case as earlier, "Minneapolis, MN: " would be prefixed to every tweet.
 
-## Deploying to [Heroku](https://www.heroku.com/)
-weatherBot can easily be deployed to Heroku. Install the heroku-toolbelt and run the following to get started:
-```shell
-heroku login
-heroku create
-git push heroku master
-```
-The Twitter and Dark Sky keys need to be added. The format to do so is:
-```shell
-heroku config:set \
-WEATHERBOT_CONSUMER_KEY=xxx \
-WEATHERBOT_CONSUMER_SECRET=xxx \
-WEATHERBOT_ACCESS_TOKEN=xxx \
-WEATHERBOT_ACCESS_TOKEN_SECRET=xxx \
-WEATHERBOT_DARKSKY_KEY=xxx
-```
-You can also add keys/environmental variables on the Heroku project's settings page.
+## Deploying
 
-## Deploying with Docker
-
-weatherBot can easily be deployed using Docker.
-
-### weatherBot from Docker Hub
-
-To download the image, run:
-```shell
-docker pull brianmitchl/weatherbot
-```
-Start the bot with the following, replacing the API keys and secrets with the correct strings. You will also need to add your conf file to the container (I use the `-v` flag).
-```shell
-docker run --name weatherBot -d \
--v /home/brianmitchell/weatherBot/dist/custom.conf:/src/custom.conf \
--e WEATHERBOT_CONSUMER_KEY=xxx \
--e WEATHERBOT_CONSUMER_SECRET=xxx \
--e WEATHERBOT_ACCESS_TOKEN=xxx \
--e WEATHERBOT_ACCESS_TOKEN_SECRET=xxx \
--e WEATHERBOT_DARKSKY_KEY=xxx \
-brianmitchl/weatherbot python weatherBot.py custom.conf
-```
-
-### Building Your Own weatherBot
-
-Alternatively, if you wish to build the Docker image yourself, run:
-```shell
-docker build -t weatherbot .
-```
-Start the bot using the same run command as above, while replacing the image name with what you call yours.
+Head over to the [wiki](https://github.com/BrianMitchL/weatherBot/wiki#deploying) for some examples of deploying weatherBot.
 
 ## Task Runner
 
