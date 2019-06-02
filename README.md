@@ -49,7 +49,8 @@ You're all set!
 ## Settings and Customizing
 
 ### Configuration File
-Many features of weatherBot can be customized in a conf file. This ships with a file named `weatherBot.conf`, but can be called whatever you'd like. Each option has a comment above it describing its purpose.
+Many features of weatherBot can be customized in a conf file, using the [INI](https://en.wikipedia.org/wiki/INI_file) configuration format. This ships with a file named `weatherBot.conf`, but can be called whatever you'd like. Each option has a comment above it describing its purpose. By default, each option is commented out with a semi-colons (`;`). This shows the default value and provides an example of a valid configuration.
+
 If you want a clean conf file, feel free to remove all but the settings you set, they are all optional. The section headers must remain in the file.
 
 ### API Keys
