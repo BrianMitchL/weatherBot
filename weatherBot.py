@@ -428,8 +428,8 @@ def main(path):
         logging.error('We got an exception!', exc_info=True)
         if CONFIG['basic']['dm_errors']:
             api = get_tweepy_api()
-            api.send_direct_message(screen_name=api.me().screen_name,
-                                    text=str(random.randint(0, 9999)) + traceback.format_exc())
+            api.send_direct_message(recipient_id=api.me().id,
+                                    text=datetime.utcnow().isoformat() + '\n' + traceback.format_exc())
 
 
 if __name__ == '__main__':
