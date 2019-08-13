@@ -1,7 +1,6 @@
 dist: xenial
 language: python
 python:
-- '3.4'
 - '3.5'
 - '3.6'
 - '3.7'
@@ -21,6 +20,11 @@ deploy:
     "latest"}'' https://registry.hub.docker.com/u/brianmitchl/weatherbot/trigger/$DOCKER_HUB_TOKEN/'
   on:
     branch: master
+branches:
+  only:
+  - development
+  - master
+  - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 env:
   global:
   - secure: Httle2zpXRyVPIdRZ2XE9WwdhdTicZBi7vltamQczSoiKK5MLquE9gUS5Vnyfs+8v58IiJdyfaRt2QG/03a3hf9F95BnVt00zWZKHLDpNgfDwRd1JMxIE+4ey+bcNVbcqNwQ7HvNcdknrV1NvBhkTtB5AUWKD3IK3fne7ziX0u0=
