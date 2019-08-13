@@ -13,7 +13,6 @@ import configparser
 import logging
 import os
 import pickle
-import random
 import sys
 import textwrap
 import time
