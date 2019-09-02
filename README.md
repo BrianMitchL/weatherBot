@@ -1,4 +1,4 @@
-# weatherBot [![GitHub release](https://img.shields.io/github/release/BrianMitchL/weatherBot.svg?maxAge=86400)](https://github.com/BrianMitchL/weatherBot/releases/latest) [![Python Version](https://img.shields.io/badge/python-3.4+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master)
+# weatherBot [![GitHub release](https://img.shields.io/github/release/BrianMitchL/weatherBot.svg?maxAge=86400)](https://github.com/BrianMitchL/weatherBot/releases/latest) [![Python Version](https://img.shields.io/badge/python-3.5+-blue.svg)](https://www.python.org) [![Build Status](https://travis-ci.org/BrianMitchL/weatherBot.svg?branch=master)](https://travis-ci.org/BrianMitchL/weatherBot) [![Coverage Status](https://coveralls.io/repos/github/BrianMitchL/weatherBot/badge.svg?branch=master)](https://coveralls.io/github/BrianMitchL/weatherBot?branch=master)
 
 A Twitter bot for weather. [Powered by Dark Sky](https://darksky.net/poweredby/).
 
@@ -36,7 +36,7 @@ pip3 install -r requirements-dev.txt
 ```
 
 ## Use
-weatherBot.py has been built for Python 3 (tested with 3.4 and above). Legacy Python is not supported. 
+weatherBot.py has been built for Python 3 (tested with 3.5 and above). Legacy Python is not supported. 
 
 1. Set your location and other settings in `weatherBot.conf`
 2. Set your API keys and secrets as environmental variables (recommended) or in `keys.py`
@@ -49,7 +49,8 @@ You're all set!
 ## Settings and Customizing
 
 ### Configuration File
-Many features of weatherBot can be customized in a conf file. This ships with a file named `weatherBot.conf`, but can be called whatever you'd like. Each option has a comment above it describing its purpose.
+Many features of weatherBot can be customized in a conf file, using the [INI](https://en.wikipedia.org/wiki/INI_file) configuration format. This ships with a file named `weatherBot.conf`, but can be called whatever you'd like. Each option has a comment above it describing its purpose. By default, each option is commented out with a semi-colons (`;`). This shows the default value and provides an example of a valid configuration.
+
 If you want a clean conf file, feel free to remove all but the settings you set, they are all optional. The section headers must remain in the file.
 
 ### API Keys
@@ -64,53 +65,9 @@ Enable variable location to have the location for weather change. The Twitter us
 For example, say the given user tweets from Minneapolis, MN one day. Minneapolis will be used as the location indefinitely until a new tweet with location is posted or if 20 new tweets have been posted that do not contain a location. weatherBot checks the user's timeline every 30 minutes for updates in location.
 The human readable Twitter location will also be added to the beginning of each tweet. For example, in the same case as earlier, "Minneapolis, MN: " would be prefixed to every tweet.
 
-## Deploying to [Heroku](https://www.heroku.com/)
-weatherBot can easily be deployed to Heroku. Install the heroku-toolbelt and run the following to get started:
-```shell
-heroku login
-heroku create
-git push heroku master
-```
-The Twitter and Dark Sky keys need to be added. The format to do so is:
-```shell
-heroku config:set \
-WEATHERBOT_CONSUMER_KEY=xxx \
-WEATHERBOT_CONSUMER_SECRET=xxx \
-WEATHERBOT_ACCESS_TOKEN=xxx \
-WEATHERBOT_ACCESS_TOKEN_SECRET=xxx \
-WEATHERBOT_DARKSKY_KEY=xxx
-```
-You can also add keys/environmental variables on the Heroku project's settings page.
+## Deploying
 
-## Deploying with Docker
-
-weatherBot can easily be deployed using Docker.
-
-### weatherBot from Docker Hub
-
-To download the image, run:
-```shell
-docker pull brianmitchl/weatherbot
-```
-Start the bot with the following, replacing the API keys and secrets with the correct strings. You will also need to add your conf file to the container (I use the `-v` flag).
-```shell
-docker run --name weatherBot -d \
--v /home/brianmitchell/weatherBot/dist/custom.conf:/src/custom.conf \
--e WEATHERBOT_CONSUMER_KEY=xxx \
--e WEATHERBOT_CONSUMER_SECRET=xxx \
--e WEATHERBOT_ACCESS_TOKEN=xxx \
--e WEATHERBOT_ACCESS_TOKEN_SECRET=xxx \
--e WEATHERBOT_DARKSKY_KEY=xxx \
-brianmitchl/weatherbot python weatherBot.py custom.conf
-```
-
-### Building Your Own weatherBot
-
-Alternatively, if you wish to build the Docker image yourself, run:
-```shell
-docker build -t weatherbot .
-```
-Start the bot using the same run command as above, while replacing the image name with what you call yours.
+Head over to the [wiki](https://github.com/BrianMitchL/weatherBot/wiki#deploying) for some examples of deploying weatherBot.
 
 ## Task Runner
 
