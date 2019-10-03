@@ -1,4 +1,4 @@
 tweepy==3.8.0
-python-forecastio>=1.4.0,<2
+python-forecastio==1.4.0
 pytz>=2019.2
-PyYAML>=5.1.2,<6
+PyYAML==5.1.2
