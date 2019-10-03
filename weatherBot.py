@@ -399,7 +399,7 @@ def main(path):
         except yaml.YAMLError as err:
             logging.error(err, exc_info=True)
             logging.error('Could not read YAML file, please correct, run yamllint, and try again.')
-            exit()
+            sys.exit()
 
     location = CONFIG['default_location']
     updated_time = utils.datetime_to_utc('UTC', datetime.utcnow()) - timedelta(minutes=30)
