@@ -1,4 +1,4 @@
-tweepy==3.8.0
+tweepy==3.10.0
 python-forecastio==1.4.0
-pytz>=2019.3
-PyYAML==5.1.2
+pytz>=2020.4
+PyYAML==5.4.1
