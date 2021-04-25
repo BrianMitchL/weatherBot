@@ -1,5 +1,5 @@
-testfixtures>=6.10.0,<7
-invoke>=1.3.0,<2
-pylint==2.4.3
-yamllint==1.18.0
-coverage>=4.5.4,<5
+testfixtures>=6.17.1,<7
+invoke>=1.5.0,<2
+pylint==2.8.0
+yamllint==1.26.1
+coverage>=5.5,<6
